@@ -1,0 +1,338 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Support"})
+    @@include('partials/head-css.html')
+    
+    <style>
+        .support-hero {
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 50%, #4fa896 100%);
+            border-radius: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .support-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 80%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+        
+        .contact-card {
+            border: none;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .contact-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .contact-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .contact-icon.email { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .contact-icon.phone { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .contact-icon.company { background: linear-gradient(135deg, #c9a962 0%, #dfc581 100%); }
+        .contact-icon.developer { background: linear-gradient(135deg, #1a365d 0%, #4fa896 100%); }
+        
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .hours-table td {
+            padding: 8px 15px;
+        }
+        
+        .logo-large {
+            font-size: 72px;
+            font-weight: 800;
+            letter-spacing: -3px;
+        }
+        
+        .logo-large .i { color: #fff; }
+        .logo-large .amp { color: #c9a962; }
+        .logo-large .c { color: #9dd5c4; }
+        
+        .faq-item {
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .faq-item .accordion-button {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .faq-item .accordion-button:not(.collapsed) {
+            background: #1a365d;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Authentication check -->
+    <script>
+        (async function() {
+            try {
+                const response = await fetch('http://localhost:3001/api/me', { credentials: 'include' });
+                if (!response.ok) window.location.href = 'pages-login.html';
+            } catch (error) {
+                window.location.href = 'pages-login.html';
+            }
+        })();
+    </script>
+
+    <div class="layout-wrapper">
+        @@include('partials/menu.html')
+
+        <div class="page-content">
+            @@include('partials/topbar.html')
+
+            <div class="px-3">
+                <div class="container-fluid">
+
+                    @@include("./partials/page-title.html", {"subtitle":"I&C Insurance","title":"Support"})
+
+                    <!-- Hero Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="support-hero p-5">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-7">
+                                        <h1 class="display-5 fw-bold mb-3">Need Help?</h1>
+                                        <p class="lead mb-4 opacity-75">
+                                            Our dedicated support team is here to assist you with any questions or issues 
+                                            you may have with the I&C Insurance Brokers system.
+                                        </p>
+                                        <div class="d-flex gap-3 flex-wrap">
+                                            <a href="mailto:nicholas@solace-systems.com" class="btn btn-light btn-lg">
+                                                <i data-lucide="mail" class="icon-sm me-2"></i> Email Support
+                                            </a>
+                                            <a href="tel:8684603788" class="btn btn-outline-light btn-lg">
+                                                <i data-lucide="phone" class="icon-sm me-2"></i> Call Now
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-5 text-center mt-4 mt-lg-0">
+                                        <div class="logo-large">
+                                            <span class="i">I</span><span class="amp">&</span><span class="c">C</span>
+                                        </div>
+                                        <p class="mb-0 opacity-75">Insurance Brokers</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Cards -->
+                    <div class="row mb-4">
+                        <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                            <div class="card contact-card text-center p-4">
+                                <div class="contact-icon developer">
+                                    <i data-lucide="user" class="text-white" style="width:36px;height:36px;"></i>
+                                </div>
+                                <h5 class="mb-2">Technical Support</h5>
+                                <p class="text-muted mb-3">Your dedicated support contact</p>
+                                <h4 class="text-primary mb-0">Nicholas Dass</h4>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                            <div class="card contact-card text-center p-4">
+                                <div class="contact-icon company">
+                                    <i data-lucide="building" class="text-white" style="width:36px;height:36px;"></i>
+                                </div>
+                                <h5 class="mb-2">Company</h5>
+                                <p class="text-muted mb-3">Software development partner</p>
+                                <h4 class="mb-0" style="color: #c9a962;">Solace-Systems</h4>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                            <div class="card contact-card text-center p-4">
+                                <div class="contact-icon email">
+                                    <i data-lucide="mail" class="text-white" style="width:36px;height:36px;"></i>
+                                </div>
+                                <h5 class="mb-2">Email</h5>
+                                <p class="text-muted mb-3">Best for detailed inquiries</p>
+                                <a href="mailto:nicholas@solace-systems.com" class="h6 text-decoration-none" style="color: #667eea;">
+                                    nicholas@solace-systems.com
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card contact-card text-center p-4">
+                                <div class="contact-icon phone">
+                                    <i data-lucide="phone" class="text-white" style="width:36px;height:36px;"></i>
+                                </div>
+                                <h5 class="mb-2">Phone</h5>
+                                <p class="text-muted mb-3">For urgent matters</p>
+                                <a href="tel:8684603788" class="h4 text-decoration-none" style="color: #11998e;">
+                                    868-460-3788
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Section -->
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-transparent">
+                                    <h5 class="mb-0"><i data-lucide="help-circle" class="icon-sm me-2 text-primary"></i>Frequently Asked Questions</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="accordion" id="faqAccordion">
+                                        <div class="faq-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                                    How do I create a new customer?
+                                                </button>
+                                            </h2>
+                                            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                                <div class="accordion-body">
+                                                    Navigate to the Customers page and click "Add Customer". Fill in the required fields and click Save. You can also upload an ID document to auto-fill customer information.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="faq-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                                    How do I process a payment?
+                                                </button>
+                                            </h2>
+                                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                                <div class="accordion-body">
+                                                    Go to Payments page, click "Record Payment", search for the policy, select payment method(s), enter the amount, and save. A receipt will be generated automatically.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="faq-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                                    How do I generate reports?
+                                                </button>
+                                            </h2>
+                                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                                <div class="accordion-body">
+                                                    Access the Reports page (Supervisor/Admin only), select the report type, choose the date range, and click Generate. Reports can be printed or exported as PDF.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="faq-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                                    What are the different user roles?
+                                                </button>
+                                            </h2>
+                                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                                <div class="accordion-body">
+                                                    <strong>Cashier:</strong> Receive payments<br>
+                                                    <strong>Underwriter:</strong> Create customers and policies<br>
+                                                    <strong>Supervisor:</strong> Access reports and oversight<br>
+                                                    <strong>Admin:</strong> Full system access including user management
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-transparent">
+                                    <h5 class="mb-0"><i data-lucide="info" class="icon-sm me-2 text-info"></i>Support Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="info-box mb-4">
+                                        <h6 class="text-muted mb-2">Support Hours</h6>
+                                        <table class="hours-table mx-auto">
+                                            <tr>
+                                                <td class="text-muted">Monday - Friday</td>
+                                                <td class="fw-bold">9:00 AM - 5:00 PM</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Saturday</td>
+                                                <td class="fw-bold">9:00 AM - 1:00 PM</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Sunday</td>
+                                                <td class="text-danger">Closed</td>
+                                            </tr>
+                                        </table>
+                                        <small class="text-muted d-block mt-2">* Emergency support available for critical issues</small>
+                                    </div>
+                                    
+                                    <div class="row text-center">
+                                        <div class="col-6 mb-3">
+                                            <div class="info-box">
+                                                <i data-lucide="clock" class="text-primary mb-2" style="width:32px;height:32px;"></i>
+                                                <h5 class="mb-0">24hr</h5>
+                                                <small class="text-muted">Email Response</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="info-box">
+                                                <i data-lucide="shield-check" class="text-success mb-2" style="width:32px;height:32px;"></i>
+                                                <h5 class="mb-0">Secure</h5>
+                                                <small class="text-muted">Data Protected</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-center mt-4">
+                                        <p class="text-muted mb-3">Developed with ❤️ by</p>
+                                        <a href="https://solace-systems.com" target="_blank" class="text-decoration-none">
+                                            <h3 style="color: #1a365d;">Solace-Systems</h3>
+                                        </a>
+                                        <p class="text-muted small">Custom Software Solutions</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            @@include('partials/footer.html')
+        </div>
+    </div>
+
+    @@include('partials/footer-scripts.html')
+    <script>
+        $(document).ready(function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>
+
