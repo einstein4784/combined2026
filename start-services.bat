@@ -1,9 +1,9 @@
 @echo off
-title I&C Insurance Brokers - Service Launcher
+title IC Insurance Brokers - Service Launcher
 color 0A
 
 echo ============================================
-echo   I&C Insurance Brokers - Service Startup
+echo   IC Insurance Brokers - Service Startup
 echo   Powered by Solace-Systems
 echo ============================================
 echo.
@@ -23,13 +23,13 @@ echo.
 :: Start Backend Server
 echo [1/2] Starting Backend API Server...
 cd /d "C:\IandC\Drezoc_v2.0\server"
-start "I&C Backend Server" cmd /k "node server.js"
+start "IC Backend Server" cmd /k "node server.js"
 timeout /t 3 /nobreak >nul
 
 :: Start Frontend Server
 echo [2/2] Starting Frontend Web Server...
 cd /d "C:\IandC\Drezoc_v2.0\Admin\dist"
-start "I&C Frontend Server" cmd /k "npx http-server -p 8000 -c-1"
+start "IC Frontend Server" cmd /k "npx http-server -p 8000 -c-1"
 timeout /t 2 /nobreak >nul
 
 echo.
@@ -54,4 +54,3 @@ echo.
 echo Press any key to close this window...
 echo (Services will continue running in background)
 pause >nul
-
