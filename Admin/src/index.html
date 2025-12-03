@@ -2,8 +2,6 @@
 
 <head>
     @@include("partials/title-meta.html", {"title": "Dashboard"})
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @@include('partials/head-css.html')
     
     <style>
@@ -56,11 +54,6 @@
         .stat-icon.outstanding { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
         .stat-icon.payments { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
         
-        .chart-card {
-            border-radius: 12px;
-            border: none;
-        }
-        
         .activity-item {
             padding: 12px 0;
             border-bottom: 1px solid #f0f0f0;
@@ -103,31 +96,6 @@
             padding: 3px 8px;
             border-radius: 20px;
         }
-        
-        .live-indicator {
-            display: inline-flex;
-            align-items: center;
-            font-size: 11px;
-            color: #28a745;
-        }
-        
-        .live-indicator::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background: #28a745;
-            border-radius: 50%;
-            margin-right: 5px;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .trend-up { color: #28a745; }
-        .trend-down { color: #dc3545; }
     </style>
 </head>
 
@@ -245,45 +213,6 @@
                                         <div>
                                             <p class="text-muted mb-1 small">Today's Collections</p>
                                             <h3 class="mb-0 text-success" id="statTodayPayments">$0</h3>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Charts Row -->
-                    <div class="row mb-4">
-                        <div class="col-lg-8 mb-4 mb-lg-0">
-                            <div class="card chart-card h-100">
-                                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h5 class="mb-0">Monthly Collections</h5>
-                                        <small class="text-muted">Payment trends over last 6 months</small>
-                                    </div>
-                                    <span class="live-indicator">Live Data</span>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="collectionsChart" height="280"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <div class="card chart-card h-100">
-                                <div class="card-header bg-transparent border-0">
-                                    <h5 class="mb-0">Coverage Distribution</h5>
-                                    <small class="text-muted">Policy types breakdown</small>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="coverageChart" height="250"></canvas>
-                                    <div class="row text-center mt-3">
-                                        <div class="col-6">
-                                            <h4 class="mb-0" id="thirdPartyCount">0</h4>
-                                            <small class="text-muted">Third Party</small>
-                                        </div>
-                                        <div class="col-6">
-                                            <h4 class="mb-0" id="fullyCompCount">0</h4>
-                                            <small class="text-muted">Fully Comp</small>
                                         </div>
                                     </div>
                                 </div>
