@@ -4,285 +4,295 @@
     @@include("partials/title-meta.html", {"title": "Report Viewer"})
 
     @@include('partials/head-css.html')
+    <link href="assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
     
     <style>
+        /* Print styles */
         @media print {
-            .no-print { display: none !important; }
+            .no-print, .navbar-custom, .main-menu, .footer, .sidenav-menu { display: none !important; }
             body { background: #fff !important; }
             .report-container { box-shadow: none !important; margin: 0 !important; }
-            .navbar-custom, .sidenav-menu, .footer { display: none !important; }
-            .content-page { margin: 0 !important; padding: 0 !important; }
+            .content-page { margin: 0 !important; padding: 0 !important; min-height: auto !important; }
             .container-fluid { padding: 0 !important; }
+            .content { padding: 0 !important; }
         }
         
+        /* Report Toolbar */
         .report-toolbar {
-            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
-            padding: 15px 30px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%) !important;
+            padding: 15px 30px !important;
+            border-radius: 12px !important;
+            margin-bottom: 20px !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            gap: 15px !important;
         }
         
         .report-toolbar h5 {
-            color: #fff;
-            margin: 0;
-            font-weight: 600;
+            color: #fff !important;
+            margin: 0 !important;
+            font-weight: 600 !important;
+            display: flex !important;
+            align-items: center !important;
         }
         
         .report-toolbar .btn {
-            border-radius: 8px;
-            padding: 10px 20px;
-            font-weight: 500;
+            border-radius: 8px !important;
+            padding: 10px 20px !important;
+            font-weight: 500 !important;
         }
         
+        /* Report Container */
         .report-container {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(26, 54, 93, 0.1);
-            overflow: hidden;
+            background: #fff !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(26, 54, 93, 0.1) !important;
+            overflow: hidden !important;
         }
         
+        /* Report Header */
         .report-header {
-            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
-            color: #fff;
-            padding: 40px;
-            text-align: center;
-            position: relative;
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%) !important;
+            color: #fff !important;
+            padding: 40px 40px 60px 40px !important;
+            text-align: center !important;
+            position: relative !important;
         }
         
         .report-header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100'%3E%3Cpath fill='%239dd5c4' fill-opacity='0.3' d='M0,50L60,45C120,40,240,30,360,35C480,40,600,60,720,65C840,70,960,60,1080,50C1200,40,1320,30,1380,25L1440,20L1440,100L1380,100C1320,100,1200,100,1080,100C960,100,840,100,720,100C600,100,480,100,360,100C240,100,120,100,60,100L0,100Z'%3E%3C/path%3E%3Cpath fill='%23c9a962' fill-opacity='0.3' d='M0,70L60,68C120,66,240,62,360,60C480,58,600,58,720,62C840,66,960,74,1080,76C1200,78,1320,74,1380,72L1440,70L1440,100L1380,100C1320,100,1200,100,1080,100C960,100,840,100,720,100C600,100,480,100,360,100C240,100,120,100,60,100L0,100Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
-            background-size: cover;
-        }
-        
-        .company-logo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 15px;
+            content: '' !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 40px !important;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100'%3E%3Cpath fill='%239dd5c4' fill-opacity='0.3' d='M0,50L60,45C120,40,240,30,360,35C480,40,600,60,720,65C840,70,960,60,1080,50C1200,40,1320,30,1380,25L1440,20L1440,100L0,100Z'%3E%3C/path%3E%3Cpath fill='%23c9a962' fill-opacity='0.25' d='M0,70L60,68C120,66,240,62,360,60C480,58,600,58,720,62C840,66,960,74,1080,76C1200,78,1320,74,1380,72L1440,70L1440,100L0,100Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom !important;
+            background-size: cover !important;
         }
         
         .company-logo-text {
-            font-size: 48px;
-            font-weight: 800;
-            letter-spacing: -2px;
+            font-size: 56px !important;
+            font-weight: 800 !important;
+            letter-spacing: -2px !important;
+            margin-bottom: 10px !important;
         }
         
-        .company-logo-text .i { color: #fff; }
-        .company-logo-text .amp { color: #c9a962; font-size: 36px; }
-        .company-logo-text .c { color: #9dd5c4; }
+        .company-logo-text .logo-i { color: #fff !important; }
+        .company-logo-text .logo-amp { color: #c9a962 !important; font-size: 42px !important; }
+        .company-logo-text .logo-c { color: #9dd5c4 !important; }
         
         .company-name {
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            margin-top: 5px;
+            font-size: 18px !important;
+            font-weight: 600 !important;
+            letter-spacing: 4px !important;
+            text-transform: uppercase !important;
+            color: #fff !important;
         }
         
         .company-location {
-            font-size: 12px;
-            letter-spacing: 2px;
-            opacity: 0.8;
-            margin-top: 5px;
+            font-size: 13px !important;
+            letter-spacing: 2px !important;
+            color: rgba(255,255,255,0.8) !important;
+            margin-top: 5px !important;
         }
         
         .report-title {
-            font-size: 22px;
-            font-weight: 600;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.2);
+            font-size: 24px !important;
+            font-weight: 600 !important;
+            margin-top: 25px !important;
+            padding-top: 20px !important;
+            border-top: 1px solid rgba(255,255,255,0.2) !important;
+            color: #fff !important;
         }
         
+        /* Report Meta */
         .report-meta {
-            background: linear-gradient(135deg, rgba(157, 213, 196, 0.15) 0%, rgba(79, 168, 150, 0.1) 100%);
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 20px;
-            border-bottom: 1px solid rgba(26, 54, 93, 0.1);
+            background: linear-gradient(135deg, rgba(157, 213, 196, 0.15) 0%, rgba(79, 168, 150, 0.1) 100%) !important;
+            padding: 20px 40px !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            flex-wrap: wrap !important;
+            gap: 20px !important;
+            border-bottom: 1px solid rgba(26, 54, 93, 0.1) !important;
         }
         
         .meta-item {
-            text-align: center;
+            text-align: center !important;
+            flex: 1 !important;
+            min-width: 120px !important;
         }
         
         .meta-item span {
-            display: block;
-            color: #6c757d;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            display: block !important;
+            color: #6c757d !important;
+            font-size: 11px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
         }
         
         .meta-item strong {
-            display: block;
-            color: #1a365d;
-            font-size: 14px;
-            margin-top: 5px;
+            display: block !important;
+            color: #1a365d !important;
+            font-size: 14px !important;
+            margin-top: 5px !important;
         }
         
+        /* Report Summary */
         .report-summary {
-            background: linear-gradient(135deg, rgba(79, 168, 150, 0.08) 0%, rgba(157, 213, 196, 0.08) 100%);
-            padding: 30px 40px;
-            margin: 25px 40px;
-            border-radius: 12px;
-            border-left: 4px solid #4fa896;
+            background: linear-gradient(135deg, rgba(79, 168, 150, 0.08) 0%, rgba(157, 213, 196, 0.08) 100%) !important;
+            padding: 30px 40px !important;
+            margin: 25px 40px !important;
+            border-radius: 12px !important;
+            border-left: 4px solid #4fa896 !important;
         }
         
         .report-summary h5 {
-            color: #1a365d;
-            font-weight: 600;
-            margin-bottom: 20px;
-            font-size: 16px;
+            color: #1a365d !important;
+            font-weight: 600 !important;
+            margin-bottom: 20px !important;
+            font-size: 16px !important;
+            display: flex !important;
+            align-items: center !important;
         }
         
         .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 25px;
+            display: grid !important;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+            gap: 20px !important;
         }
         
         .summary-item {
-            text-align: center;
-            padding: 15px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(26, 54, 93, 0.08);
+            text-align: center !important;
+            padding: 20px 15px !important;
+            background: #fff !important;
+            border-radius: 10px !important;
+            box-shadow: 0 2px 10px rgba(26, 54, 93, 0.08) !important;
         }
         
         .summary-item .value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #4fa896;
+            font-size: 32px !important;
+            font-weight: 700 !important;
+            color: #4fa896 !important;
         }
         
         .summary-item .label {
-            font-size: 11px;
-            color: #6c757d;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 5px;
+            font-size: 11px !important;
+            color: #6c757d !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            margin-top: 8px !important;
         }
         
+        /* Report Content */
         .report-content {
-            padding: 30px 40px;
+            padding: 30px 40px !important;
         }
         
         .report-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
+            width: 100% !important;
+            border-collapse: collapse !important;
+            font-size: 13px !important;
         }
         
         .report-table thead th {
-            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
-            color: #fff;
-            padding: 14px 16px;
-            text-align: left;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%) !important;
+            color: #fff !important;
+            padding: 14px 16px !important;
+            text-align: left !important;
+            font-size: 11px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            font-weight: 600 !important;
         }
         
         .report-table tbody td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #eee;
-            color: #333;
+            padding: 12px 16px !important;
+            border-bottom: 1px solid #eee !important;
+            color: #333 !important;
         }
         
         .report-table tbody tr:nth-child(even) {
-            background: rgba(157, 213, 196, 0.05);
+            background: rgba(157, 213, 196, 0.05) !important;
         }
         
         .report-table tbody tr:hover {
-            background: rgba(79, 168, 150, 0.08);
+            background: rgba(79, 168, 150, 0.1) !important;
         }
         
         .report-table tfoot td {
-            background: linear-gradient(135deg, rgba(26, 54, 93, 0.08) 0%, rgba(44, 74, 124, 0.08) 100%);
-            font-weight: 600;
-            padding: 14px 16px;
-            color: #1a365d;
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.08) 0%, rgba(44, 74, 124, 0.08) 100%) !important;
+            font-weight: 600 !important;
+            padding: 14px 16px !important;
+            color: #1a365d !important;
         }
         
+        /* Report Footer */
         .report-footer {
-            background: linear-gradient(135deg, rgba(26, 54, 93, 0.03) 0%, rgba(44, 74, 124, 0.03) 100%);
-            padding: 40px;
-            margin-top: 30px;
-            border-top: 1px solid #eee;
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.03) 0%, rgba(44, 74, 124, 0.03) 100%) !important;
+            padding: 40px !important;
+            margin-top: 30px !important;
+            border-top: 1px solid #eee !important;
         }
         
         .certification-text {
-            text-align: center;
-            font-style: italic;
-            color: #6c757d;
-            margin-bottom: 40px;
+            text-align: center !important;
+            font-style: italic !important;
+            color: #6c757d !important;
+            margin-bottom: 40px !important;
         }
         
         .signature-section {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 60px;
-            max-width: 600px;
-            margin: 0 auto;
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 60px !important;
+            max-width: 600px !important;
+            margin: 0 auto !important;
         }
         
         .signature-box {
-            text-align: center;
+            text-align: center !important;
         }
         
         .signature-line {
-            border-top: 1px solid #1a365d;
-            margin-top: 60px;
-            padding-top: 12px;
+            border-top: 1px solid #1a365d !important;
+            margin-top: 60px !important;
+            padding-top: 12px !important;
         }
         
         .signature-title {
-            color: #6c757d;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            color: #6c757d !important;
+            font-size: 12px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
         }
         
         .generated-info {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px dashed #ccc;
-            text-align: center;
-            font-size: 11px;
-            color: #999;
+            margin-top: 40px !important;
+            padding-top: 20px !important;
+            border-top: 1px dashed #ccc !important;
+            text-align: center !important;
+            font-size: 11px !important;
+            color: #999 !important;
         }
         
         .amount-cell {
-            font-family: 'Courier New', monospace;
-            text-align: right;
+            font-family: 'Courier New', monospace !important;
+            text-align: right !important;
         }
         
         .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
+            padding: 4px 12px !important;
+            border-radius: 20px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
         }
         
-        .status-active { background: rgba(79, 168, 150, 0.15); color: #3d8a7a; }
-        .status-paid { background: rgba(79, 168, 150, 0.15); color: #3d8a7a; }
-        .status-pending { background: rgba(201, 169, 98, 0.15); color: #9a7c3e; }
-        .status-overdue { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .status-active { background: rgba(79, 168, 150, 0.15) !important; color: #3d8a7a !important; }
+        .status-paid { background: rgba(79, 168, 150, 0.15) !important; color: #3d8a7a !important; }
+        .status-pending { background: rgba(201, 169, 98, 0.15) !important; color: #9a7c3e !important; }
+        .status-overdue { background: rgba(220, 53, 69, 0.15) !important; color: #dc3545 !important; }
     </style>
 </head>
 
@@ -299,39 +309,37 @@
                 <!-- Start Content-->
                 <div class="container-fluid">
                     
-                    <!-- Report Toolbar -->
-                    <div class="report-toolbar no-print">
+                    <!-- Report Toolbar - Always Visible -->
+                    <div class="report-toolbar no-print" id="reportToolbar">
                         <div>
-                            <h5><i data-lucide="file-text" class="me-2"></i> <span id="toolbarTitle">Report Viewer</span></h5>
+                            <h5><i data-lucide="file-text" class="me-2" style="width:20px;height:20px;"></i> <span id="toolbarTitle">Report Viewer</span></h5>
                         </div>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-light" onclick="window.history.back()">
-                                <i data-lucide="arrow-left" class="icon-sm me-1"></i> Back
-                            </button>
-                            <button class="btn btn-warning" onclick="window.print()">
-                                <i data-lucide="printer" class="icon-sm me-1"></i> Print
+                            <a href="admin-settings.html" class="btn btn-light">
+                                <i data-lucide="arrow-left" class="me-1" style="width:16px;height:16px;"></i> Back to Reports
+                            </a>
+                            <button class="btn btn-warning text-dark" onclick="window.print()">
+                                <i data-lucide="printer" class="me-1" style="width:16px;height:16px;"></i> Print
                             </button>
                             <button class="btn btn-success" onclick="exportToPDF()">
-                                <i data-lucide="download" class="icon-sm me-1"></i> Export PDF
+                                <i data-lucide="download" class="me-1" style="width:16px;height:16px;"></i> Export PDF
                             </button>
                         </div>
                     </div>
 
                     <!-- Report Container -->
                     <div class="report-container" id="reportContainer">
-                        <!-- Report Header -->
-                        <div class="report-header">
-                            <div class="company-logo-container">
-                                <div class="company-logo-text">
-                                    <span class="i">I</span><span class="amp">&</span><span class="c">C</span>
-                                </div>
+                        <!-- Report Header with Logo -->
+                        <div class="report-header" id="reportHeader">
+                            <div class="company-logo-text">
+                                <span class="logo-i">I</span><span class="logo-amp">&</span><span class="logo-c">C</span>
                             </div>
                             <div class="company-name">INSURANCE BROKERS</div>
                             <div class="company-location">ST. LUCIA</div>
                             <div class="report-title" id="reportTitle">Report</div>
                         </div>
                         
-                        <!-- Report Meta -->
+                        <!-- Report Meta Information -->
                         <div class="report-meta" id="reportMeta">
                             <div class="meta-item">
                                 <span>Report Date</span>
@@ -359,7 +367,7 @@
                             </div>
                         </div>
                         
-                        <!-- Report Content -->
+                        <!-- Report Data Table -->
                         <div class="report-content">
                             <table class="report-table" id="reportTable">
                                 <thead id="reportTableHead">
@@ -374,7 +382,7 @@
                             </table>
                         </div>
                         
-                        <!-- Report Footer -->
+                        <!-- Report Footer with Signatures -->
                         <div class="report-footer">
                             <p class="certification-text">
                                 I certify that the information contained in this report is accurate and complete to the best of my knowledge.
@@ -408,47 +416,73 @@
     </div>
 
     @@include('partials/footer-scripts.html')
-    
+    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <script>
-        // Get report data from URL or session storage
+        // Report data storage
         let reportData = null;
         
         $(document).ready(function() {
-            lucide.createIcons();
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
             
             // Get report data from session storage
             const storedData = sessionStorage.getItem('reportData');
+            console.log('Report data from session:', storedData);
+            
             if (storedData) {
-                reportData = JSON.parse(storedData);
-                renderReport(reportData);
+                try {
+                    reportData = JSON.parse(storedData);
+                    console.log('Parsed report data:', reportData);
+                    renderReport(reportData);
+                } catch (e) {
+                    console.error('Error parsing report data:', e);
+                    showNoDataMessage();
+                }
             } else {
-                // Show error if no data
-                $('#reportTableBody').html('<tr><td colspan="10" class="text-center py-5">No report data available. Please generate a report first.</td></tr>');
+                console.log('No report data found in session storage');
+                showNoDataMessage();
             }
         });
         
+        function showNoDataMessage() {
+            $('#reportTitle').text('No Report Available');
+            $('#reportSummary').hide();
+            $('#reportTableBody').html('<tr><td colspan="10" class="text-center py-5 text-muted"><i data-lucide="alert-circle" style="width:48px;height:48px;margin-bottom:15px;"></i><br><strong>No report data available</strong><br>Please go back and generate a report first.</td></tr>');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+        
         function renderReport(data) {
+            console.log('Rendering report with data:', data);
+            
             const now = new Date();
             const userDataStr = localStorage.getItem('userData');
             const userData = userDataStr ? JSON.parse(userDataStr) : { fullName: 'System', role: 'Admin' };
             
+            // Set toolbar and page title
+            const title = data.title || 'Report';
+            $('#toolbarTitle').text(title);
+            $('#reportTitle').text(title);
+            document.title = title + ' | I&C Insurance Brokers';
+            
             // Set meta information
-            $('#toolbarTitle').text(data.title || 'Report');
-            $('#reportTitle').text(data.title || 'Report');
             $('#metaReportDate').text(now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
-            $('#metaGeneratedBy').text(`${userData.fullName} (${userData.role})`);
+            $('#metaGeneratedBy').text(`${userData.fullName || 'System'} (${userData.role || 'Admin'})`);
             $('#metaDateRange').text(data.dateRange || 'All Time');
             $('#metaReportId').text('RPT-' + Date.now().toString(36).toUpperCase());
             
-            // Set generated info
+            // Set generated info footer
             $('#generatedDate').text(now.toLocaleDateString());
             $('#generatedTime').text(now.toLocaleTimeString());
-            $('#generatedUser').text(userData.fullName);
+            $('#generatedUser').text(userData.fullName || 'System');
             
-            // Render summary
-            if (data.summary) {
+            // Render summary section
+            if (data.summary && data.summary.length > 0) {
                 let summaryHtml = '';
                 data.summary.forEach(item => {
                     summaryHtml += `
@@ -459,46 +493,55 @@
                     `;
                 });
                 $('#summaryGrid').html(summaryHtml);
+                $('#reportSummary').show();
+            } else {
+                $('#reportSummary').hide();
             }
             
             // Render table headers
-            if (data.headers) {
+            if (data.headers && data.headers.length > 0) {
                 let headerHtml = '<tr>';
                 data.headers.forEach(h => {
-                    headerHtml += `<th>${h}</th>`;
+                    headerHtml += `<th>${escapeHtml(h)}</th>`;
                 });
                 headerHtml += '</tr>';
                 $('#reportTableHead').html(headerHtml);
             }
             
             // Render table body
-            if (data.rows) {
+            if (data.rows && data.rows.length > 0) {
                 let bodyHtml = '';
                 data.rows.forEach(row => {
                     bodyHtml += '<tr>';
-                    row.forEach((cell, idx) => {
+                    row.forEach((cell) => {
                         let cellClass = '';
+                        let cellContent = cell;
+                        
                         if (typeof cell === 'string') {
-                            if (cell.startsWith('$') || cell.match(/^\d+\.\d{2}$/)) {
+                            // Check for currency formatting
+                            if (cell.startsWith('$') || cell.match(/^\$[\d,]+\.?\d*$/)) {
                                 cellClass = 'amount-cell';
                             }
+                            // Status badges
                             if (cell === 'Active' || cell === 'Paid') {
-                                cell = `<span class="status-badge status-active">${cell}</span>`;
+                                cellContent = `<span class="status-badge status-active">${cell}</span>`;
                             } else if (cell === 'Pending') {
-                                cell = `<span class="status-badge status-pending">${cell}</span>`;
-                            } else if (cell === 'Overdue') {
-                                cell = `<span class="status-badge status-overdue">${cell}</span>`;
+                                cellContent = `<span class="status-badge status-pending">${cell}</span>`;
+                            } else if (cell === 'Overdue' || cell === 'Cancelled') {
+                                cellContent = `<span class="status-badge status-overdue">${cell}</span>`;
                             }
                         }
-                        bodyHtml += `<td class="${cellClass}">${cell}</td>`;
+                        bodyHtml += `<td class="${cellClass}">${cellContent}</td>`;
                     });
                     bodyHtml += '</tr>';
                 });
                 $('#reportTableBody').html(bodyHtml);
+            } else {
+                $('#reportTableBody').html('<tr><td colspan="10" class="text-center py-4 text-muted">No data available</td></tr>');
             }
             
             // Render footer/totals
-            if (data.totals) {
+            if (data.totals && data.totals.length > 0) {
                 let footHtml = '<tr>';
                 data.totals.forEach(t => {
                     footHtml += `<td>${t}</td>`;
@@ -508,7 +551,16 @@
             }
             
             // Re-initialize icons
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+        
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return text;
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         function exportToPDF() {
@@ -522,7 +574,8 @@
                 html2canvas: { 
                     scale: 2,
                     useCORS: true,
-                    letterRendering: true
+                    letterRendering: true,
+                    logging: false
                 },
                 jsPDF: { 
                     unit: 'mm', 
@@ -532,24 +585,32 @@
             };
             
             // Show loading
-            Swal.fire({
-                title: 'Generating PDF...',
-                text: 'Please wait...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Generating PDF...',
+                    text: 'Please wait while we prepare your document...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            }
             
             html2pdf().set(opt).from(element).save().then(() => {
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'PDF has been downloaded',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'PDF has been downloaded',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            }).catch(err => {
+                console.error('PDF export error:', err);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', 'Failed to generate PDF. Please try printing instead.', 'error');
+                }
             });
         }
     </script>
 </body>
 </html>
-
