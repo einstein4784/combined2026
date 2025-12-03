@@ -7,6 +7,19 @@
     <link href="assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
     
     <style>
+        /* Fix layout - ensure content starts at top */
+        .content-page {
+            min-height: 100vh !important;
+        }
+        
+        .content {
+            padding-top: 10px !important;
+        }
+        
+        .container-fluid {
+            padding-top: 0 !important;
+        }
+        
         .report-card {
             border: none;
             border-radius: 12px;
@@ -20,18 +33,18 @@
         }
         
         .report-card .card-header {
-            padding: 20px;
+            padding: 15px 20px;
             border: none;
         }
         
         .report-card .card-body {
-            padding: 20px;
+            padding: 15px 20px;
         }
         
         .report-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -40,38 +53,70 @@
         .quick-btn-group .btn {
             border-radius: 8px;
             font-weight: 500;
-            padding: 8px 16px;
+            padding: 6px 12px;
+            font-size: 13px;
         }
         
         .date-range-group {
             background: rgba(0,0,0,0.02);
-            border-radius: 10px;
-            padding: 15px;
+            border-radius: 8px;
+            padding: 10px;
         }
         
         .page-header {
             background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 30px;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
             color: #fff;
         }
         
         .page-header h2 {
             margin: 0;
             font-weight: 700;
+            font-size: 1.5rem;
         }
         
         .page-header p {
-            margin: 10px 0 0;
+            margin: 5px 0 0;
             opacity: 0.8;
+            font-size: 14px;
         }
         
         .access-badge {
             background: rgba(255,255,255,0.2);
-            padding: 5px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
+        }
+        
+        /* Compact cards */
+        .report-card h5 {
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+        
+        .report-card small {
+            font-size: 11px;
+        }
+        
+        .form-label.small {
+            font-size: 10px !important;
+            margin-bottom: 5px;
+        }
+        
+        .input-group-text {
+            font-size: 13px;
+            padding: 6px 10px;
+        }
+        
+        .form-control {
+            font-size: 13px;
+            padding: 6px 10px;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1rem !important;
         }
     </style>
 </head>
