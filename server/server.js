@@ -2,7 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const { User, Customer, Policy, Payment, Receipt, generateReceiptNumber, generatePolicyNumber } = require('./database');
+const { 
+    User, Customer, Policy, Payment, Receipt, 
+    RolePermission, SystemSettings, FinancialPeriod, AuditLog,
+    SYSTEM_FUNCTIONS, DEFAULT_PERMISSIONS,
+    generateReceiptNumber, generatePolicyNumber,
+    hasPermission, logAuditAction
+} = require('./database');
 const bcrypt = require('bcryptjs');
 
 const app = express();
@@ -626,6 +632,460 @@ app.get('/api/dashboard/stats', requireAuth, async (req, res) => {
             activePolicies,
             totalOutstanding,
             todayPayments: todayTotal
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ========== ADMIN ROUTES ==========
+
+// Middleware to check if user is Admin
+const requireAdmin = async (req, res, next) => {
+    if (!req.session || !req.session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    try {
+        const user = await User.findById(req.session.userId);
+        if (!user || user.role !== 'Admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        req.user = user;
+        return next();
+    } catch (error) {
+        res.status(401).json({ error: 'Unauthorized' });
+    }
+};
+
+// Middleware to check permission
+const requirePermission = (permissionId) => {
+    return async (req, res, next) => {
+        if (!req.session || !req.session.userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        try {
+            const allowed = await hasPermission(req.session.userId, permissionId);
+            if (allowed) {
+                return next();
+            }
+            res.status(403).json({ error: 'Permission denied' });
+        } catch (error) {
+            res.status(401).json({ error: 'Unauthorized' });
+        }
+    };
+};
+
+// Get system functions
+app.get('/api/admin/functions', requireAuth, requireAdmin, (req, res) => {
+    res.json(SYSTEM_FUNCTIONS);
+});
+
+// Get all role permissions
+app.get('/api/admin/permissions', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const permissions = await RolePermission.find();
+        res.json(permissions);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update role permissions
+app.post('/api/admin/permissions', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { role, permissions } = req.body;
+        
+        if (role === 'Admin') {
+            return res.status(400).json({ error: 'Cannot modify Admin permissions' });
+        }
+        
+        await RolePermission.findOneAndUpdate(
+            { role },
+            { 
+                role,
+                permissions,
+                updated_at: Date.now(),
+                updated_by: req.session.userId
+            },
+            { upsert: true }
+        );
+        
+        // Log the action
+        await logAuditAction(
+            req.session.userId,
+            'UPDATE_PERMISSIONS',
+            'RolePermission',
+            role,
+            { permissions },
+            req.ip
+        );
+        
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all financial periods
+app.get('/api/admin/periods', requireAuth, async (req, res) => {
+    try {
+        const periods = await FinancialPeriod.find().sort({ start_date: -1 });
+        res.json(periods);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get current period statistics
+app.get('/api/admin/period-stats', requireAuth, async (req, res) => {
+    try {
+        const currentPeriod = await FinancialPeriod.findOne({ status: 'Open' });
+        
+        if (!currentPeriod) {
+            return res.json({ payment_count: 0, policy_count: 0, total_collections: 0 });
+        }
+        
+        const [payments, policies] = await Promise.all([
+            Payment.find({
+                created_at: { $gte: currentPeriod.start_date, $lte: currentPeriod.end_date }
+            }),
+            Policy.countDocuments({
+                created_at: { $gte: currentPeriod.start_date, $lte: currentPeriod.end_date }
+            })
+        ]);
+        
+        const totalCollections = payments.reduce((sum, p) => sum + p.amount, 0);
+        
+        res.json({
+            payment_count: payments.length,
+            policy_count: policies,
+            total_collections: totalCollections
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create new financial period
+app.post('/api/admin/periods', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { period_name, start_date, end_date } = req.body;
+        
+        const period = new FinancialPeriod({
+            period_name,
+            start_date: new Date(start_date),
+            end_date: new Date(end_date),
+            status: 'Open'
+        });
+        
+        await period.save();
+        
+        await logAuditAction(
+            req.session.userId,
+            'CREATE_PERIOD',
+            'FinancialPeriod',
+            period._id.toString(),
+            { period_name },
+            req.ip
+        );
+        
+        res.json({ success: true, id: period._id });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Close current period
+app.post('/api/admin/periods/close-current', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const currentPeriod = await FinancialPeriod.findOne({ status: 'Open' });
+        
+        if (!currentPeriod) {
+            return res.status(404).json({ error: 'No open period found' });
+        }
+        
+        // Calculate total collections
+        const payments = await Payment.find({
+            created_at: { $gte: currentPeriod.start_date, $lte: currentPeriod.end_date }
+        });
+        const totalCollections = payments.reduce((sum, p) => sum + p.amount, 0);
+        
+        const policies = await Policy.countDocuments({
+            created_at: { $gte: currentPeriod.start_date, $lte: currentPeriod.end_date }
+        });
+        
+        currentPeriod.status = 'Closed';
+        currentPeriod.total_collections = totalCollections;
+        currentPeriod.total_policies_created = policies;
+        currentPeriod.closed_by = req.session.userId;
+        currentPeriod.closed_at = Date.now();
+        
+        await currentPeriod.save();
+        
+        await logAuditAction(
+            req.session.userId,
+            'CLOSE_PERIOD',
+            'FinancialPeriod',
+            currentPeriod._id.toString(),
+            { total_collections: totalCollections },
+            req.ip
+        );
+        
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Close specific period
+app.post('/api/admin/periods/:id/close', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const period = await FinancialPeriod.findById(req.params.id);
+        
+        if (!period) {
+            return res.status(404).json({ error: 'Period not found' });
+        }
+        
+        if (period.status === 'Closed') {
+            return res.status(400).json({ error: 'Period is already closed' });
+        }
+        
+        // Calculate total collections
+        const payments = await Payment.find({
+            created_at: { $gte: period.start_date, $lte: period.end_date }
+        });
+        const totalCollections = payments.reduce((sum, p) => sum + p.amount, 0);
+        
+        const policies = await Policy.countDocuments({
+            created_at: { $gte: period.start_date, $lte: period.end_date }
+        });
+        
+        period.status = 'Closed';
+        period.total_collections = totalCollections;
+        period.total_policies_created = policies;
+        period.closed_by = req.session.userId;
+        period.closed_at = Date.now();
+        
+        await period.save();
+        
+        await logAuditAction(
+            req.session.userId,
+            'CLOSE_PERIOD',
+            'FinancialPeriod',
+            period._id.toString(),
+            { total_collections: totalCollections },
+            req.ip
+        );
+        
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get audit log
+app.get('/api/admin/audit-log', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { date } = req.query;
+        let query = {};
+        
+        if (date) {
+            const startDate = new Date(date);
+            startDate.setHours(0, 0, 0, 0);
+            const endDate = new Date(date);
+            endDate.setHours(23, 59, 59, 999);
+            query.created_at = { $gte: startDate, $lte: endDate };
+        }
+        
+        const logs = await AuditLog.find(query)
+            .populate('user_id', 'username full_name')
+            .sort({ created_at: -1 })
+            .limit(500);
+        
+        res.json(logs.map(log => ({
+            ...log.toObject(),
+            user_name: log.user_id ? log.user_id.full_name : 'Unknown'
+        })));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Override arrears for customer
+app.post('/api/admin/override-arrears', requireAuth, requirePermission('override_outstanding_balance'), async (req, res) => {
+    try {
+        const { customer_id, reason } = req.body;
+        
+        await Customer.findByIdAndUpdate(customer_id, {
+            arrears_override: true,
+            arrears_override_by: req.session.userId,
+            arrears_override_at: Date.now()
+        });
+        
+        await logAuditAction(
+            req.session.userId,
+            'OVERRIDE_ARREARS',
+            'Customer',
+            customer_id,
+            { reason },
+            req.ip
+        );
+        
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Reset system
+app.post('/api/admin/reset-system', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        // Check permission
+        const allowed = await hasPermission(req.session.userId, 'reset_system');
+        if (!allowed) {
+            return res.status(403).json({ error: 'Permission denied' });
+        }
+        
+        // Delete all data except users and role permissions
+        await Promise.all([
+            Customer.deleteMany({}),
+            Policy.deleteMany({}),
+            Payment.deleteMany({}),
+            Receipt.deleteMany({}),
+            FinancialPeriod.deleteMany({})
+        ]);
+        
+        // Create default financial period
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const endOfYear = new Date(now.getFullYear(), 11, 31);
+        
+        const period = new FinancialPeriod({
+            period_name: `FY ${now.getFullYear()}`,
+            start_date: startOfYear,
+            end_date: endOfYear,
+            status: 'Open'
+        });
+        await period.save();
+        
+        await logAuditAction(
+            req.session.userId,
+            'RESET_SYSTEM',
+            'System',
+            null,
+            { timestamp: Date.now() },
+            req.ip
+        );
+        
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Generate user report
+app.get('/api/admin/reports/users', requireAuth, requirePermission('generate_user_report'), async (req, res) => {
+    try {
+        const users = await User.find().select('-password');
+        res.json(users.map(u => ({
+            username: u.username,
+            full_name: u.full_name,
+            email: u.email,
+            role: u.role,
+            created_at: u.created_at
+        })));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Generate cash statement
+app.get('/api/admin/reports/cash-statement', requireAuth, requirePermission('generate_cash_statements'), async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        
+        const payments = await Payment.find({
+            payment_date: { $gte: start, $lte: end }
+        })
+        .populate('policy_id', 'policy_number')
+        .populate({
+            path: 'policy_id',
+            populate: { path: 'customer_id', select: 'first_name middle_name last_name' }
+        })
+        .populate('received_by', 'full_name')
+        .sort({ payment_date: 1 });
+        
+        const total = payments.reduce((sum, p) => sum + p.amount, 0);
+        
+        res.json({
+            startDate,
+            endDate,
+            total,
+            summary: `Cash Statement from ${startDate} to ${endDate}`,
+            payments: payments.map(p => ({
+                date: p.payment_date,
+                receipt_number: p.receipt_number,
+                policy_number: p.policy_id?.policy_number,
+                customer_name: p.policy_id?.customer_id ? 
+                    `${p.policy_id.customer_id.first_name} ${p.policy_id.customer_id.middle_name || ''} ${p.policy_id.customer_id.last_name}`.trim() : '',
+                amount: p.amount,
+                payment_method: p.payment_method,
+                received_by: p.received_by?.full_name
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Generate policy report
+app.get('/api/admin/reports/policies', requireAuth, async (req, res) => {
+    try {
+        const policies = await Policy.find()
+            .populate('customer_id', 'first_name middle_name last_name id_number')
+            .sort({ created_at: -1 });
+        
+        res.json(policies.map(p => ({
+            policy_number: p.policy_number,
+            customer_name: p.customer_id ? 
+                `${p.customer_id.first_name} ${p.customer_id.middle_name || ''} ${p.customer_id.last_name}`.trim() : '',
+            customer_id_number: p.customer_id?.id_number,
+            total_premium_due: p.total_premium_due,
+            amount_paid: p.amount_paid,
+            outstanding_balance: p.outstanding_balance,
+            status: p.status,
+            created_at: p.created_at
+        })));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get user permissions for current user
+app.get('/api/user/permissions', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId);
+        if (!user) {
+            return res.status(401).json({ error: 'User not found' });
+        }
+        
+        // Admin has all permissions
+        if (user.role === 'Admin') {
+            return res.json({
+                role: user.role,
+                permissions: Object.values(SYSTEM_FUNCTIONS).map(f => f.id)
+            });
+        }
+        
+        const rolePermission = await RolePermission.findOne({ role: user.role });
+        res.json({
+            role: user.role,
+            permissions: rolePermission ? rolePermission.permissions : []
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
