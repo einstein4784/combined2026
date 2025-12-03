@@ -440,6 +440,34 @@ window.generateUserReport = async function() {
     }
 };
 
+// Quick access cash statement generators
+window.generateDailyCash = function() {
+    const today = new Date();
+    const dateStr = formatDateForInput(today);
+    $('#cashStatementStartDate').val(dateStr);
+    $('#cashStatementEndDate').val(dateStr);
+    generateCashStatement();
+};
+
+window.generateWeeklyCash = function() {
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(today.getDate() - 6); // Last 7 days including today
+    
+    $('#cashStatementStartDate').val(formatDateForInput(weekAgo));
+    $('#cashStatementEndDate').val(formatDateForInput(today));
+    generateCashStatement();
+};
+
+window.generateMonthlyCash = function() {
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    $('#cashStatementStartDate').val(formatDateForInput(firstOfMonth));
+    $('#cashStatementEndDate').val(formatDateForInput(today));
+    generateCashStatement();
+};
+
 window.generateCashStatement = async function() {
     const startDate = $('#cashStatementStartDate').val() || $('#reportStartDate').val();
     const endDate = $('#cashStatementEndDate').val() || $('#reportEndDate').val();
