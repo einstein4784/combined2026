@@ -1,11 +1,22 @@
 let policiesTable;
 let editingPolicyId = null;
+let customersData = [];
 
 $(document).ready(function() {
     initPoliciesTable();
     loadPolicies();
-    loadCustomers();
+    loadCustomersData();
 });
+
+// Load customers data once
+async function loadCustomersData() {
+    try {
+        customersData = await api.getCustomers();
+    } catch (error) {
+        console.error('Error loading customers:', error);
+        customersData = [];
+    }
+}
 
 // Make functions globally accessible
 window.openPolicyModal = function() {
@@ -21,8 +32,10 @@ window.openPolicyModal = function() {
         $('#policyModal').modal('show');
     }
     
-    // Load customers for dropdown
-    loadCustomers();
+    // Initialize Select2 after modal is shown
+    setTimeout(() => {
+        initCustomerSelect2();
+    }, 200);
 };
 
 window.resetPolicyForm = function() {
@@ -31,6 +44,12 @@ window.resetPolicyForm = function() {
     $('#policyNumber').val('');
     $('#policyModalTitle').text('Create Policy');
     editingPolicyId = null;
+    
+    // Clear Select2 selection
+    if ($('#customerId').hasClass('select2-hidden-accessible')) {
+        $('#customerId').val(null).trigger('change');
+    }
+    
     // Remove validation classes
     $('#policyForm input, #policyForm select').removeClass('is-invalid');
 };
@@ -41,14 +60,10 @@ window.editPolicy = async function(id) {
         editingPolicyId = id;
         
         $('#policyId').val(policy.id);
-        $('#customerId').val(policy.customer_id);
         $('#policyNumber').val(policy.policy_number);
         $('#totalPremiumDue').val(policy.total_premium_due);
         
         $('#policyModalTitle').text('Edit Policy');
-        
-        // Load customers and then show modal
-        await loadCustomers();
         
         // Show modal
         const modalElement = document.getElementById('policyModal');
@@ -58,10 +73,131 @@ window.editPolicy = async function(id) {
         } else {
             $('#policyModal').modal('show');
         }
+        
+        // Initialize Select2 after modal is shown and set value
+        setTimeout(() => {
+            initCustomerSelect2();
+            $('#customerId').val(policy.customer_id).trigger('change');
+        }, 200);
     } catch (error) {
         Swal.fire('Error', error.message, 'error');
     }
 };
+
+function initCustomerSelect2() {
+    const select = $('#customerId');
+    
+    // Destroy existing Select2 if initialized
+    if (select.hasClass('select2-hidden-accessible')) {
+        select.select2('destroy');
+    }
+    
+    // Clear and populate options
+    select.empty().append('<option value="">Search customer...</option>');
+    
+    customersData.forEach(customer => {
+        const name = `${customer.first_name} ${customer.middle_name || ''} ${customer.last_name}`.trim();
+        const idNumber = customer.id_number || '';
+        const email = customer.email || '';
+        const contact = customer.contact_number || '';
+        
+        select.append(`<option value="${customer.id}" 
+            data-name="${escapeHtml(name)}" 
+            data-id-number="${escapeHtml(idNumber)}" 
+            data-email="${escapeHtml(email)}" 
+            data-contact="${escapeHtml(contact)}">${escapeHtml(name)} - ${escapeHtml(idNumber)}</option>`);
+    });
+    
+    // Initialize Select2 with dropdownParent for modal compatibility
+    select.select2({
+        placeholder: 'Search customer by name, ID number, email, or contact...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#policyModal .modal-content'),
+        matcher: customMatcher,
+        templateResult: formatCustomerResult,
+        templateSelection: formatCustomerSelection
+    });
+}
+
+function customMatcher(params, data) {
+    // If there is no search term, return all
+    if ($.trim(params.term) === '') {
+        return data;
+    }
+    
+    // Skip if no element
+    if (!data.element) {
+        return null;
+    }
+    
+    const term = params.term.toLowerCase();
+    const $element = $(data.element);
+    
+    // Get all searchable fields
+    const text = (data.text || '').toLowerCase();
+    const name = ($element.data('name') || '').toString().toLowerCase();
+    const idNumber = ($element.data('id-number') || '').toString().toLowerCase();
+    const email = ($element.data('email') || '').toString().toLowerCase();
+    const contact = ($element.data('contact') || '').toString().toLowerCase();
+    
+    // Check if any field matches
+    if (text.indexOf(term) > -1 || 
+        name.indexOf(term) > -1 || 
+        idNumber.indexOf(term) > -1 || 
+        email.indexOf(term) > -1 || 
+        contact.indexOf(term) > -1) {
+        return data;
+    }
+    
+    return null;
+}
+
+function formatCustomerResult(data) {
+    if (data.loading) {
+        return data.text;
+    }
+    
+    if (!data.element) {
+        return data.text;
+    }
+    
+    const $element = $(data.element);
+    const name = $element.data('name') || data.text;
+    const idNumber = $element.data('id-number') || '';
+    const email = $element.data('email') || '';
+    const contact = $element.data('contact') || '';
+    
+    const $container = $('<div class="select2-result-customer"></div>');
+    $container.append('<div class="fw-semibold">' + escapeHtml(name) + '</div>');
+    
+    let details = [];
+    if (idNumber) details.push('ID: ' + escapeHtml(idNumber));
+    if (email) details.push('Email: ' + escapeHtml(email));
+    if (contact) details.push('Tel: ' + escapeHtml(contact));
+    
+    if (details.length > 0) {
+        $container.append('<small class="text-muted">' + details.join(' | ') + '</small>');
+    }
+    
+    return $container;
+}
+
+function formatCustomerSelection(data) {
+    if (!data.id) {
+        return data.text;
+    }
+    const $element = $(data.element);
+    const name = $element.data('name') || data.text;
+    return name;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 window.savePolicy = async function() {
     // Validate form
@@ -85,7 +221,7 @@ window.savePolicy = async function() {
     };
 
     // Show loading
-    const saveBtn = $('#policyModal').find('button[onclick="savePolicy()"]');
+    const saveBtn = $('#savePolicyBtn');
     const originalText = saveBtn.html();
     saveBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
 
@@ -115,7 +251,6 @@ window.savePolicy = async function() {
         
         // Reload policies list immediately
         loadPolicies().then(() => {
-            // Show success message after a brief delay
             setTimeout(() => {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -222,78 +357,3 @@ async function loadPolicies() {
         }
     }
 }
-
-async function loadCustomers() {
-    try {
-        const customers = await api.getCustomers();
-        const select = $('#customerId');
-        
-        // Destroy existing Select2 if initialized
-        if (select.hasClass('select2-hidden-accessible')) {
-            select.select2('destroy');
-        }
-        
-        select.empty().append('<option value="">Search customer...</option>');
-        
-        customers.forEach(customer => {
-            const name = `${customer.first_name} ${customer.middle_name || ''} ${customer.last_name}`.trim();
-            // Include multiple searchable fields in the option text
-            const searchText = `${name} | ${customer.id_number} | ${customer.email} | ${customer.contact_number}`;
-            select.append(`<option value="${customer.id}" data-name="${name}" data-id="${customer.id_number}" data-email="${customer.email}" data-contact="${customer.contact_number}">${name} - ${customer.id_number}</option>`);
-        });
-        
-        // Initialize Select2 with search functionality
-        select.select2({
-            placeholder: 'Search customer by name, ID number, email, or contact...',
-            allowClear: true,
-            width: '100%',
-            matcher: function(params, data) {
-                // Custom matcher to search across all fields
-                if (params.term === '') {
-                    return data;
-                }
-                
-                const term = params.term.toLowerCase();
-                const text = data.text.toLowerCase();
-                const idNumber = $(data.element).data('id') || '';
-                const email = $(data.element).data('email') || '';
-                const contact = $(data.element).data('contact') || '';
-                const name = $(data.element).data('name') || '';
-                
-                if (text.includes(term) || 
-                    idNumber.toLowerCase().includes(term) || 
-                    email.toLowerCase().includes(term) || 
-                    contact.toLowerCase().includes(term) ||
-                    name.toLowerCase().includes(term)) {
-                    return data;
-                }
-                
-                return null;
-            },
-            templateResult: function(data) {
-                if (!data.id) {
-                    return data.text;
-                }
-                
-                const $container = $('<div></div>');
-                const name = $(data.element).data('name') || data.text;
-                const idNumber = $(data.element).data('id') || '';
-                const email = $(data.element).data('email') || '';
-                
-                $container.append($('<div class="fw-semibold">' + name + '</div>'));
-                if (idNumber) {
-                    $container.append($('<small class="text-muted">ID: ' + idNumber + '</small>'));
-                }
-                if (email) {
-                    $container.append($('<small class="text-muted ms-2">Email: ' + email + '</small>'));
-                }
-                
-                return $container;
-            }
-        });
-    } catch (error) {
-        console.error('Error loading customers:', error);
-    }
-}
-
-

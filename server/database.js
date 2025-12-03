@@ -1,17 +1,16 @@
-const mongoose = require('mongoose');
+const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
+const path = require('path');
 
-// MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ic_insurance';
-
-mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
-    console.log('Connected to MongoDB');
-    initializeDatabase();
-}).catch(err => {
-    console.error('MongoDB connection error:', err);
+// SQLite database connection
+const dbPath = path.join(__dirname, 'database.sqlite');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to database:', err);
+    } else {
+        console.log('Connected to SQLite database');
+        initializeDatabase();
+    }
 });
 
 // Define all system functions/permissions
@@ -84,150 +83,9 @@ const SYSTEM_FUNCTIONS = {
     }
 };
 
-// Role Permissions Schema
-const rolePermissionSchema = new mongoose.Schema({
-    role: { 
-        type: String, 
-        required: true, 
-        unique: true,
-        enum: ['Admin', 'Supervisor', 'Cashier', 'Underwriter'] 
-    },
-    permissions: [{
-        type: String,
-        enum: Object.values(SYSTEM_FUNCTIONS).map(f => f.id)
-    }],
-    updated_at: { type: Date, default: Date.now },
-    updated_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-});
-
-// System Settings Schema
-const systemSettingsSchema = new mongoose.Schema({
-    setting_key: { type: String, required: true, unique: true },
-    setting_value: { type: mongoose.Schema.Types.Mixed, required: true },
-    description: { type: String },
-    updated_at: { type: Date, default: Date.now },
-    updated_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-});
-
-// Financial Period Schema
-const financialPeriodSchema = new mongoose.Schema({
-    period_name: { type: String, required: true },
-    start_date: { type: Date, required: true },
-    end_date: { type: Date, required: true },
-    status: { 
-        type: String, 
-        default: 'Open', 
-        enum: ['Open', 'Closed'] 
-    },
-    total_collections: { type: Number, default: 0 },
-    total_policies_created: { type: Number, default: 0 },
-    closed_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    closed_at: { type: Date },
-    created_at: { type: Date, default: Date.now }
-});
-
-// Audit Log Schema
-const auditLogSchema = new mongoose.Schema({
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    action: { type: String, required: true },
-    entity_type: { type: String, required: true },
-    entity_id: { type: String },
-    details: { type: mongoose.Schema.Types.Mixed },
-    ip_address: { type: String },
-    created_at: { type: Date, default: Date.now }
-});
-
-// User Schema
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { 
-        type: String, 
-        required: true, 
-        enum: ['Admin', 'Supervisor', 'Cashier', 'Underwriter'] 
-    },
-    full_name: { type: String, required: true },
-    created_at: { type: Date, default: Date.now },
-    updated_at: { type: Date, default: Date.now }
-});
-
-// Customer Schema
-const customerSchema = new mongoose.Schema({
-    first_name: { type: String, required: true },
-    middle_name: { type: String },
-    last_name: { type: String, required: true },
-    address: { type: String, required: true },
-    contact_number: { type: String, required: true },
-    email: { type: String, required: true },
-    sex: { type: String, enum: ['Male', 'Female', 'Other'] },
-    id_number: { type: String, required: true, unique: true },
-    has_arrears: { type: Boolean, default: false },
-    arrears_override: { type: Boolean, default: false },
-    arrears_override_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    arrears_override_at: { type: Date },
-    created_at: { type: Date, default: Date.now },
-    updated_at: { type: Date, default: Date.now }
-});
-
-// Policy Schema
-const policySchema = new mongoose.Schema({
-    policy_number: { type: String, required: true, unique: true },
-    customer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
-    total_premium_due: { type: Number, required: true },
-    amount_paid: { type: Number, default: 0 },
-    outstanding_balance: { type: Number, required: true },
-    status: { 
-        type: String, 
-        default: 'Active', 
-        enum: ['Active', 'Cancelled', 'Expired'] 
-    },
-    financial_period: { type: mongoose.Schema.Types.ObjectId, ref: 'FinancialPeriod' },
-    created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    created_at: { type: Date, default: Date.now },
-    updated_at: { type: Date, default: Date.now }
-});
-
-// Payment Schema
-const paymentSchema = new mongoose.Schema({
-    policy_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Policy', required: true },
-    amount: { type: Number, required: true },
-    payment_date: { type: Date, default: Date.now },
-    payment_method: { type: String, default: 'Cash' },
-    receipt_number: { type: String, required: true, unique: true },
-    received_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    arrears_override_used: { type: Boolean, default: false },
-    financial_period: { type: mongoose.Schema.Types.ObjectId, ref: 'FinancialPeriod' },
-    notes: { type: String },
-    created_at: { type: Date, default: Date.now }
-});
-
-// Receipt Schema
-const receiptSchema = new mongoose.Schema({
-    receipt_number: { type: String, required: true, unique: true },
-    payment_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment', required: true },
-    policy_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Policy', required: true },
-    customer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
-    amount: { type: Number, required: true },
-    payment_date: { type: Date, required: true },
-    generated_at: { type: Date, default: Date.now },
-    generated_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-});
-
-// Create Models
-const User = mongoose.model('User', userSchema);
-const Customer = mongoose.model('Customer', customerSchema);
-const Policy = mongoose.model('Policy', policySchema);
-const Payment = mongoose.model('Payment', paymentSchema);
-const Receipt = mongoose.model('Receipt', receiptSchema);
-const RolePermission = mongoose.model('RolePermission', rolePermissionSchema);
-const SystemSettings = mongoose.model('SystemSettings', systemSettingsSchema);
-const FinancialPeriod = mongoose.model('FinancialPeriod', financialPeriodSchema);
-const AuditLog = mongoose.model('AuditLog', auditLogSchema);
-
 // Default permissions for each role
 const DEFAULT_PERMISSIONS = {
-    Admin: Object.values(SYSTEM_FUNCTIONS).map(f => f.id), // Admin has ALL permissions
+    Admin: Object.values(SYSTEM_FUNCTIONS).map(f => f.id),
     Supervisor: [
         'create_edit_customer',
         'create_edit_policy',
@@ -251,59 +109,179 @@ const DEFAULT_PERMISSIONS = {
     ]
 };
 
-// Initialize database with default admin user and permissions
-async function initializeDatabase() {
-    try {
-        // Create default admin user if not exists
-        const adminCount = await User.countDocuments({ role: 'Admin' });
-        
-        if (adminCount === 0) {
-            const defaultPassword = bcrypt.hashSync('admin123', 10);
-            const admin = new User({
-                username: 'admin',
-                email: 'admin@icinsurance.com',
-                password: defaultPassword,
-                role: 'Admin',
-                full_name: 'System Administrator'
-            });
-            
-            await admin.save();
-            console.log('Default admin user created: username=admin, password=admin123');
-        }
+function initializeDatabase() {
+    db.serialize(() => {
+        // Users table
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('Admin', 'Supervisor', 'Cashier', 'Underwriter')),
+            full_name TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
 
-        // Initialize role permissions if not exists
-        for (const [role, permissions] of Object.entries(DEFAULT_PERMISSIONS)) {
-            const existingRole = await RolePermission.findOne({ role });
-            if (!existingRole) {
-                const rolePermission = new RolePermission({
-                    role,
-                    permissions
-                });
-                await rolePermission.save();
-                console.log(`Default permissions created for role: ${role}`);
+        // Customers table
+        db.run(`CREATE TABLE IF NOT EXISTS customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT NOT NULL,
+            middle_name TEXT,
+            last_name TEXT NOT NULL,
+            address TEXT NOT NULL,
+            contact_number TEXT NOT NULL,
+            email TEXT NOT NULL,
+            sex TEXT CHECK(sex IN ('Male', 'Female', 'Other')),
+            id_number TEXT UNIQUE NOT NULL,
+            has_arrears INTEGER DEFAULT 0,
+            arrears_override INTEGER DEFAULT 0,
+            arrears_override_by INTEGER,
+            arrears_override_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // Policies table
+        db.run(`CREATE TABLE IF NOT EXISTS policies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            policy_number TEXT UNIQUE NOT NULL,
+            customer_id INTEGER NOT NULL,
+            total_premium_due REAL NOT NULL,
+            amount_paid REAL DEFAULT 0,
+            outstanding_balance REAL NOT NULL,
+            status TEXT DEFAULT 'Active' CHECK(status IN ('Active', 'Cancelled', 'Expired')),
+            financial_period_id INTEGER,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (customer_id) REFERENCES customers(id),
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )`);
+
+        // Payments table
+        db.run(`CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            policy_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            payment_method TEXT DEFAULT 'Cash',
+            receipt_number TEXT UNIQUE NOT NULL,
+            received_by INTEGER,
+            arrears_override_used INTEGER DEFAULT 0,
+            financial_period_id INTEGER,
+            notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (policy_id) REFERENCES policies(id),
+            FOREIGN KEY (received_by) REFERENCES users(id)
+        )`);
+
+        // Receipts table
+        db.run(`CREATE TABLE IF NOT EXISTS receipts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            receipt_number TEXT UNIQUE NOT NULL,
+            payment_id INTEGER NOT NULL,
+            policy_id INTEGER NOT NULL,
+            customer_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            payment_date DATETIME NOT NULL,
+            generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            generated_by INTEGER,
+            FOREIGN KEY (payment_id) REFERENCES payments(id),
+            FOREIGN KEY (policy_id) REFERENCES policies(id),
+            FOREIGN KEY (customer_id) REFERENCES customers(id),
+            FOREIGN KEY (generated_by) REFERENCES users(id)
+        )`);
+
+        // Role Permissions table
+        db.run(`CREATE TABLE IF NOT EXISTS role_permissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT UNIQUE NOT NULL CHECK(role IN ('Admin', 'Supervisor', 'Cashier', 'Underwriter')),
+            permissions TEXT NOT NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_by INTEGER,
+            FOREIGN KEY (updated_by) REFERENCES users(id)
+        )`);
+
+        // Financial Periods table
+        db.run(`CREATE TABLE IF NOT EXISTS financial_periods (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            period_name TEXT NOT NULL,
+            start_date DATE NOT NULL,
+            end_date DATE NOT NULL,
+            status TEXT DEFAULT 'Open' CHECK(status IN ('Open', 'Closed')),
+            total_collections REAL DEFAULT 0,
+            total_policies_created INTEGER DEFAULT 0,
+            closed_by INTEGER,
+            closed_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (closed_by) REFERENCES users(id)
+        )`);
+
+        // Audit Log table
+        db.run(`CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT,
+            details TEXT,
+            ip_address TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )`);
+
+        // Create default admin user if not exists
+        const defaultPassword = bcrypt.hashSync('admin123', 10);
+        db.get('SELECT COUNT(*) as count FROM users WHERE role = ?', ['Admin'], (err, row) => {
+            if (err) {
+                console.error('Error checking admin user:', err);
+                return;
             }
-        }
+            if (row.count === 0) {
+                db.run(`INSERT INTO users (username, email, password, role, full_name) 
+                        VALUES (?, ?, ?, ?, ?)`,
+                    ['admin', 'admin@icinsurance.com', defaultPassword, 'Admin', 'System Administrator'],
+                    (err) => {
+                        if (err) {
+                            console.error('Error creating admin user:', err);
+                        } else {
+                            console.log('Default admin user created: username=admin, password=admin123');
+                        }
+                    });
+            }
+        });
+
+        // Initialize default role permissions
+        Object.entries(DEFAULT_PERMISSIONS).forEach(([role, permissions]) => {
+            db.get('SELECT COUNT(*) as count FROM role_permissions WHERE role = ?', [role], (err, row) => {
+                if (err) return;
+                if (row.count === 0) {
+                    db.run('INSERT INTO role_permissions (role, permissions) VALUES (?, ?)',
+                        [role, JSON.stringify(permissions)],
+                        (err) => {
+                            if (!err) console.log(`Default permissions created for role: ${role}`);
+                        });
+                }
+            });
+        });
 
         // Create default financial period if not exists
-        const periodCount = await FinancialPeriod.countDocuments();
-        if (periodCount === 0) {
-            const now = new Date();
-            const startOfYear = new Date(now.getFullYear(), 0, 1);
-            const endOfYear = new Date(now.getFullYear(), 11, 31);
-            
-            const period = new FinancialPeriod({
-                period_name: `FY ${now.getFullYear()}`,
-                start_date: startOfYear,
-                end_date: endOfYear,
-                status: 'Open'
-            });
-            await period.save();
-            console.log('Default financial period created');
-        }
-
-    } catch (error) {
-        console.error('Error initializing database:', error);
-    }
+        db.get('SELECT COUNT(*) as count FROM financial_periods', (err, row) => {
+            if (err) return;
+            if (row.count === 0) {
+                const now = new Date();
+                const startOfYear = `${now.getFullYear()}-01-01`;
+                const endOfYear = `${now.getFullYear()}-12-31`;
+                db.run(`INSERT INTO financial_periods (period_name, start_date, end_date, status) 
+                        VALUES (?, ?, ?, ?)`,
+                    [`FY ${now.getFullYear()}`, startOfYear, endOfYear, 'Open'],
+                    (err) => {
+                        if (!err) console.log('Default financial period created');
+                    });
+            }
+        });
+    });
 }
 
 // Helper functions
@@ -320,56 +298,52 @@ function generatePolicyNumber() {
 }
 
 // Check if user has permission
-async function hasPermission(userId, permissionId) {
-    try {
-        const user = await User.findById(userId);
-        if (!user) return false;
+function hasPermission(userId, permissionId, callback) {
+    db.get('SELECT role FROM users WHERE id = ?', [userId], (err, user) => {
+        if (err || !user) {
+            return callback(false);
+        }
         
         // Admin always has all permissions
-        if (user.role === 'Admin') return true;
+        if (user.role === 'Admin') {
+            return callback(true);
+        }
         
-        const rolePermission = await RolePermission.findOne({ role: user.role });
-        if (!rolePermission) return false;
-        
-        return rolePermission.permissions.includes(permissionId);
-    } catch (error) {
-        console.error('Error checking permission:', error);
-        return false;
-    }
+        db.get('SELECT permissions FROM role_permissions WHERE role = ?', [user.role], (err, row) => {
+            if (err || !row) {
+                return callback(false);
+            }
+            
+            const permissions = JSON.parse(row.permissions || '[]');
+            callback(permissions.includes(permissionId));
+        });
+    });
+}
+
+// Async version of hasPermission
+async function hasPermissionAsync(userId, permissionId) {
+    return new Promise((resolve) => {
+        hasPermission(userId, permissionId, resolve);
+    });
 }
 
 // Log audit action
-async function logAuditAction(userId, action, entityType, entityId, details, ipAddress) {
-    try {
-        const log = new AuditLog({
-            user_id: userId,
-            action,
-            entity_type: entityType,
-            entity_id,
-            details,
-            ip_address: ipAddress
+function logAuditAction(userId, action, entityType, entityId, details, ipAddress) {
+    db.run(`INSERT INTO audit_log (user_id, action, entity_type, entity_id, details, ip_address) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+        [userId, action, entityType, entityId, JSON.stringify(details), ipAddress],
+        (err) => {
+            if (err) console.error('Error logging audit action:', err);
         });
-        await log.save();
-    } catch (error) {
-        console.error('Error logging audit action:', error);
-    }
 }
 
 module.exports = {
-    mongoose,
-    User,
-    Customer,
-    Policy,
-    Payment,
-    Receipt,
-    RolePermission,
-    SystemSettings,
-    FinancialPeriod,
-    AuditLog,
+    db,
     SYSTEM_FUNCTIONS,
     DEFAULT_PERMISSIONS,
     generateReceiptNumber,
     generatePolicyNumber,
     hasPermission,
+    hasPermissionAsync,
     logAuditAction
 };

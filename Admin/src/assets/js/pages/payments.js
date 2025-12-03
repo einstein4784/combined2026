@@ -1,10 +1,11 @@
 let paymentsTable;
 let selectedPolicyId = null;
+let policiesData = [];
 
 $(document).ready(function() {
     initPaymentsTable();
     loadPayments();
-    loadPolicies();
+    loadPoliciesData();
     
     // Check if policyId is in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -12,11 +13,20 @@ $(document).ready(function() {
     if (policyId) {
         selectedPolicyId = policyId;
         setTimeout(() => {
-            $('#policyId').val(policyId).trigger('change');
-            $('#paymentModal').modal('show');
+            openPaymentModal();
         }, 500);
     }
 });
+
+// Load policies data once
+async function loadPoliciesData() {
+    try {
+        policiesData = await api.getPolicies();
+    } catch (error) {
+        console.error('Error loading policies:', error);
+        policiesData = [];
+    }
+}
 
 function initPaymentsTable() {
     paymentsTable = $('#payments-table').DataTable({
@@ -68,127 +78,15 @@ async function loadPayments() {
         paymentsTable.clear().rows.add(payments).draw();
         lucide.createIcons();
     } catch (error) {
-        Swal.fire('Error', error.message, 'error');
-    }
-}
-
-async function loadPolicies() {
-    try {
-        const policies = await api.getPolicies();
-        const select = $('#policyId');
-        
-        // Destroy existing Select2 if initialized
-        if (select.hasClass('select2-hidden-accessible')) {
-            select.off('change'); // Remove existing change handler
-            select.select2('destroy');
+        console.error('Error loading payments:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', error.message, 'error');
         }
-        
-        select.empty().append('<option value="">Search policy...</option>');
-        
-        policies.forEach(policy => {
-            // Store customer info in data attributes for searching
-            const customerName = policy.customer_name || '';
-            const customerEmail = policy.customer_email || '';
-            const customerContact = policy.customer_contact || '';
-            const policyNumber = policy.policy_number || '';
-            
-            select.append(`<option value="${policy.id}" 
-                data-outstanding="${policy.outstanding_balance}" 
-                data-policy-number="${policyNumber}"
-                data-customer-name="${customerName}"
-                data-customer-email="${customerEmail}"
-                data-customer-contact="${customerContact}">
-                ${policyNumber} - ${customerName} (Outstanding: ${formatCurrency(policy.outstanding_balance)})
-            </option>`);
-        });
-        
-        // Initialize Select2 with search functionality
-        select.select2({
-            placeholder: 'Search policy by customer name, ID number, email, policy number, or contact...',
-            allowClear: true,
-            width: '100%',
-            matcher: function(params, data) {
-                // Custom matcher to search across all fields
-                if (params.term === '') {
-                    return data;
-                }
-                
-                const term = params.term.toLowerCase();
-                const text = data.text.toLowerCase();
-                const policyNumber = $(data.element).data('policy-number') || '';
-                const customerName = $(data.element).data('customer-name') || '';
-                const customerEmail = $(data.element).data('customer-email') || '';
-                const customerContact = $(data.element).data('customer-contact') || '';
-                
-                if (text.includes(term) || 
-                    policyNumber.toLowerCase().includes(term) || 
-                    customerName.toLowerCase().includes(term) ||
-                    customerEmail.toLowerCase().includes(term) || 
-                    customerContact.toLowerCase().includes(term)) {
-                    return data;
-                }
-                
-                return null;
-            },
-            templateResult: function(data) {
-                if (!data.id) {
-                    return data.text;
-                }
-                
-                const $container = $('<div></div>');
-                const policyNumber = $(data.element).data('policy-number') || '';
-                const customerName = $(data.element).data('customer-name') || '';
-                const outstanding = $(data.element).data('outstanding') || 0;
-                
-                $container.append($('<div class="fw-semibold">Policy: ' + policyNumber + '</div>'));
-                $container.append($('<div class="text-muted">Customer: ' + customerName + '</div>'));
-                $container.append($('<small class="text-danger">Outstanding: ' + formatCurrency(outstanding) + '</small>'));
-                
-                return $container;
-            },
-            templateSelection: function(data) {
-                if (!data.id) {
-                    return data.text;
-                }
-                const policyNumber = $(data.element).data('policy-number') || '';
-                const customerName = $(data.element).data('customer-name') || '';
-                return policyNumber + ' - ' + customerName;
-            }
-        });
-        
-        // Handle change event to show policy info
-        select.on('change', function() {
-            const selectedOption = $(this).find('option:selected');
-            const outstanding = selectedOption.data('outstanding');
-            const policyNumber = selectedOption.data('policy-number');
-            const customerName = selectedOption.data('customer-name');
-            
-            if (outstanding !== undefined && policyNumber) {
-                $('#policyInfo').html(`
-                    <div class="alert alert-info mb-0">
-                        <strong>Policy:</strong> ${policyNumber}<br>
-                        <strong>Customer:</strong> ${customerName}<br>
-                        <strong>Outstanding Balance:</strong> <span class="text-danger fw-bold">${formatCurrency(outstanding)}</span>
-                    </div>
-                `);
-                $('#amount').attr('max', outstanding);
-            } else {
-                $('#policyInfo').html('');
-            }
-        });
-        
-        // Trigger change if policyId is preselected
-        if (selectedPolicyId) {
-            select.val(selectedPolicyId).trigger('change');
-        }
-    } catch (error) {
-        console.error('Error loading policies:', error);
     }
 }
 
 window.openPaymentModal = function() {
     $('#paymentForm')[0].reset();
-    $('#policyId').val(selectedPolicyId || '').trigger('change');
     $('#policyInfo').html('');
     
     // Show modal
@@ -199,7 +97,148 @@ window.openPaymentModal = function() {
     } else {
         $('#paymentModal').modal('show');
     }
+    
+    // Initialize Select2 after modal is shown
+    setTimeout(() => {
+        initPolicySelect2();
+        // Set selected policy if provided
+        if (selectedPolicyId) {
+            $('#policyId').val(selectedPolicyId).trigger('change');
+        }
+    }, 200);
 };
+
+function initPolicySelect2() {
+    const select = $('#policyId');
+    
+    // Destroy existing Select2 if initialized
+    if (select.hasClass('select2-hidden-accessible')) {
+        select.off('change');
+        select.select2('destroy');
+    }
+    
+    // Clear and populate options
+    select.empty().append('<option value="">Search policy...</option>');
+    
+    policiesData.forEach(policy => {
+        const customerName = policy.customer_name || '';
+        const customerEmail = policy.customer_email || '';
+        const customerContact = policy.customer_contact || '';
+        const policyNumber = policy.policy_number || '';
+        const outstanding = policy.outstanding_balance || 0;
+        
+        select.append(`<option value="${policy.id}" 
+            data-outstanding="${outstanding}" 
+            data-policy-number="${escapeHtml(policyNumber)}"
+            data-customer-name="${escapeHtml(customerName)}"
+            data-customer-email="${escapeHtml(customerEmail)}"
+            data-customer-contact="${escapeHtml(customerContact)}">${escapeHtml(policyNumber)} - ${escapeHtml(customerName)} (Outstanding: ${formatCurrency(outstanding)})</option>`);
+    });
+    
+    // Initialize Select2 with dropdownParent for modal compatibility
+    select.select2({
+        placeholder: 'Search policy by customer name, policy number, email, or contact...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#paymentModal .modal-content'),
+        matcher: policyMatcher,
+        templateResult: formatPolicyResult,
+        templateSelection: formatPolicySelection
+    });
+    
+    // Handle change event to show policy info
+    select.on('change', function() {
+        const selectedOption = $(this).find('option:selected');
+        const outstanding = selectedOption.data('outstanding');
+        const policyNumber = selectedOption.data('policy-number');
+        const customerName = selectedOption.data('customer-name');
+        
+        if (outstanding !== undefined && policyNumber) {
+            $('#policyInfo').html(`
+                <div class="alert alert-info mb-0 mt-2">
+                    <strong>Policy:</strong> ${escapeHtml(policyNumber)}<br>
+                    <strong>Customer:</strong> ${escapeHtml(customerName)}<br>
+                    <strong>Outstanding Balance:</strong> <span class="text-danger fw-bold">${formatCurrency(outstanding)}</span>
+                </div>
+            `);
+            $('#amount').attr('max', outstanding);
+        } else {
+            $('#policyInfo').html('');
+        }
+    });
+}
+
+function policyMatcher(params, data) {
+    // If there is no search term, return all
+    if ($.trim(params.term) === '') {
+        return data;
+    }
+    
+    // Skip if no element
+    if (!data.element) {
+        return null;
+    }
+    
+    const term = params.term.toLowerCase();
+    const $element = $(data.element);
+    
+    // Get all searchable fields
+    const text = (data.text || '').toLowerCase();
+    const policyNumber = ($element.data('policy-number') || '').toString().toLowerCase();
+    const customerName = ($element.data('customer-name') || '').toString().toLowerCase();
+    const customerEmail = ($element.data('customer-email') || '').toString().toLowerCase();
+    const customerContact = ($element.data('customer-contact') || '').toString().toLowerCase();
+    
+    // Check if any field matches
+    if (text.indexOf(term) > -1 || 
+        policyNumber.indexOf(term) > -1 || 
+        customerName.indexOf(term) > -1 ||
+        customerEmail.indexOf(term) > -1 || 
+        customerContact.indexOf(term) > -1) {
+        return data;
+    }
+    
+    return null;
+}
+
+function formatPolicyResult(data) {
+    if (data.loading) {
+        return data.text;
+    }
+    
+    if (!data.element) {
+        return data.text;
+    }
+    
+    const $element = $(data.element);
+    const policyNumber = $element.data('policy-number') || '';
+    const customerName = $element.data('customer-name') || '';
+    const outstanding = $element.data('outstanding') || 0;
+    
+    const $container = $('<div class="select2-result-policy"></div>');
+    $container.append('<div class="fw-semibold">Policy: ' + escapeHtml(policyNumber) + '</div>');
+    $container.append('<div class="text-muted">Customer: ' + escapeHtml(customerName) + '</div>');
+    $container.append('<small class="text-danger">Outstanding: ' + formatCurrency(outstanding) + '</small>');
+    
+    return $container;
+}
+
+function formatPolicySelection(data) {
+    if (!data.id) {
+        return data.text;
+    }
+    const $element = $(data.element);
+    const policyNumber = $element.data('policy-number') || '';
+    const customerName = $element.data('customer-name') || '';
+    return policyNumber + ' - ' + customerName;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 window.savePayment = async function() {
     if (!$('#paymentForm')[0].checkValidity()) {
@@ -215,10 +254,21 @@ window.savePayment = async function() {
         return;
     }
 
+    // Get selected payment methods
+    const selectedMethods = [];
+    $('.payment-method-check:checked').each(function() {
+        selectedMethods.push($(this).val());
+    });
+
+    if (selectedMethods.length === 0) {
+        Swal.fire('Error', 'Please select at least one payment method', 'error');
+        return;
+    }
+
     const paymentData = {
         policyId: policyId,
         amount: amount,
-        paymentMethod: $('#paymentMethod').val(),
+        paymentMethods: selectedMethods,
         notes: $('#notes').val() || null
     };
 
@@ -246,8 +296,9 @@ window.savePayment = async function() {
         $('#policyInfo').html('');
         selectedPolicyId = null;
         
-        // Reload payments list
+        // Reload payments and policies data
         await loadPayments();
+        await loadPoliciesData();
         
         // Show success message
         setTimeout(() => {
@@ -273,8 +324,6 @@ window.savePayment = async function() {
     }
 };
 
-function viewReceipt(receiptNumber) {
+window.viewReceipt = function(receiptNumber) {
     window.open(`receipt.html?receiptNumber=${receiptNumber}`, '_blank');
-}
-
-
+};

@@ -81,14 +81,37 @@
                             <input type="number" step="0.01" class="form-control" id="amount" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Payment Method</label>
-                            <select class="form-select" id="paymentMethod">
-                                <option value="Cash">Cash</option>
-                                <option value="Bank Transfer">Bank Transfer</option>
-                                <option value="Cheque">Cheque</option>
-                                <option value="Credit Card">Credit Card</option>
-                                <option value="Mobile Money">Mobile Money</option>
-                            </select>
+                            <label class="form-label">Payment Method(s) <small class="text-muted">(Select one or more)</small></label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input payment-method-check" type="checkbox" value="Cash" id="methodCash" checked>
+                                        <label class="form-check-label" for="methodCash">Cash</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input payment-method-check" type="checkbox" value="Bank Transfer" id="methodBankTransfer">
+                                        <label class="form-check-label" for="methodBankTransfer">Bank Transfer</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input payment-method-check" type="checkbox" value="Cheque" id="methodCheque">
+                                        <label class="form-check-label" for="methodCheque">Cheque</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input payment-method-check" type="checkbox" value="Credit Card" id="methodCreditCard">
+                                        <label class="form-check-label" for="methodCreditCard">Credit Card</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input payment-method-check" type="checkbox" value="Mobile Money" id="methodMobileMoney">
+                                        <label class="form-check-label" for="methodMobileMoney">Mobile Money</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input payment-method-check" type="checkbox" value="Other" id="methodOther">
+                                        <label class="form-check-label" for="methodOther">Other</label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Notes</label>

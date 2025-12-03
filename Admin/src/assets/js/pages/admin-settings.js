@@ -383,17 +383,39 @@ window.generateUserReport = async function() {
     try {
         Swal.fire({
             title: 'Generating Report...',
+            text: 'Please wait...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
         });
         
         const report = await api.request('/admin/reports/users');
         
-        // Create downloadable report
-        downloadReport(report, 'user_report.csv', 'User Report');
+        if (!report || report.length === 0) {
+            Swal.fire('Info', 'No user data to report', 'info');
+            return;
+        }
         
-        Swal.fire('Success', 'User report generated successfully', 'success');
+        // Create downloadable report with activity data
+        let csv = 'User Report - Generated: ' + new Date().toLocaleString() + '\n\n';
+        csv += 'Username,Full Name,Email,Role,Created At,Total Actions,Customers Created,Policies Created,Payments Received,Last Activity\n';
+        
+        report.forEach(user => {
+            csv += `"${user.username || ''}","${user.full_name || ''}","${user.email || ''}","${user.role || ''}",`;
+            csv += `"${user.created_at || ''}","${user.total_actions || 0}","${user.customers_created || 0}",`;
+            csv += `"${user.policies_created || 0}","${user.payments_received || 0}","${user.last_activity || 'Never'}"\n`;
+        });
+        
+        downloadCSV(csv, 'user_report_' + new Date().toISOString().split('T')[0] + '.csv');
+        
+        Swal.fire({
+            title: 'Success!',
+            text: 'User report downloaded successfully',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+        });
     } catch (error) {
+        console.error('Report error:', error);
         Swal.fire('Error', error.message || 'Failed to generate report', 'error');
     }
 };
@@ -409,17 +431,44 @@ window.generateCashStatement = async function() {
     
     try {
         Swal.fire({
-            title: 'Generating Report...',
+            title: 'Generating Cash Statement...',
+            text: 'Please wait...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
         });
         
         const report = await api.request(`/admin/reports/cash-statement?startDate=${startDate}&endDate=${endDate}`);
         
-        downloadReport(report, `cash_statement_${startDate}_${endDate}.csv`, 'Cash Statement');
+        // Create CSV
+        let csv = 'Cash Statement Report\n';
+        csv += `Date Range: ${startDate} to ${endDate}\n`;
+        csv += `Total Collections: ${formatCurrency(report.total || 0)}\n`;
+        csv += `Number of Payments: ${report.payments ? report.payments.length : 0}\n\n`;
         
-        Swal.fire('Success', 'Cash statement generated successfully', 'success');
+        if (report.payments && report.payments.length > 0) {
+            csv += 'Date,Receipt Number,Policy Number,Customer Name,Amount,Payment Method,Received By\n';
+            
+            report.payments.forEach(payment => {
+                const date = payment.date ? new Date(payment.date).toLocaleDateString() : '';
+                csv += `"${date}","${payment.receipt_number || ''}","${payment.policy_number || ''}",`;
+                csv += `"${payment.customer_name || ''}","${payment.amount || 0}","${payment.payment_method || ''}",`;
+                csv += `"${payment.received_by || ''}"\n`;
+            });
+        } else {
+            csv += 'No payments found for this date range.\n';
+        }
+        
+        downloadCSV(csv, `cash_statement_${startDate}_to_${endDate}.csv`);
+        
+        Swal.fire({
+            title: 'Success!',
+            text: 'Cash statement downloaded successfully',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+        });
     } catch (error) {
+        console.error('Report error:', error);
         Swal.fire('Error', error.message || 'Failed to generate report', 'error');
     }
 };
@@ -427,60 +476,56 @@ window.generateCashStatement = async function() {
 window.generatePolicyReport = async function() {
     try {
         Swal.fire({
-            title: 'Generating Report...',
+            title: 'Generating Policy Report...',
+            text: 'Please wait...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
         });
         
         const report = await api.request('/admin/reports/policies');
         
-        downloadReport(report, 'policy_report.csv', 'Policy Report');
+        if (!report || report.length === 0) {
+            Swal.fire('Info', 'No policy data to report', 'info');
+            return;
+        }
         
-        Swal.fire('Success', 'Policy report generated successfully', 'success');
+        // Create CSV
+        let csv = 'Policy Report - Generated: ' + new Date().toLocaleString() + '\n\n';
+        csv += 'Policy Number,Customer Name,Customer ID,Total Premium,Amount Paid,Outstanding Balance,Status,Created At\n';
+        
+        report.forEach(policy => {
+            csv += `"${policy.policy_number || ''}","${policy.customer_name || ''}","${policy.customer_id_number || ''}",`;
+            csv += `"${policy.total_premium_due || 0}","${policy.amount_paid || 0}","${policy.outstanding_balance || 0}",`;
+            csv += `"${policy.status || ''}","${policy.created_at || ''}"\n`;
+        });
+        
+        downloadCSV(csv, 'policy_report_' + new Date().toISOString().split('T')[0] + '.csv');
+        
+        Swal.fire({
+            title: 'Success!',
+            text: 'Policy report downloaded successfully',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+        });
     } catch (error) {
+        console.error('Report error:', error);
         Swal.fire('Error', error.message || 'Failed to generate report', 'error');
     }
 };
 
-function downloadReport(data, filename, title) {
-    let csv = '';
-    
-    if (Array.isArray(data) && data.length > 0) {
-        // Get headers
-        const headers = Object.keys(data[0]);
-        csv = headers.join(',') + '\n';
-        
-        // Add rows
-        data.forEach(row => {
-            const values = headers.map(h => {
-                const val = row[h];
-                return typeof val === 'string' && val.includes(',') ? `"${val}"` : val;
-            });
-            csv += values.join(',') + '\n';
-        });
-    } else if (data.summary) {
-        // Handle cash statement format
-        csv = `${title}\n`;
-        csv += `Date Range: ${data.startDate} to ${data.endDate}\n`;
-        csv += `Total: ${formatCurrency(data.total)}\n\n`;
-        
-        if (data.payments && data.payments.length > 0) {
-            const headers = Object.keys(data.payments[0]);
-            csv += headers.join(',') + '\n';
-            data.payments.forEach(row => {
-                const values = headers.map(h => row[h]);
-                csv += values.join(',') + '\n';
-            });
-        }
-    }
-    
-    // Create and download
-    const blob = new Blob([csv], { type: 'text/csv' });
+function downloadCSV(csvContent, filename) {
+    // Add BOM for Excel compatibility
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 }
 
