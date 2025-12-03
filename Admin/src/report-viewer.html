@@ -1,491 +1,548 @@
-@@include('partials/main.html')
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    @@include("partials/title-meta.html", {"title": "Report Viewer"})
-
-    @@include('partials/head-css.html')
+    <meta charset="utf-8" />
+    <title>Report Viewer | I&C Insurance Brokers</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="assets/images/favicon.ico">
     <link href="assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* Print styles */
-        @media print {
-            .no-print, .navbar-custom, .main-menu, .footer, .sidenav-menu { display: none !important; }
-            body { background: #fff !important; }
-            .report-container { box-shadow: none !important; margin: 0 !important; }
-            .content-page { margin: 0 !important; padding: 0 !important; min-height: auto !important; }
-            .container-fluid { padding: 0 !important; }
-            .content { padding: 0 !important; }
-            .report-header { padding: 25px 30px 35px 30px !important; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        /* Report Toolbar - Compact */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f6f9;
+            color: #333;
+            line-height: 1.5;
+        }
+        
+        /* Print styles */
+        @media print {
+            body { background: #fff; }
+            .no-print { display: none !important; }
+            .report-page { padding: 0; }
+            .report-container { box-shadow: none; border-radius: 0; }
+        }
+        
+        .report-page {
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* Toolbar */
         .report-toolbar {
-            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%) !important;
-            padding: 10px 20px !important;
-            border-radius: 8px !important;
-            margin-bottom: 15px !important;
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            flex-wrap: wrap !important;
-            gap: 10px !important;
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+            padding: 12px 24px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .report-toolbar h5 {
-            color: #fff !important;
-            margin: 0 !important;
-            font-weight: 600 !important;
-            font-size: 14px !important;
-            display: flex !important;
-            align-items: center !important;
+            color: #fff;
+            margin: 0;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
-        .report-toolbar .btn {
-            border-radius: 6px !important;
-            padding: 6px 14px !important;
-            font-weight: 500 !important;
-            font-size: 13px !important;
+        .toolbar-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-light {
+            background: #fff;
+            color: #1a365d;
+        }
+        
+        .btn-light:hover {
+            background: #f0f0f0;
+        }
+        
+        .btn-warning {
+            background: #c9a962;
+            color: #1a365d;
+        }
+        
+        .btn-warning:hover {
+            background: #b89952;
+        }
+        
+        .btn-success {
+            background: #4fa896;
+            color: #fff;
+        }
+        
+        .btn-success:hover {
+            background: #3d8a7a;
         }
         
         /* Report Container */
         .report-container {
-            background: #fff !important;
-            border-radius: 10px !important;
-            box-shadow: 0 4px 20px rgba(26, 54, 93, 0.1) !important;
-            overflow: hidden !important;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(26, 54, 93, 0.1);
+            overflow: hidden;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
-        /* Report Header - Compact */
+        /* Report Header */
         .report-header {
-            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%) !important;
-            color: #fff !important;
-            padding: 20px 30px 30px 30px !important;
-            text-align: center !important;
-            position: relative !important;
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+            color: #fff;
+            padding: 25px 30px;
+            text-align: center;
+            position: relative;
         }
         
         .report-header::after {
-            content: '' !important;
-            position: absolute !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            height: 20px !important;
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100'%3E%3Cpath fill='%239dd5c4' fill-opacity='0.3' d='M0,50L60,45C120,40,240,30,360,35C480,40,600,60,720,65C840,70,960,60,1080,50C1200,40,1320,30,1380,25L1440,20L1440,100L0,100Z'%3E%3C/path%3E%3Cpath fill='%23c9a962' fill-opacity='0.25' d='M0,70L60,68C120,66,240,62,360,60C480,58,600,58,720,62C840,66,960,74,1080,76C1200,78,1320,74,1380,72L1440,70L1440,100L0,100Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom !important;
-            background-size: cover !important;
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 15px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100'%3E%3Cpath fill='%239dd5c4' fill-opacity='0.3' d='M0,50L60,45C120,40,240,30,360,35C480,40,600,60,720,65C840,70,960,60,1080,50C1200,40,1320,30,1380,25L1440,20L1440,100L0,100Z'%3E%3C/path%3E%3Cpath fill='%23c9a962' fill-opacity='0.25' d='M0,70L60,68C120,66,240,62,360,60C480,58,600,58,720,62C840,66,960,74,1080,76C1200,78,1320,74,1380,72L1440,70L1440,100L0,100Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+            background-size: cover;
         }
         
         .company-logo-text {
-            font-size: 36px !important;
-            font-weight: 800 !important;
-            letter-spacing: -1px !important;
-            margin-bottom: 2px !important;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 2px;
         }
         
-        .company-logo-text .logo-i { color: #fff !important; }
-        .company-logo-text .logo-amp { color: #c9a962 !important; font-size: 28px !important; }
-        .company-logo-text .logo-c { color: #9dd5c4 !important; }
+        .logo-i { color: #fff; }
+        .logo-amp { color: #c9a962; font-size: 24px; }
+        .logo-c { color: #9dd5c4; }
         
         .company-name {
-            font-size: 12px !important;
-            font-weight: 600 !important;
-            letter-spacing: 3px !important;
-            text-transform: uppercase !important;
-            color: #fff !important;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
         }
         
         .company-location {
-            font-size: 10px !important;
-            letter-spacing: 2px !important;
-            color: rgba(255,255,255,0.8) !important;
-            margin-top: 2px !important;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.8);
+            margin-top: 2px;
         }
         
         .report-title {
-            font-size: 18px !important;
-            font-weight: 600 !important;
-            margin-top: 12px !important;
-            padding-top: 10px !important;
-            border-top: 1px solid rgba(255,255,255,0.2) !important;
-            color: #fff !important;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.2);
         }
         
-        /* Report Meta - Compact */
+        /* Report Meta */
         .report-meta {
-            background: linear-gradient(135deg, rgba(157, 213, 196, 0.15) 0%, rgba(79, 168, 150, 0.1) 100%) !important;
-            padding: 12px 25px !important;
-            display: flex !important;
-            justify-content: space-between !important;
-            flex-wrap: wrap !important;
-            gap: 15px !important;
-            border-bottom: 1px solid rgba(26, 54, 93, 0.1) !important;
+            background: linear-gradient(135deg, rgba(157, 213, 196, 0.15) 0%, rgba(79, 168, 150, 0.1) 100%);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-bottom: 1px solid rgba(26, 54, 93, 0.1);
         }
         
         .meta-item {
-            text-align: center !important;
-            flex: 1 !important;
-            min-width: 100px !important;
+            text-align: center;
         }
         
         .meta-item span {
-            display: block !important;
-            color: #6c757d !important;
-            font-size: 9px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.5px !important;
+            display: block;
+            color: #6c757d;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .meta-item strong {
-            display: block !important;
-            color: #1a365d !important;
-            font-size: 12px !important;
-            margin-top: 2px !important;
+            display: block;
+            color: #1a365d;
+            font-size: 12px;
+            margin-top: 2px;
         }
         
-        /* Report Summary - Compact */
+        /* Report Summary */
         .report-summary {
-            background: linear-gradient(135deg, rgba(79, 168, 150, 0.08) 0%, rgba(157, 213, 196, 0.08) 100%) !important;
-            padding: 15px 20px !important;
-            margin: 15px 20px !important;
-            border-radius: 8px !important;
-            border-left: 3px solid #4fa896 !important;
+            background: linear-gradient(135deg, rgba(79, 168, 150, 0.08) 0%, rgba(157, 213, 196, 0.08) 100%);
+            padding: 15px 20px;
+            margin: 15px 20px;
+            border-radius: 8px;
+            border-left: 3px solid #4fa896;
         }
         
         .report-summary h5 {
-            color: #1a365d !important;
-            font-weight: 600 !important;
-            margin-bottom: 12px !important;
-            font-size: 13px !important;
-            display: flex !important;
-            align-items: center !important;
+            color: #1a365d;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .summary-grid {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
-            gap: 12px !important;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
         }
         
         .summary-item {
-            text-align: center !important;
-            padding: 12px 10px !important;
-            background: #fff !important;
-            border-radius: 8px !important;
-            box-shadow: 0 2px 8px rgba(26, 54, 93, 0.06) !important;
+            text-align: center;
+            padding: 12px 10px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(26, 54, 93, 0.06);
         }
         
         .summary-item .value {
-            font-size: 22px !important;
-            font-weight: 700 !important;
-            color: #4fa896 !important;
+            font-size: 24px;
+            font-weight: 700;
+            color: #4fa896;
         }
         
         .summary-item .label {
-            font-size: 9px !important;
-            color: #6c757d !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.3px !important;
-            margin-top: 4px !important;
+            font-size: 9px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 4px;
         }
         
-        /* Report Content - Compact */
+        /* Report Content */
         .report-content {
-            padding: 15px 20px !important;
+            padding: 15px 20px;
+            overflow-x: auto;
         }
         
         .report-table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            font-size: 11px !important;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
         }
         
         .report-table thead th {
-            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%) !important;
-            color: #fff !important;
-            padding: 8px 10px !important;
-            text-align: left !important;
-            font-size: 10px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.3px !important;
-            font-weight: 600 !important;
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+            color: #fff;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            font-weight: 600;
+            white-space: nowrap;
         }
         
         .report-table tbody td {
-            padding: 8px 10px !important;
-            border-bottom: 1px solid #eee !important;
-            color: #333 !important;
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            color: #333;
         }
         
         .report-table tbody tr:nth-child(even) {
-            background: rgba(157, 213, 196, 0.05) !important;
+            background: rgba(157, 213, 196, 0.05);
         }
         
         .report-table tbody tr:hover {
-            background: rgba(79, 168, 150, 0.1) !important;
+            background: rgba(79, 168, 150, 0.1);
         }
         
         .report-table tfoot td {
-            background: linear-gradient(135deg, rgba(26, 54, 93, 0.08) 0%, rgba(44, 74, 124, 0.08) 100%) !important;
-            font-weight: 600 !important;
-            padding: 8px 10px !important;
-            color: #1a365d !important;
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.08) 0%, rgba(44, 74, 124, 0.08) 100%);
+            font-weight: 600;
+            padding: 10px 12px;
+            color: #1a365d;
         }
         
-        /* Report Footer - Compact */
+        /* Report Footer */
         .report-footer {
-            background: linear-gradient(135deg, rgba(26, 54, 93, 0.03) 0%, rgba(44, 74, 124, 0.03) 100%) !important;
-            padding: 20px !important;
-            margin-top: 15px !important;
-            border-top: 1px solid #eee !important;
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.03) 0%, rgba(44, 74, 124, 0.03) 100%);
+            padding: 20px;
+            margin-top: 15px;
+            border-top: 1px solid #eee;
         }
         
         .certification-text {
-            text-align: center !important;
-            font-style: italic !important;
-            color: #6c757d !important;
-            margin-bottom: 20px !important;
-            font-size: 11px !important;
+            text-align: center;
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 20px;
+            font-size: 11px;
         }
         
         .signature-section {
-            display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 40px !important;
-            max-width: 500px !important;
-            margin: 0 auto !important;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            max-width: 500px;
+            margin: 0 auto;
         }
         
         .signature-box {
-            text-align: center !important;
+            text-align: center;
         }
         
         .signature-line {
-            border-top: 1px solid #1a365d !important;
-            margin-top: 40px !important;
-            padding-top: 8px !important;
+            border-top: 1px solid #1a365d;
+            margin-top: 40px;
+            padding-top: 8px;
         }
         
         .signature-title {
-            color: #6c757d !important;
-            font-size: 10px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.5px !important;
+            color: #6c757d;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .generated-info {
-            margin-top: 20px !important;
-            padding-top: 15px !important;
-            border-top: 1px dashed #ccc !important;
-            text-align: center !important;
-            font-size: 9px !important;
-            color: #999 !important;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+            text-align: center;
+            font-size: 9px;
+            color: #999;
         }
         
         .amount-cell {
-            font-family: 'Courier New', monospace !important;
-            text-align: right !important;
+            font-family: 'Courier New', monospace;
+            text-align: right;
         }
         
         .status-badge {
-            padding: 4px 12px !important;
-            border-radius: 20px !important;
-            font-size: 11px !important;
-            font-weight: 600 !important;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
         }
         
-        .status-active { background: rgba(79, 168, 150, 0.15) !important; color: #3d8a7a !important; }
-        .status-paid { background: rgba(79, 168, 150, 0.15) !important; color: #3d8a7a !important; }
-        .status-pending { background: rgba(201, 169, 98, 0.15) !important; color: #9a7c3e !important; }
-        .status-overdue { background: rgba(220, 53, 69, 0.15) !important; color: #dc3545 !important; }
+        .status-active, .status-paid { background: rgba(79, 168, 150, 0.15); color: #3d8a7a; }
+        .status-pending { background: rgba(201, 169, 98, 0.15); color: #9a7c3e; }
+        .status-overdue { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        
+        /* Icon styles */
+        .icon-sm {
+            width: 16px;
+            height: 16px;
+        }
+        
+        /* No data message */
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .no-data svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
     </style>
 </head>
 
 <body>
-    <div id="wrapper">
+    <div class="report-page">
+        <!-- Report Toolbar -->
+        <div class="report-toolbar no-print">
+            <h5>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                <span id="toolbarTitle">Report Viewer</span>
+            </h5>
+            <div class="toolbar-buttons">
+                <a href="admin-settings.html" class="btn btn-light">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    Back to Reports
+                </a>
+                <button class="btn btn-warning" onclick="window.print()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Print
+                </button>
+                <button class="btn btn-success" onclick="exportToPDF()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export PDF
+                </button>
+            </div>
+        </div>
 
-        @@include('partials/sidenav.html')
-
-        <div class="content-page">
-
-            @@include('partials/topbar.html')
-
-            <div class="content">
-                <!-- Start Content-->
-                <div class="container-fluid">
-                    
-                    <!-- Report Toolbar - Always Visible -->
-                    <div class="report-toolbar no-print" id="reportToolbar">
-                        <div>
-                            <h5><i data-lucide="file-text" class="me-2" style="width:20px;height:20px;"></i> <span id="toolbarTitle">Report Viewer</span></h5>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="admin-settings.html" class="btn btn-light">
-                                <i data-lucide="arrow-left" class="me-1" style="width:16px;height:16px;"></i> Back to Reports
-                            </a>
-                            <button class="btn btn-warning text-dark" onclick="window.print()">
-                                <i data-lucide="printer" class="me-1" style="width:16px;height:16px;"></i> Print
-                            </button>
-                            <button class="btn btn-success" onclick="exportToPDF()">
-                                <i data-lucide="download" class="me-1" style="width:16px;height:16px;"></i> Export PDF
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Report Container -->
-                    <div class="report-container" id="reportContainer">
-                        <!-- Report Header with Logo -->
-                        <div class="report-header" id="reportHeader">
-                            <div class="company-logo-text">
-                                <span class="logo-i">I</span><span class="logo-amp">&</span><span class="logo-c">C</span>
-                            </div>
-                            <div class="company-name">INSURANCE BROKERS</div>
-                            <div class="company-location">ST. LUCIA</div>
-                            <div class="report-title" id="reportTitle">Report</div>
-                        </div>
-                        
-                        <!-- Report Meta Information -->
-                        <div class="report-meta" id="reportMeta">
-                            <div class="meta-item">
-                                <span>Report Date</span>
-                                <strong id="metaReportDate">--</strong>
-                            </div>
-                            <div class="meta-item">
-                                <span>Generated By</span>
-                                <strong id="metaGeneratedBy">--</strong>
-                            </div>
-                            <div class="meta-item">
-                                <span>Date Range</span>
-                                <strong id="metaDateRange">--</strong>
-                            </div>
-                            <div class="meta-item">
-                                <span>Report ID</span>
-                                <strong id="metaReportId">--</strong>
-                            </div>
-                        </div>
-                        
-                        <!-- Report Summary -->
-                        <div class="report-summary" id="reportSummary">
-                            <h5><i data-lucide="bar-chart-2" class="me-2" style="width:18px;height:18px;"></i> Summary</h5>
-                            <div class="summary-grid" id="summaryGrid">
-                                <!-- Summary items will be inserted here -->
-                            </div>
-                        </div>
-                        
-                        <!-- Report Data Table -->
-                        <div class="report-content">
-                            <table class="report-table" id="reportTable">
-                                <thead id="reportTableHead">
-                                    <!-- Headers will be inserted here -->
-                                </thead>
-                                <tbody id="reportTableBody">
-                                    <!-- Data will be inserted here -->
-                                </tbody>
-                                <tfoot id="reportTableFoot">
-                                    <!-- Totals will be inserted here -->
-                                </tfoot>
-                            </table>
-                        </div>
-                        
-                        <!-- Report Footer with Signatures -->
-                        <div class="report-footer">
-                            <p class="certification-text">
-                                I certify that the information contained in this report is accurate and complete to the best of my knowledge.
-                            </p>
-                            
-                            <div class="signature-section">
-                                <div class="signature-box">
-                                    <div class="signature-line">
-                                        <div class="signature-title">Prepared By</div>
-                                    </div>
-                                </div>
-                                <div class="signature-box">
-                                    <div class="signature-line">
-                                        <div class="signature-title">Authorized Signature</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="generated-info" id="generatedInfo">
-                                Report generated on <span id="generatedDate">--</span> at <span id="generatedTime">--</span>
-                                by <span id="generatedUser">--</span> | I&C Insurance Brokers, St. Lucia
-                            </div>
-                        </div>
-                    </div>
-
+        <!-- Report Container -->
+        <div class="report-container" id="reportContainer">
+            <!-- Report Header -->
+            <div class="report-header">
+                <div class="company-logo-text">
+                    <span class="logo-i">I</span><span class="logo-amp">&</span><span class="logo-c">C</span>
+                </div>
+                <div class="company-name">INSURANCE BROKERS</div>
+                <div class="company-location">ST. LUCIA</div>
+                <div class="report-title" id="reportTitle">Report</div>
+            </div>
+            
+            <!-- Report Meta -->
+            <div class="report-meta">
+                <div class="meta-item">
+                    <span>Report Date</span>
+                    <strong id="metaReportDate">--</strong>
+                </div>
+                <div class="meta-item">
+                    <span>Generated By</span>
+                    <strong id="metaGeneratedBy">--</strong>
+                </div>
+                <div class="meta-item">
+                    <span>Date Range</span>
+                    <strong id="metaDateRange">--</strong>
+                </div>
+                <div class="meta-item">
+                    <span>Report ID</span>
+                    <strong id="metaReportId">--</strong>
                 </div>
             </div>
-
-            @@include('partials/footer.html')
+            
+            <!-- Report Summary -->
+            <div class="report-summary" id="reportSummary">
+                <h5>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    Summary
+                </h5>
+                <div class="summary-grid" id="summaryGrid"></div>
+            </div>
+            
+            <!-- Report Content -->
+            <div class="report-content">
+                <table class="report-table" id="reportTable">
+                    <thead id="reportTableHead"></thead>
+                    <tbody id="reportTableBody"></tbody>
+                    <tfoot id="reportTableFoot"></tfoot>
+                </table>
+            </div>
+            
+            <!-- Report Footer -->
+            <div class="report-footer">
+                <p class="certification-text">
+                    I certify that the information contained in this report is accurate and complete to the best of my knowledge.
+                </p>
+                
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="signature-line">
+                            <div class="signature-title">Prepared By</div>
+                        </div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line">
+                            <div class="signature-title">Authorized Signature</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="generated-info">
+                    Report generated on <span id="generatedDate">--</span> at <span id="generatedTime">--</span>
+                    by <span id="generatedUser">--</span> | I&C Insurance Brokers, St. Lucia
+                </div>
+            </div>
         </div>
     </div>
 
-    @@include('partials/footer-scripts.html')
-    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
     
     <script>
-        // Report data storage
         let reportData = null;
         
-        $(document).ready(function() {
-            // Initialize Lucide icons
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-            
-            // Get report data from session storage
+        document.addEventListener('DOMContentLoaded', function() {
             const storedData = sessionStorage.getItem('reportData');
-            console.log('Report data from session:', storedData);
             
             if (storedData) {
                 try {
                     reportData = JSON.parse(storedData);
-                    console.log('Parsed report data:', reportData);
                     renderReport(reportData);
                 } catch (e) {
                     console.error('Error parsing report data:', e);
                     showNoDataMessage();
                 }
             } else {
-                console.log('No report data found in session storage');
                 showNoDataMessage();
             }
         });
         
         function showNoDataMessage() {
-            $('#reportTitle').text('No Report Available');
-            $('#reportSummary').hide();
-            $('#reportTableBody').html('<tr><td colspan="10" class="text-center py-5 text-muted"><i data-lucide="alert-circle" style="width:48px;height:48px;margin-bottom:15px;"></i><br><strong>No report data available</strong><br>Please go back and generate a report first.</td></tr>');
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+            document.getElementById('reportTitle').textContent = 'No Report Available';
+            document.getElementById('reportSummary').style.display = 'none';
+            document.getElementById('reportTableBody').innerHTML = `
+                <tr>
+                    <td colspan="10" class="no-data">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <div><strong>No report data available</strong></div>
+                        <div>Please go back and generate a report first.</div>
+                    </td>
+                </tr>
+            `;
         }
         
         function renderReport(data) {
-            console.log('Rendering report with data:', data);
-            
             const now = new Date();
-            const userDataStr = localStorage.getItem('userData');
-            const userData = userDataStr ? JSON.parse(userDataStr) : { fullName: 'System', role: 'Admin' };
+            let userData = { fullName: 'System', role: 'Admin' };
+            try {
+                const userDataStr = localStorage.getItem('userData');
+                if (userDataStr) userData = JSON.parse(userDataStr);
+            } catch (e) {}
             
-            // Set toolbar and page title
+            // Set titles
             const title = data.title || 'Report';
-            $('#toolbarTitle').text(title);
-            $('#reportTitle').text(title);
+            document.getElementById('toolbarTitle').textContent = title;
+            document.getElementById('reportTitle').textContent = title;
             document.title = title + ' | I&C Insurance Brokers';
             
-            // Set meta information
-            $('#metaReportDate').text(now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
-            $('#metaGeneratedBy').text(`${userData.fullName || 'System'} (${userData.role || 'Admin'})`);
-            $('#metaDateRange').text(data.dateRange || 'All Time');
-            $('#metaReportId').text('RPT-' + Date.now().toString(36).toUpperCase());
+            // Set meta info
+            document.getElementById('metaReportDate').textContent = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('metaGeneratedBy').textContent = `${userData.fullName || 'System'} (${userData.role || 'Admin'})`;
+            document.getElementById('metaDateRange').textContent = data.dateRange || 'All Time';
+            document.getElementById('metaReportId').textContent = 'RPT-' + Date.now().toString(36).toUpperCase();
             
-            // Set generated info footer
-            $('#generatedDate').text(now.toLocaleDateString());
-            $('#generatedTime').text(now.toLocaleTimeString());
-            $('#generatedUser').text(userData.fullName || 'System');
+            // Set footer info
+            document.getElementById('generatedDate').textContent = now.toLocaleDateString();
+            document.getElementById('generatedTime').textContent = now.toLocaleTimeString();
+            document.getElementById('generatedUser').textContent = userData.fullName || 'System';
             
-            // Render summary section
+            // Render summary
             if (data.summary && data.summary.length > 0) {
                 let summaryHtml = '';
                 data.summary.forEach(item => {
@@ -496,10 +553,10 @@
                         </div>
                     `;
                 });
-                $('#summaryGrid').html(summaryHtml);
-                $('#reportSummary').show();
+                document.getElementById('summaryGrid').innerHTML = summaryHtml;
+                document.getElementById('reportSummary').style.display = 'block';
             } else {
-                $('#reportSummary').hide();
+                document.getElementById('reportSummary').style.display = 'none';
             }
             
             // Render table headers
@@ -509,7 +566,7 @@
                     headerHtml += `<th>${escapeHtml(h)}</th>`;
                 });
                 headerHtml += '</tr>';
-                $('#reportTableHead').html(headerHtml);
+                document.getElementById('reportTableHead').innerHTML = headerHtml;
             }
             
             // Render table body
@@ -522,11 +579,9 @@
                         let cellContent = cell;
                         
                         if (typeof cell === 'string') {
-                            // Check for currency formatting
                             if (cell.startsWith('$') || cell.match(/^\$[\d,]+\.?\d*$/)) {
                                 cellClass = 'amount-cell';
                             }
-                            // Status badges
                             if (cell === 'Active' || cell === 'Paid') {
                                 cellContent = `<span class="status-badge status-active">${cell}</span>`;
                             } else if (cell === 'Pending') {
@@ -539,24 +594,19 @@
                     });
                     bodyHtml += '</tr>';
                 });
-                $('#reportTableBody').html(bodyHtml);
+                document.getElementById('reportTableBody').innerHTML = bodyHtml;
             } else {
-                $('#reportTableBody').html('<tr><td colspan="10" class="text-center py-4 text-muted">No data available</td></tr>');
+                document.getElementById('reportTableBody').innerHTML = '<tr><td colspan="10" class="no-data">No data available</td></tr>';
             }
             
-            // Render footer/totals
+            // Render totals
             if (data.totals && data.totals.length > 0) {
                 let footHtml = '<tr>';
                 data.totals.forEach(t => {
                     footHtml += `<td>${t}</td>`;
                 });
                 footHtml += '</tr>';
-                $('#reportTableFoot').html(footHtml);
-            }
-            
-            // Re-initialize icons
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+                document.getElementById('reportTableFoot').innerHTML = footHtml;
             }
         }
         
@@ -588,11 +638,10 @@
                 }
             };
             
-            // Show loading
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Generating PDF...',
-                    text: 'Please wait while we prepare your document...',
+                    text: 'Please wait...',
                     allowOutsideClick: false,
                     didOpen: () => Swal.showLoading()
                 });
