@@ -40,3 +40,4 @@ Write-Host "cd server" -ForegroundColor Cyan
 Write-Host "npm install" -ForegroundColor Cyan
 Write-Host "node server.js" -ForegroundColor Cyan
 
+

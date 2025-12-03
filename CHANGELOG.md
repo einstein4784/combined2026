@@ -64,3 +64,4 @@ The menu now only shows essential I&C Insurance features:
 - System will log out and redirect to login page
 
 
+

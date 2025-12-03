@@ -87,3 +87,4 @@ Default admin user created: username=admin, password=admin123
 3. Login with admin/admin123
 4. Try creating a customer - should work now!
 
+

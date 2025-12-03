@@ -64,3 +64,4 @@ Default admin user created: username=admin, password=admin123
 2. **Cannot connect**: Make sure MongoDB service is running
 3. **Permission errors**: Run command prompt as Administrator
 
+
