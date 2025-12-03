@@ -1060,6 +1060,240 @@ app.get('/api/user/permissions', requireAuth, (req, res) => {
     });
 });
 
+// ========== DATA EXPORT ROUTES ==========
+
+app.get('/api/admin/export/customers', requireAuth, requireAdmin, (req, res) => {
+    db.all('SELECT * FROM customers ORDER BY created_at DESC', (err, data) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(data);
+    });
+});
+
+app.get('/api/admin/export/policies', requireAuth, requireAdmin, (req, res) => {
+    const query = `
+        SELECT p.*, 
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               c.id_number as customer_id_number
+        FROM policies p
+        JOIN customers c ON p.customer_id = c.id
+        ORDER BY p.created_at DESC
+    `;
+    db.all(query, (err, data) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(data);
+    });
+});
+
+app.get('/api/admin/export/payments', requireAuth, requireAdmin, (req, res) => {
+    const query = `
+        SELECT py.*, 
+               p.policy_number,
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               u.full_name as received_by_name
+        FROM payments py
+        JOIN policies p ON py.policy_id = p.id
+        JOIN customers c ON p.customer_id = c.id
+        LEFT JOIN users u ON py.received_by = u.id
+        ORDER BY py.payment_date DESC
+    `;
+    db.all(query, (err, data) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(data);
+    });
+});
+
+app.get('/api/admin/export/receipts', requireAuth, requireAdmin, (req, res) => {
+    const query = `
+        SELECT r.*,
+               p.policy_number,
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               u.full_name as generated_by_name
+        FROM receipts r
+        JOIN policies p ON r.policy_id = p.id
+        JOIN customers c ON r.customer_id = c.id
+        LEFT JOIN users u ON r.generated_by = u.id
+        ORDER BY r.generated_at DESC
+    `;
+    db.all(query, (err, data) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(data);
+    });
+});
+
+app.get('/api/admin/export/users', requireAuth, requireAdmin, (req, res) => {
+    db.all('SELECT id, username, email, role, full_name, created_at FROM users ORDER BY created_at DESC', (err, data) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(data);
+    });
+});
+
+app.get('/api/admin/export/audit', requireAuth, requireAdmin, (req, res) => {
+    const query = `
+        SELECT al.*, u.full_name as user_name
+        FROM audit_log al
+        LEFT JOIN users u ON al.user_id = u.id
+        ORDER BY al.created_at DESC
+        LIMIT 10000
+    `;
+    db.all(query, (err, data) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(data);
+    });
+});
+
+// ========== DATA IMPORT ROUTES ==========
+
+app.post('/api/admin/import/customers', requireAuth, requireAdmin, (req, res) => {
+    const { records } = req.body;
+    
+    if (!records || !Array.isArray(records)) {
+        return res.status(400).json({ error: 'Invalid data format' });
+    }
+    
+    let imported = 0;
+    let skipped = 0;
+    
+    const stmt = db.prepare(`INSERT OR IGNORE INTO customers 
+        (first_name, middle_name, last_name, address, contact_number, email, sex, id_number) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+    
+    records.forEach(record => {
+        // Map various possible column names
+        const firstName = record.first_name || record.firstName || record['First Name'] || '';
+        const middleName = record.middle_name || record.middleName || record['Middle Name'] || '';
+        const lastName = record.last_name || record.lastName || record['Last Name'] || '';
+        const address = record.address || record.Address || '';
+        const contact = record.contact_number || record.contactNumber || record['Contact Number'] || record.phone || '';
+        const email = record.email || record.Email || '';
+        const sex = record.sex || record.Sex || record.gender || '';
+        const idNumber = record.id_number || record.idNumber || record['ID Number'] || record['Customer ID'] || '';
+        
+        if (firstName && lastName && idNumber) {
+            stmt.run([firstName, middleName, lastName, address, contact, email, sex, idNumber], function(err) {
+                if (err) {
+                    skipped++;
+                } else if (this.changes > 0) {
+                    imported++;
+                } else {
+                    skipped++;
+                }
+            });
+        } else {
+            skipped++;
+        }
+    });
+    
+    stmt.finalize(() => {
+        logAuditAction(req.session.userId, 'IMPORT_DATA', 'Customer', null, { imported, skipped }, req.ip);
+        res.json({ imported, skipped });
+    });
+});
+
+app.post('/api/admin/import/policies', requireAuth, requireAdmin, (req, res) => {
+    const { records } = req.body;
+    
+    if (!records || !Array.isArray(records)) {
+        return res.status(400).json({ error: 'Invalid data format' });
+    }
+    
+    let imported = 0;
+    let skipped = 0;
+    let processed = 0;
+    
+    records.forEach(record => {
+        const policyNumber = record.policy_number || record.policyNumber || record['Policy Number'] || generatePolicyNumber();
+        const customerId = record.customer_id || record.customerId || '';
+        const totalPremium = parseFloat(record.total_premium_due || record.totalPremiumDue || record['Total Premium'] || 0);
+        const amountPaid = parseFloat(record.amount_paid || record.amountPaid || record['Amount Paid'] || 0);
+        const outstanding = totalPremium - amountPaid;
+        
+        if (customerId && totalPremium > 0) {
+            db.run(`INSERT OR IGNORE INTO policies 
+                (policy_number, customer_id, total_premium_due, amount_paid, outstanding_balance, created_by) 
+                VALUES (?, ?, ?, ?, ?, ?)`,
+                [policyNumber, customerId, totalPremium, amountPaid, outstanding, req.session.userId],
+                function(err) {
+                    processed++;
+                    if (err) {
+                        skipped++;
+                    } else if (this.changes > 0) {
+                        imported++;
+                    } else {
+                        skipped++;
+                    }
+                    
+                    if (processed === records.length) {
+                        logAuditAction(req.session.userId, 'IMPORT_DATA', 'Policy', null, { imported, skipped }, req.ip);
+                        res.json({ imported, skipped });
+                    }
+                });
+        } else {
+            processed++;
+            skipped++;
+            if (processed === records.length) {
+                logAuditAction(req.session.userId, 'IMPORT_DATA', 'Policy', null, { imported, skipped }, req.ip);
+                res.json({ imported, skipped });
+            }
+        }
+    });
+    
+    if (records.length === 0) {
+        res.json({ imported: 0, skipped: 0 });
+    }
+});
+
+app.post('/api/admin/import/payments', requireAuth, requireAdmin, (req, res) => {
+    const { records } = req.body;
+    
+    if (!records || !Array.isArray(records)) {
+        return res.status(400).json({ error: 'Invalid data format' });
+    }
+    
+    let imported = 0;
+    let skipped = 0;
+    let processed = 0;
+    
+    records.forEach(record => {
+        const policyId = record.policy_id || record.policyId || '';
+        const amount = parseFloat(record.amount || record.Amount || 0);
+        const paymentMethod = record.payment_method || record.paymentMethod || record['Payment Method'] || 'Cash';
+        const receiptNumber = record.receipt_number || record.receiptNumber || generateReceiptNumber();
+        
+        if (policyId && amount > 0) {
+            db.run(`INSERT OR IGNORE INTO payments 
+                (policy_id, amount, payment_method, receipt_number, received_by) 
+                VALUES (?, ?, ?, ?, ?)`,
+                [policyId, amount, paymentMethod, receiptNumber, req.session.userId],
+                function(err) {
+                    processed++;
+                    if (err) {
+                        skipped++;
+                    } else if (this.changes > 0) {
+                        imported++;
+                    } else {
+                        skipped++;
+                    }
+                    
+                    if (processed === records.length) {
+                        logAuditAction(req.session.userId, 'IMPORT_DATA', 'Payment', null, { imported, skipped }, req.ip);
+                        res.json({ imported, skipped });
+                    }
+                });
+        } else {
+            processed++;
+            skipped++;
+            if (processed === records.length) {
+                logAuditAction(req.session.userId, 'IMPORT_DATA', 'Payment', null, { imported, skipped }, req.ip);
+                res.json({ imported, skipped });
+            }
+        }
+    });
+    
+    if (records.length === 0) {
+        res.json({ imported: 0, skipped: 0 });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

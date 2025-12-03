@@ -14,6 +14,7 @@ $(document).ready(function() {
     loadCustomersWithArrears();
     setupEventHandlers();
     setDefaultReportDates();
+    loadAuditLog();
     lucide.createIcons();
 });
 
@@ -43,6 +44,18 @@ function formatDateForInput(date) {
     return date.toISOString().split('T')[0];
 }
 
+function getCurrentUserInfo() {
+    const userDataStr = localStorage.getItem('userData');
+    if (userDataStr) {
+        try {
+            return JSON.parse(userDataStr);
+        } catch (e) {
+            return { fullName: 'Unknown User', role: 'Unknown' };
+        }
+    }
+    return { fullName: 'Unknown User', role: 'Unknown' };
+}
+
 // ========== PERMISSIONS MANAGEMENT ==========
 
 async function loadSystemFunctions() {
@@ -52,7 +65,6 @@ async function loadSystemFunctions() {
         renderPermissions();
     } catch (error) {
         console.error('Error loading system functions:', error);
-        // Use default functions if API fails
         systemFunctions = getDefaultFunctions();
         renderPermissions();
     }
@@ -101,7 +113,6 @@ function renderPermissions() {
     const functions = Object.values(systemFunctions);
     const currentPermissions = rolePermissions[selectedRole] || [];
     
-    // Group by category
     const categories = {};
     functions.forEach(func => {
         const cat = func.category || 'Other';
@@ -229,7 +240,7 @@ function initPeriodsTable() {
                 render: function(data) {
                     if (data.status === 'Open') {
                         return `
-                            <button class="btn btn-sm btn-warning" onclick="closePeriodById('${data._id}')" title="Close Period">
+                            <button class="btn btn-sm btn-warning" onclick="closePeriodById('${data.id}')" title="Close Period">
                                 <i data-lucide="lock" class="icon-sm"></i>
                             </button>
                         `;
@@ -251,7 +262,6 @@ async function loadFinancialPeriods() {
             periodsTable.draw();
         }
         
-        // Find current open period
         const currentPeriod = periods.find(p => p.status === 'Open');
         if (currentPeriod) {
             $('#currentPeriodName').text(currentPeriod.period_name);
@@ -263,9 +273,7 @@ async function loadFinancialPeriods() {
             $('#periodPolicies').text(currentPeriod.total_policies_created || 0);
         }
         
-        // Load period statistics
         loadPeriodStatistics();
-        
         lucide.createIcons();
     } catch (error) {
         console.error('Error loading financial periods:', error);
@@ -339,12 +347,8 @@ window.closePeriod = async function() {
     
     if (result.isConfirmed) {
         try {
-            await api.request('/admin/periods/close-current', {
-                method: 'POST'
-            });
-            
+            await api.request('/admin/periods/close-current', { method: 'POST' });
             loadFinancialPeriods();
-            
             Swal.fire('Closed!', 'The financial period has been closed.', 'success');
         } catch (error) {
             Swal.fire('Error', error.message || 'Failed to close period', 'error');
@@ -364,12 +368,8 @@ window.closePeriodById = async function(id) {
     
     if (result.isConfirmed) {
         try {
-            await api.request(`/admin/periods/${id}/close`, {
-                method: 'POST'
-            });
-            
+            await api.request(`/admin/periods/${id}/close`, { method: 'POST' });
             loadFinancialPeriods();
-            
             Swal.fire('Closed!', 'The financial period has been closed.', 'success');
         } catch (error) {
             Swal.fire('Error', error.message || 'Failed to close period', 'error');
@@ -377,35 +377,49 @@ window.closePeriodById = async function(id) {
     }
 };
 
-// ========== REPORTS ==========
+// ========== PROFESSIONAL REPORT GENERATION ==========
 
 window.generateUserReport = async function() {
     try {
         Swal.fire({
-            title: 'Generating Report...',
+            title: 'Generating User Report...',
             text: 'Please wait...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
         });
         
         const report = await api.request('/admin/reports/users');
+        const user = getCurrentUserInfo();
+        const now = new Date();
         
         if (!report || report.length === 0) {
             Swal.fire('Info', 'No user data to report', 'info');
             return;
         }
         
-        // Create downloadable report with activity data
-        let csv = 'User Report - Generated: ' + new Date().toLocaleString() + '\n\n';
+        // Create professional CSV report
+        let csv = '';
+        csv += '================================================================================\n';
+        csv += '                        I&C INSURANCE BROKERS\n';
+        csv += '                           USER REPORT\n';
+        csv += '================================================================================\n\n';
+        csv += `Report Generated: ${now.toLocaleString()}\n`;
+        csv += `Generated By: ${user.fullName} (${user.role})\n`;
+        csv += `Total Users: ${report.length}\n`;
+        csv += '\n================================================================================\n\n';
         csv += 'Username,Full Name,Email,Role,Created At,Total Actions,Customers Created,Policies Created,Payments Received,Last Activity\n';
         
-        report.forEach(user => {
-            csv += `"${user.username || ''}","${user.full_name || ''}","${user.email || ''}","${user.role || ''}",`;
-            csv += `"${user.created_at || ''}","${user.total_actions || 0}","${user.customers_created || 0}",`;
-            csv += `"${user.policies_created || 0}","${user.payments_received || 0}","${user.last_activity || 'Never'}"\n`;
+        report.forEach(u => {
+            csv += `"${u.username || ''}","${u.full_name || ''}","${u.email || ''}","${u.role || ''}",`;
+            csv += `"${formatDateTime(u.created_at)}","${u.total_actions || 0}","${u.customers_created || 0}",`;
+            csv += `"${u.policies_created || 0}","${u.payments_received || 0}","${formatDateTime(u.last_activity)}"\n`;
         });
         
-        downloadCSV(csv, 'user_report_' + new Date().toISOString().split('T')[0] + '.csv');
+        csv += '\n================================================================================\n';
+        csv += `                    END OF REPORT - ${now.toLocaleString()}\n`;
+        csv += '================================================================================\n';
+        
+        downloadCSV(csv, `IC_User_Report_${formatDateForFilename(now)}.csv`);
         
         Swal.fire({
             title: 'Success!',
@@ -431,34 +445,68 @@ window.generateCashStatement = async function() {
     
     try {
         Swal.fire({
-            title: 'Generating Cash Statement...',
+            title: 'Generating Daily Cash Statement...',
             text: 'Please wait...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
         });
         
         const report = await api.request(`/admin/reports/cash-statement?startDate=${startDate}&endDate=${endDate}`);
+        const user = getCurrentUserInfo();
+        const now = new Date();
         
-        // Create CSV
-        let csv = 'Cash Statement Report\n';
-        csv += `Date Range: ${startDate} to ${endDate}\n`;
+        // Create professional daily cash statement
+        let csv = '';
+        csv += '================================================================================\n';
+        csv += '                        I&C INSURANCE BROKERS\n';
+        csv += '                       DAILY CASH STATEMENT\n';
+        csv += '================================================================================\n\n';
+        csv += `Report Period: ${formatDateDisplay(startDate)} to ${formatDateDisplay(endDate)}\n`;
+        csv += `Report Generated: ${now.toLocaleString()}\n`;
+        csv += `Generated By: ${user.fullName} (${user.role})\n`;
+        csv += '\n================================================================================\n';
+        csv += '                           SUMMARY\n';
+        csv += '================================================================================\n\n';
         csv += `Total Collections: ${formatCurrency(report.total || 0)}\n`;
-        csv += `Number of Payments: ${report.payments ? report.payments.length : 0}\n\n`;
+        csv += `Number of Transactions: ${report.payments ? report.payments.length : 0}\n`;
+        csv += '\n================================================================================\n';
+        csv += '                    TRANSACTION DETAILS\n';
+        csv += '================================================================================\n\n';
         
         if (report.payments && report.payments.length > 0) {
-            csv += 'Date,Receipt Number,Policy Number,Customer Name,Amount,Payment Method,Received By\n';
+            csv += 'Date,Time,Receipt Number,Policy Number,Customer Name,Amount,Payment Method,Received By\n';
             
+            let runningTotal = 0;
             report.payments.forEach(payment => {
-                const date = payment.date ? new Date(payment.date).toLocaleDateString() : '';
-                csv += `"${date}","${payment.receipt_number || ''}","${payment.policy_number || ''}",`;
-                csv += `"${payment.customer_name || ''}","${payment.amount || 0}","${payment.payment_method || ''}",`;
-                csv += `"${payment.received_by || ''}"\n`;
+                const paymentDate = payment.date ? new Date(payment.date) : new Date();
+                runningTotal += parseFloat(payment.amount) || 0;
+                
+                csv += `"${paymentDate.toLocaleDateString()}","${paymentDate.toLocaleTimeString()}",`;
+                csv += `"${payment.receipt_number || ''}","${payment.policy_number || ''}",`;
+                csv += `"${payment.customer_name || ''}","${formatCurrency(payment.amount || 0)}",`;
+                csv += `"${payment.payment_method || ''}","${payment.received_by || ''}"\n`;
             });
+            
+            csv += '\n================================================================================\n';
+            csv += `RUNNING TOTAL: ${formatCurrency(runningTotal)}\n`;
         } else {
-            csv += 'No payments found for this date range.\n';
+            csv += 'No transactions found for this date range.\n';
         }
         
-        downloadCSV(csv, `cash_statement_${startDate}_to_${endDate}.csv`);
+        csv += '\n================================================================================\n';
+        csv += '                         CERTIFICATION\n';
+        csv += '================================================================================\n\n';
+        csv += `I certify that this cash statement is accurate and complete.\n\n`;
+        csv += `Prepared By: ${user.fullName}\n`;
+        csv += `Date: ${now.toLocaleDateString()}\n`;
+        csv += `Time: ${now.toLocaleTimeString()}\n`;
+        csv += '\n\n_______________________________     _______________________________\n';
+        csv += '        Cashier Signature                 Supervisor Signature\n';
+        csv += '\n================================================================================\n';
+        csv += `                    END OF STATEMENT - ${now.toLocaleString()}\n`;
+        csv += '================================================================================\n';
+        
+        downloadCSV(csv, `IC_Cash_Statement_${startDate}_to_${endDate}.csv`);
         
         Swal.fire({
             title: 'Success!',
@@ -483,23 +531,53 @@ window.generatePolicyReport = async function() {
         });
         
         const report = await api.request('/admin/reports/policies');
+        const user = getCurrentUserInfo();
+        const now = new Date();
         
         if (!report || report.length === 0) {
             Swal.fire('Info', 'No policy data to report', 'info');
             return;
         }
         
-        // Create CSV
-        let csv = 'Policy Report - Generated: ' + new Date().toLocaleString() + '\n\n';
-        csv += 'Policy Number,Customer Name,Customer ID,Total Premium,Amount Paid,Outstanding Balance,Status,Created At\n';
+        // Calculate summary stats
+        const totalPremium = report.reduce((sum, p) => sum + (parseFloat(p.total_premium_due) || 0), 0);
+        const totalPaid = report.reduce((sum, p) => sum + (parseFloat(p.amount_paid) || 0), 0);
+        const totalOutstanding = report.reduce((sum, p) => sum + (parseFloat(p.outstanding_balance) || 0), 0);
+        const activePolicies = report.filter(p => p.status === 'Active').length;
+        
+        // Create professional CSV report
+        let csv = '';
+        csv += '================================================================================\n';
+        csv += '                        I&C INSURANCE BROKERS\n';
+        csv += '                          POLICY REPORT\n';
+        csv += '================================================================================\n\n';
+        csv += `Report Generated: ${now.toLocaleString()}\n`;
+        csv += `Generated By: ${user.fullName} (${user.role})\n`;
+        csv += '\n================================================================================\n';
+        csv += '                           SUMMARY\n';
+        csv += '================================================================================\n\n';
+        csv += `Total Policies: ${report.length}\n`;
+        csv += `Active Policies: ${activePolicies}\n`;
+        csv += `Total Premium Due: ${formatCurrency(totalPremium)}\n`;
+        csv += `Total Amount Paid: ${formatCurrency(totalPaid)}\n`;
+        csv += `Total Outstanding: ${formatCurrency(totalOutstanding)}\n`;
+        csv += '\n================================================================================\n';
+        csv += '                       POLICY DETAILS\n';
+        csv += '================================================================================\n\n';
+        csv += 'Policy Number,Customer Name,Customer ID,Total Premium,Amount Paid,Outstanding Balance,Status,Created Date\n';
         
         report.forEach(policy => {
             csv += `"${policy.policy_number || ''}","${policy.customer_name || ''}","${policy.customer_id_number || ''}",`;
-            csv += `"${policy.total_premium_due || 0}","${policy.amount_paid || 0}","${policy.outstanding_balance || 0}",`;
-            csv += `"${policy.status || ''}","${policy.created_at || ''}"\n`;
+            csv += `"${formatCurrency(policy.total_premium_due || 0)}","${formatCurrency(policy.amount_paid || 0)}",`;
+            csv += `"${formatCurrency(policy.outstanding_balance || 0)}","${policy.status || ''}",`;
+            csv += `"${formatDateTime(policy.created_at)}"\n`;
         });
         
-        downloadCSV(csv, 'policy_report_' + new Date().toISOString().split('T')[0] + '.csv');
+        csv += '\n================================================================================\n';
+        csv += `                    END OF REPORT - ${now.toLocaleString()}\n`;
+        csv += '================================================================================\n';
+        
+        downloadCSV(csv, `IC_Policy_Report_${formatDateForFilename(now)}.csv`);
         
         Swal.fire({
             title: 'Success!',
@@ -514,19 +592,201 @@ window.generatePolicyReport = async function() {
     }
 };
 
-function downloadCSV(csvContent, filename) {
-    // Add BOM for Excel compatibility
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+// ========== DATA EXPORT/IMPORT ==========
+
+window.exportAllData = async function() {
+    const selectedTypes = [];
+    $('.export-check:checked').each(function() {
+        selectedTypes.push($(this).val());
+    });
+    
+    if (selectedTypes.length === 0) {
+        Swal.fire('Error', 'Please select at least one data type to export', 'error');
+        return;
+    }
+    
+    try {
+        Swal.fire({
+            title: 'Exporting Data...',
+            text: 'Please wait...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        const user = getCurrentUserInfo();
+        const now = new Date();
+        const exportData = {};
+        
+        // Fetch all selected data
+        for (const type of selectedTypes) {
+            try {
+                exportData[type] = await api.request(`/admin/export/${type}`);
+            } catch (e) {
+                console.error(`Error exporting ${type}:`, e);
+                exportData[type] = [];
+            }
+        }
+        
+        // Create combined CSV
+        let csv = '';
+        csv += '================================================================================\n';
+        csv += '                        I&C INSURANCE BROKERS\n';
+        csv += '                         DATA EXPORT BACKUP\n';
+        csv += '================================================================================\n\n';
+        csv += `Export Date: ${now.toLocaleString()}\n`;
+        csv += `Exported By: ${user.fullName} (${user.role})\n`;
+        csv += `Data Types: ${selectedTypes.join(', ')}\n`;
+        csv += '\n';
+        
+        for (const [type, data] of Object.entries(exportData)) {
+            if (data && data.length > 0) {
+                csv += `\n================================================================================\n`;
+                csv += `                         ${type.toUpperCase()}\n`;
+                csv += `================================================================================\n\n`;
+                
+                const headers = Object.keys(data[0]);
+                csv += headers.join(',') + '\n';
+                
+                data.forEach(row => {
+                    const values = headers.map(h => {
+                        let val = row[h];
+                        if (val === null || val === undefined) val = '';
+                        if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
+                            val = '"' + val.replace(/"/g, '""') + '"';
+                        }
+                        return val;
+                    });
+                    csv += values.join(',') + '\n';
+                });
+                
+                csv += `\nTotal ${type} records: ${data.length}\n`;
+            }
+        }
+        
+        csv += '\n================================================================================\n';
+        csv += `                    END OF EXPORT - ${now.toLocaleString()}\n`;
+        csv += '================================================================================\n';
+        
+        downloadCSV(csv, `IC_Data_Backup_${formatDateForFilename(now)}.csv`);
+        
+        Swal.fire({
+            title: 'Success!',
+            text: 'Data exported successfully',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    } catch (error) {
+        console.error('Export error:', error);
+        Swal.fire('Error', error.message || 'Failed to export data', 'error');
+    }
+};
+
+window.importData = async function() {
+    const importType = $('#importType').val();
+    const fileInput = document.getElementById('importFile');
+    
+    if (!importType) {
+        Swal.fire('Error', 'Please select a data type to import', 'error');
+        return;
+    }
+    
+    if (!fileInput.files || fileInput.files.length === 0) {
+        Swal.fire('Error', 'Please select a CSV file to import', 'error');
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    
+    try {
+        Swal.fire({
+            title: 'Importing Data...',
+            text: 'Please wait...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        const text = await file.text();
+        const lines = text.split('\n').filter(line => line.trim() && !line.startsWith('=') && !line.includes('I&C INSURANCE'));
+        
+        // Find the header line (first line with commas that looks like headers)
+        let headerIndex = lines.findIndex(line => {
+            const lower = line.toLowerCase();
+            return lower.includes('name') || lower.includes('email') || lower.includes('policy') || lower.includes('customer');
+        });
+        
+        if (headerIndex === -1) headerIndex = 0;
+        
+        const headers = lines[headerIndex].split(',').map(h => h.trim().replace(/"/g, ''));
+        const dataLines = lines.slice(headerIndex + 1);
+        
+        const records = [];
+        dataLines.forEach(line => {
+            if (!line.trim()) return;
+            
+            // Parse CSV line (handle quoted values)
+            const values = parseCSVLine(line);
+            if (values.length === headers.length) {
+                const record = {};
+                headers.forEach((h, i) => {
+                    record[h] = values[i];
+                });
+                records.push(record);
+            }
+        });
+        
+        if (records.length === 0) {
+            Swal.fire('Error', 'No valid records found in file', 'error');
+            return;
+        }
+        
+        // Send to server
+        const result = await api.request(`/admin/import/${importType}`, {
+            method: 'POST',
+            body: JSON.stringify({ records })
+        });
+        
+        Swal.fire({
+            title: 'Import Complete!',
+            html: `<p>Successfully imported: ${result.imported || 0}</p><p>Skipped (duplicates): ${result.skipped || 0}</p>`,
+            icon: 'success'
+        });
+        
+        // Clear form
+        $('#importType').val('');
+        fileInput.value = '';
+        
+    } catch (error) {
+        console.error('Import error:', error);
+        Swal.fire('Error', error.message || 'Failed to import data', 'error');
+    }
+};
+
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    result.push(current.trim());
+    
+    return result;
 }
 
 // ========== AUDIT LOG ==========
@@ -548,7 +808,7 @@ function initAuditTable() {
             { 
                 data: 'details',
                 render: function(data) {
-                    if (typeof data === 'object') {
+                    if (typeof data === 'object' && data !== null) {
                         return `<small>${JSON.stringify(data).substring(0, 50)}...</small>`;
                     }
                     return data || '-';
@@ -581,7 +841,6 @@ async function loadCustomersWithArrears() {
         const select = $('#overrideCustomerId');
         select.empty().append('<option value="">Select customer with arrears...</option>');
         
-        // Filter customers with policies that have outstanding balances
         const policies = await api.getPolicies();
         const customersWithArrears = {};
         
@@ -619,13 +878,10 @@ window.applyArrearsOverride = async function() {
     try {
         await api.request('/admin/override-arrears', {
             method: 'POST',
-            body: JSON.stringify({
-                customer_id: customerId,
-                reason: reason
-            })
+            body: JSON.stringify({ customer_id: customerId, reason: reason })
         });
         
-        Swal.fire('Success', 'Arrears override applied successfully. Customer can now make payments.', 'success');
+        Swal.fire('Success', 'Arrears override applied successfully.', 'success');
         $('#overrideCustomerId').val('');
         $('#overrideReason').val('');
     } catch (error) {
@@ -672,11 +928,9 @@ window.resetSystem = async function() {
                 didOpen: () => Swal.showLoading()
             });
             
-            await api.request('/admin/reset-system', {
-                method: 'POST'
-            });
+            await api.request('/admin/reset-system', { method: 'POST' });
             
-            Swal.fire('Done', 'System has been reset. All data has been deleted.', 'success').then(() => {
+            Swal.fire('Done', 'System has been reset.', 'success').then(() => {
                 window.location.reload();
             });
         } catch (error) {
@@ -694,3 +948,42 @@ function formatCurrency(amount) {
     }).format(amount || 0);
 }
 
+function formatDateTime(dateStr) {
+    if (!dateStr) return 'N/A';
+    try {
+        return new Date(dateStr).toLocaleString();
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+function formatDateDisplay(dateStr) {
+    if (!dateStr) return 'N/A';
+    try {
+        return new Date(dateStr).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+function formatDateForFilename(date) {
+    return date.toISOString().split('T')[0].replace(/-/g, '');
+}
+
+function downloadCSV(csvContent, filename) {
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+}

@@ -80,6 +80,11 @@
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#datamanagement" type="button" role="tab">
+                                <i data-lucide="database" class="icon-sm me-1"></i> Data Management
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
                             <button class="nav-link" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit" type="button" role="tab">
                                 <i data-lucide="history" class="icon-sm me-1"></i> Audit Log
                             </button>
@@ -250,6 +255,97 @@
                                             <p class="text-muted">Generate a report of all policies and their status</p>
                                             <button class="btn btn-info" onclick="generatePolicyReport()">
                                                 <i data-lucide="download" class="icon-sm me-1"></i> Generate
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Management Tab -->
+                        <div class="tab-pane fade" id="datamanagement" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="card">
+                                        <div class="card-header bg-primary text-white">
+                                            <h5 class="card-title mb-0 text-white">
+                                                <i data-lucide="download" class="icon-sm me-1"></i> Export Data (Backup)
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted">
+                                                Export all system data to CSV files for backup purposes. 
+                                                This includes customers, policies, payments, receipts, and users.
+                                            </p>
+                                            <div class="mb-3">
+                                                <label class="form-label">Select Data to Export</label>
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input export-check" type="checkbox" value="customers" id="exportCustomers" checked>
+                                                            <label class="form-check-label" for="exportCustomers">Customers</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input export-check" type="checkbox" value="policies" id="exportPolicies" checked>
+                                                            <label class="form-check-label" for="exportPolicies">Policies</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input export-check" type="checkbox" value="payments" id="exportPayments" checked>
+                                                            <label class="form-check-label" for="exportPayments">Payments</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input export-check" type="checkbox" value="receipts" id="exportReceipts" checked>
+                                                            <label class="form-check-label" for="exportReceipts">Receipts</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input export-check" type="checkbox" value="users" id="exportUsers" checked>
+                                                            <label class="form-check-label" for="exportUsers">Users</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input export-check" type="checkbox" value="audit" id="exportAudit">
+                                                            <label class="form-check-label" for="exportAudit">Audit Log</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button class="btn btn-primary w-100" onclick="exportAllData()">
+                                                <i data-lucide="download" class="icon-sm me-1"></i> Export Selected Data
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="card">
+                                        <div class="card-header bg-success text-white">
+                                            <h5 class="card-title mb-0 text-white">
+                                                <i data-lucide="upload" class="icon-sm me-1"></i> Import Data
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted">
+                                                Import data from CSV files. Ensure the file format matches the export format.
+                                            </p>
+                                            <div class="mb-3">
+                                                <label class="form-label">Data Type to Import</label>
+                                                <select class="form-select" id="importType">
+                                                    <option value="">Select data type...</option>
+                                                    <option value="customers">Customers</option>
+                                                    <option value="policies">Policies</option>
+                                                    <option value="payments">Payments</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Select CSV File</label>
+                                                <input type="file" class="form-control" id="importFile" accept=".csv">
+                                            </div>
+                                            <div class="alert alert-warning">
+                                                <small><i data-lucide="alert-triangle" class="icon-xs me-1"></i> 
+                                                Warning: Importing data will add new records. Duplicates will be skipped.</small>
+                                            </div>
+                                            <button class="btn btn-success w-100" onclick="importData()">
+                                                <i data-lucide="upload" class="icon-sm me-1"></i> Import Data
                                             </button>
                                         </div>
                                     </div>
