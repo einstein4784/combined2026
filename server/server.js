@@ -1034,7 +1034,12 @@ app.get('/api/admin/reports/cash-statement', requireAuth, async (req, res) => {
 });
 
 // Generate policy report with date filtering
-app.get('/api/admin/reports/policies', requireAuth, (req, res) => {
+app.get('/api/admin/reports/policies', requireAuth, async (req, res) => {
+    const allowed = await hasPermissionAsync(req.session.userId, 'generate_cash_statements');
+    if (!allowed) {
+        return res.status(403).json({ error: 'Permission denied' });
+    }
+    
     const { startDate, endDate } = req.query;
     
     let query = `
@@ -1107,7 +1112,12 @@ app.get('/api/admin/reports/payments', requireAuth, async (req, res) => {
 });
 
 // Generate customer report with filters
-app.get('/api/admin/reports/customers', requireAuth, (req, res) => {
+app.get('/api/admin/reports/customers', requireAuth, async (req, res) => {
+    const allowed = await hasPermissionAsync(req.session.userId, 'generate_cash_statements');
+    if (!allowed) {
+        return res.status(403).json({ error: 'Permission denied' });
+    }
+    
     const { startDate, endDate, filter } = req.query;
     
     let query = `
