@@ -451,7 +451,7 @@ window.generateCashStatement = async function() {
     
     try {
         Swal.fire({
-            title: 'Generating Daily Cash Statement...',
+            title: 'Generating Cash Statement...',
             text: 'Please wait...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
@@ -459,30 +459,42 @@ window.generateCashStatement = async function() {
         
         const report = await api.request(`/admin/reports/cash-statement?startDate=${startDate}&endDate=${endDate}`);
         
-        // Prepare report data for viewer
+        // Group payments by payment method for summary
+        const paymentsByMethod = {};
+        (report.payments || []).forEach(p => {
+            const method = p.payment_method || 'Other';
+            if (!paymentsByMethod[method]) {
+                paymentsByMethod[method] = { count: 0, total: 0 };
+            }
+            paymentsByMethod[method].count++;
+            paymentsByMethod[method].total += parseFloat(p.amount) || 0;
+        });
+        
+        // Build summary items
+        const summaryItems = [
+            { value: formatCurrency(report.total || 0), label: 'Total Collected' },
+            { value: (report.payments || []).length, label: 'Receipts' }
+        ];
+        
+        // Add payment method breakdown to summary
+        Object.entries(paymentsByMethod).forEach(([method, data]) => {
+            summaryItems.push({ value: formatCurrency(data.total), label: method });
+        });
+        
+        // Prepare clean, minimal report data
         const reportData = {
-            title: 'Daily Cash Statement',
+            title: 'Cash Statement',
             dateRange: `${formatDateDisplay(startDate)} to ${formatDateDisplay(endDate)}`,
-            summary: [
-                { value: formatCurrency(report.total || 0), label: 'Total Collections' },
-                { value: report.payments ? report.payments.length : 0, label: 'Transactions' },
-                { value: formatCurrency((report.total || 0) / Math.max(1, report.payments?.length || 1)), label: 'Average Payment' }
-            ],
-            headers: ['Date', 'Time', 'Receipt #', 'Policy #', 'Customer Name', 'Amount', 'Payment Method', 'Received By'],
-            rows: (report.payments || []).map(p => {
-                const paymentDate = p.date ? new Date(p.date) : new Date();
-                return [
-                    paymentDate.toLocaleDateString(),
-                    paymentDate.toLocaleTimeString(),
-                    p.receipt_number || '',
-                    p.policy_number || '',
-                    p.customer_name || '',
-                    formatCurrency(p.amount || 0),
-                    p.payment_method || '',
-                    p.received_by || ''
-                ];
-            }),
-            totals: ['', '', '', '', 'TOTAL:', formatCurrency(report.total || 0), '', '']
+            summary: summaryItems,
+            headers: ['Receipt #', 'Customer', 'Policy #', 'Method', 'Amount'],
+            rows: (report.payments || []).map(p => [
+                p.receipt_number || '-',
+                p.customer_name || '-',
+                p.policy_number || '-',
+                p.payment_method || '-',
+                formatCurrency(p.amount || 0)
+            ]),
+            totals: ['', '', '', 'TOTAL', formatCurrency(report.total || 0)]
         };
         
         // Store in session and navigate to viewer
