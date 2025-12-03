@@ -130,4 +130,56 @@
 [data-bs-theme="dark"] .page-title-box {
     background: linear-gradient(135deg, #0f2744 0%, #1a365d 100%);
 }
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .page-title-box {
+        padding: 16px 18px;
+        margin-top: 10px;
+        border-radius: 12px;
+    }
+    
+    .page-title-icon {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .page-title-icon .page-icon {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .page-title {
+        font-size: 1.35rem;
+    }
+    
+    .page-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .page-title-box .breadcrumb {
+        display: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .page-title-box {
+        padding: 14px 16px;
+    }
+    
+    .page-title {
+        font-size: 1.2rem;
+    }
+    
+    .page-title-icon {
+        width: 44px;
+        height: 44px;
+        margin-right: 12px;
+    }
+    
+    .page-title-icon .page-icon {
+        width: 22px;
+        height: 22px;
+    }
+}
 </style>
