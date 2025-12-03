@@ -1,0 +1,550 @@
+// I&C Insurance Brokers Custom Theme
+// Color palette extracted from logo
+
+// Primary Colors
+$ic-navy: #1a365d;
+$ic-navy-light: #2c4a7c;
+$ic-navy-dark: #0f2340;
+
+// Accent Colors  
+$ic-teal: #4fa896;
+$ic-teal-light: #7bc4b6;
+$ic-teal-dark: #3d8a7a;
+$ic-mint: #9dd5c4;
+$ic-mint-light: #c5e8dd;
+
+// Gold/Sand Accents
+$ic-gold: #c9a962;
+$ic-gold-light: #dcc68a;
+$ic-sand: #e8dcc4;
+
+// Gradient definitions
+$ic-gradient-primary: linear-gradient(135deg, $ic-navy 0%, $ic-navy-light 100%);
+$ic-gradient-accent: linear-gradient(135deg, $ic-teal 0%, $ic-mint 100%);
+$ic-gradient-gold: linear-gradient(135deg, $ic-gold 0%, $ic-gold-light 100%);
+$ic-gradient-wave: linear-gradient(180deg, $ic-mint-light 0%, $ic-teal-light 50%, $ic-gold-light 100%);
+
+// Override Bootstrap primary colors
+:root {
+    --bs-primary: #{$ic-navy};
+    --bs-primary-rgb: 26, 54, 93;
+    --bs-success: #{$ic-teal};
+    --bs-success-rgb: 79, 168, 150;
+    --bs-info: #{$ic-mint};
+    --bs-warning: #{$ic-gold};
+    
+    // Custom CSS variables for I&C theme
+    --ic-navy: #{$ic-navy};
+    --ic-navy-light: #{$ic-navy-light};
+    --ic-teal: #{$ic-teal};
+    --ic-teal-light: #{$ic-teal-light};
+    --ic-mint: #{$ic-mint};
+    --ic-gold: #{$ic-gold};
+    --ic-sand: #{$ic-sand};
+}
+
+// Sidebar styling
+.sidenav-menu {
+    background: $ic-gradient-primary !important;
+    
+    .nav-link {
+        color: rgba(255, 255, 255, 0.8) !important;
+        
+        &:hover, &.active {
+            color: #fff !important;
+            background: rgba($ic-teal, 0.2) !important;
+            border-left: 3px solid $ic-teal;
+        }
+    }
+    
+    .menu-title {
+        color: $ic-gold !important;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 1px;
+    }
+}
+
+// Topbar styling
+.navbar-custom {
+    background: #fff !important;
+    border-bottom: 2px solid $ic-mint-light;
+    box-shadow: 0 2px 10px rgba($ic-navy, 0.08);
+}
+
+// Card styling
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba($ic-navy, 0.08);
+    transition: all 0.3s ease;
+    
+    &:hover {
+        box-shadow: 0 4px 20px rgba($ic-navy, 0.12);
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, rgba($ic-navy, 0.02) 0%, rgba($ic-teal, 0.02) 100%);
+        border-bottom: 1px solid rgba($ic-teal, 0.1);
+    }
+}
+
+// Button styling
+.btn-primary {
+    background: $ic-gradient-primary !important;
+    border: none !important;
+    
+    &:hover {
+        background: $ic-navy-dark !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba($ic-navy, 0.3);
+    }
+}
+
+.btn-success {
+    background: $ic-gradient-accent !important;
+    border: none !important;
+    
+    &:hover {
+        background: $ic-teal-dark !important;
+    }
+}
+
+.btn-warning {
+    background: $ic-gradient-gold !important;
+    border: none !important;
+    color: $ic-navy !important;
+}
+
+.btn-outline-primary {
+    color: $ic-navy;
+    border-color: $ic-navy;
+    
+    &:hover {
+        background: $ic-navy;
+        border-color: $ic-navy;
+    }
+}
+
+// Table styling
+.table {
+    thead th {
+        background: linear-gradient(135deg, $ic-navy 0%, $ic-navy-light 100%);
+        color: #fff;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+    
+    tbody tr {
+        transition: all 0.2s ease;
+        
+        &:hover {
+            background: rgba($ic-teal, 0.05);
+        }
+    }
+}
+
+// Badge styling
+.badge {
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.bg-primary {
+    background: $ic-navy !important;
+}
+
+.bg-success {
+    background: $ic-teal !important;
+}
+
+.bg-warning {
+    background: $ic-gold !important;
+    color: $ic-navy !important;
+}
+
+// Tab styling
+.nav-tabs {
+    border-bottom: 2px solid $ic-mint-light;
+    
+    .nav-link {
+        color: $ic-navy;
+        border: none;
+        padding: 12px 20px;
+        font-weight: 500;
+        
+        &:hover {
+            color: $ic-teal;
+            background: rgba($ic-teal, 0.05);
+        }
+        
+        &.active {
+            color: $ic-navy;
+            background: transparent;
+            border-bottom: 3px solid $ic-teal;
+        }
+    }
+}
+
+// Form controls
+.form-control, .form-select {
+    border: 1px solid rgba($ic-navy, 0.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+    
+    &:focus {
+        border-color: $ic-teal;
+        box-shadow: 0 0 0 3px rgba($ic-teal, 0.15);
+    }
+}
+
+// Modal styling
+.modal-header {
+    background: $ic-gradient-primary;
+    color: #fff;
+    border-radius: 12px 12px 0 0;
+    
+    .btn-close {
+        filter: brightness(0) invert(1);
+    }
+}
+
+// Page header styling
+.page-title-box {
+    background: linear-gradient(135deg, rgba($ic-navy, 0.03) 0%, rgba($ic-teal, 0.03) 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    
+    h4 {
+        color: $ic-navy;
+        font-weight: 600;
+    }
+}
+
+// DataTables styling override
+.dataTables_wrapper {
+    .dataTables_paginate .paginate_button {
+        &.current {
+            background: $ic-navy !important;
+            color: #fff !important;
+            border-color: $ic-navy !important;
+        }
+        
+        &:hover {
+            background: $ic-teal !important;
+            color: #fff !important;
+            border-color: $ic-teal !important;
+        }
+    }
+}
+
+// Login page specific styling
+.auth-page {
+    background: linear-gradient(135deg, $ic-navy 0%, $ic-navy-light 50%, $ic-teal 100%);
+    min-height: 100vh;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 200px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%239dd5c4' fill-opacity='0.3' d='M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,133.3C672,139,768,181,864,181.3C960,181,1056,139,1152,122.7C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+        background-size: cover;
+    }
+    
+    .auth-card {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+    }
+}
+
+// Dashboard stat cards
+.stat-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: $ic-gradient-accent;
+        opacity: 0.1;
+        border-radius: 50%;
+        transform: translate(30%, -30%);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        &.primary { background: rgba($ic-navy, 0.1); color: $ic-navy; }
+        &.success { background: rgba($ic-teal, 0.1); color: $ic-teal; }
+        &.warning { background: rgba($ic-gold, 0.1); color: $ic-gold; }
+        &.info { background: rgba($ic-mint, 0.2); color: $ic-teal-dark; }
+    }
+    
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: $ic-navy;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 14px;
+    }
+}
+
+// Report viewer styles
+.report-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba($ic-navy, 0.1);
+    
+    .report-header {
+        background: $ic-gradient-primary;
+        color: #fff;
+        padding: 30px;
+        text-align: center;
+        
+        .company-logo {
+            max-height: 80px;
+            margin-bottom: 15px;
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        
+        .company-location {
+            font-size: 14px;
+            opacity: 0.9;
+            letter-spacing: 1px;
+        }
+        
+        .report-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+    }
+    
+    .report-meta {
+        background: rgba($ic-mint, 0.1);
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+        
+        .meta-item {
+            span {
+                color: #6c757d;
+                font-size: 12px;
+                text-transform: uppercase;
+            }
+            strong {
+                display: block;
+                color: $ic-navy;
+            }
+        }
+    }
+    
+    .report-summary {
+        background: linear-gradient(135deg, rgba($ic-teal, 0.05) 0%, rgba($ic-mint, 0.05) 100%);
+        padding: 25px 30px;
+        margin: 20px 30px;
+        border-radius: 12px;
+        border-left: 4px solid $ic-teal;
+        
+        h5 {
+            color: $ic-navy;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            
+            .summary-item {
+                text-align: center;
+                
+                .value {
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: $ic-teal;
+                }
+                
+                .label {
+                    font-size: 12px;
+                    color: #6c757d;
+                    text-transform: uppercase;
+                }
+            }
+        }
+    }
+    
+    .report-content {
+        padding: 30px;
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            
+            thead th {
+                background: $ic-navy;
+                color: #fff;
+                padding: 12px 15px;
+                text-align: left;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            tbody td {
+                padding: 12px 15px;
+                border-bottom: 1px solid #eee;
+            }
+            
+            tbody tr:hover {
+                background: rgba($ic-teal, 0.03);
+            }
+            
+            tfoot td {
+                background: rgba($ic-navy, 0.05);
+                font-weight: 600;
+                padding: 12px 15px;
+            }
+        }
+    }
+    
+    .report-footer {
+        background: rgba($ic-navy, 0.02);
+        padding: 30px;
+        margin-top: 30px;
+        border-top: 1px solid #eee;
+        
+        .signature-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 50px;
+            margin-top: 50px;
+            
+            .signature-box {
+                text-align: center;
+                
+                .signature-line {
+                    border-top: 1px solid $ic-navy;
+                    margin-top: 60px;
+                    padding-top: 10px;
+                }
+                
+                .signature-title {
+                    color: #6c757d;
+                    font-size: 12px;
+                }
+            }
+        }
+        
+        .generated-info {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+        }
+    }
+}
+
+// Print styles
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .report-container {
+        box-shadow: none;
+        
+        .report-header {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+    
+    body {
+        background: #fff !important;
+    }
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: $ic-teal;
+    border-radius: 4px;
+    
+    &:hover {
+        background: $ic-teal-dark;
+    }
+}
+
+// Loading overlay
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba($ic-navy, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255,255,255,0.2);
+        border-top-color: $ic-teal;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+

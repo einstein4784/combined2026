@@ -76,3 +76,6 @@ File: Main Css File
 @import "plugins/vector-maps";
 @import "plugins/datepicker";
 @import "plugins/waves";
+
+// I&C Insurance Custom Theme (must be last to override)
+@import "custom-theme";

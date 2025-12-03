@@ -1,0 +1,555 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Report Viewer"})
+
+    @@include('partials/head-css.html')
+    
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff !important; }
+            .report-container { box-shadow: none !important; margin: 0 !important; }
+            .navbar-custom, .sidenav-menu, .footer { display: none !important; }
+            .content-page { margin: 0 !important; padding: 0 !important; }
+            .container-fluid { padding: 0 !important; }
+        }
+        
+        .report-toolbar {
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+            padding: 15px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .report-toolbar h5 {
+            color: #fff;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .report-toolbar .btn {
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+        }
+        
+        .report-container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(26, 54, 93, 0.1);
+            overflow: hidden;
+        }
+        
+        .report-header {
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+            color: #fff;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .report-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100'%3E%3Cpath fill='%239dd5c4' fill-opacity='0.3' d='M0,50L60,45C120,40,240,30,360,35C480,40,600,60,720,65C840,70,960,60,1080,50C1200,40,1320,30,1380,25L1440,20L1440,100L1380,100C1320,100,1200,100,1080,100C960,100,840,100,720,100C600,100,480,100,360,100C240,100,120,100,60,100L0,100Z'%3E%3C/path%3E%3Cpath fill='%23c9a962' fill-opacity='0.3' d='M0,70L60,68C120,66,240,62,360,60C480,58,600,58,720,62C840,66,960,74,1080,76C1200,78,1320,74,1380,72L1440,70L1440,100L1380,100C1320,100,1200,100,1080,100C960,100,840,100,720,100C600,100,480,100,360,100C240,100,120,100,60,100L0,100Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+            background-size: cover;
+        }
+        
+        .company-logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .company-logo-text {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -2px;
+        }
+        
+        .company-logo-text .i { color: #fff; }
+        .company-logo-text .amp { color: #c9a962; font-size: 36px; }
+        .company-logo-text .c { color: #9dd5c4; }
+        
+        .company-name {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        
+        .company-location {
+            font-size: 12px;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .report-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .report-meta {
+            background: linear-gradient(135deg, rgba(157, 213, 196, 0.15) 0%, rgba(79, 168, 150, 0.1) 100%);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 1px solid rgba(26, 54, 93, 0.1);
+        }
+        
+        .meta-item {
+            text-align: center;
+        }
+        
+        .meta-item span {
+            display: block;
+            color: #6c757d;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .meta-item strong {
+            display: block;
+            color: #1a365d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .report-summary {
+            background: linear-gradient(135deg, rgba(79, 168, 150, 0.08) 0%, rgba(157, 213, 196, 0.08) 100%);
+            padding: 30px 40px;
+            margin: 25px 40px;
+            border-radius: 12px;
+            border-left: 4px solid #4fa896;
+        }
+        
+        .report-summary h5 {
+            color: #1a365d;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 25px;
+        }
+        
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(26, 54, 93, 0.08);
+        }
+        
+        .summary-item .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #4fa896;
+        }
+        
+        .summary-item .label {
+            font-size: 11px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 5px;
+        }
+        
+        .report-content {
+            padding: 30px 40px;
+        }
+        
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .report-table thead th {
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+            color: #fff;
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .report-table tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+        }
+        
+        .report-table tbody tr:nth-child(even) {
+            background: rgba(157, 213, 196, 0.05);
+        }
+        
+        .report-table tbody tr:hover {
+            background: rgba(79, 168, 150, 0.08);
+        }
+        
+        .report-table tfoot td {
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.08) 0%, rgba(44, 74, 124, 0.08) 100%);
+            font-weight: 600;
+            padding: 14px 16px;
+            color: #1a365d;
+        }
+        
+        .report-footer {
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.03) 0%, rgba(44, 74, 124, 0.03) 100%);
+            padding: 40px;
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+        }
+        
+        .certification-text {
+            text-align: center;
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 40px;
+        }
+        
+        .signature-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 60px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .signature-box {
+            text-align: center;
+        }
+        
+        .signature-line {
+            border-top: 1px solid #1a365d;
+            margin-top: 60px;
+            padding-top: 12px;
+        }
+        
+        .signature-title {
+            color: #6c757d;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .generated-info {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+        }
+        
+        .amount-cell {
+            font-family: 'Courier New', monospace;
+            text-align: right;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .status-active { background: rgba(79, 168, 150, 0.15); color: #3d8a7a; }
+        .status-paid { background: rgba(79, 168, 150, 0.15); color: #3d8a7a; }
+        .status-pending { background: rgba(201, 169, 98, 0.15); color: #9a7c3e; }
+        .status-overdue { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+
+        @@include('partials/sidenav.html')
+
+        <div class="content-page">
+
+            @@include('partials/topbar.html')
+
+            <div class="content">
+                <!-- Start Content-->
+                <div class="container-fluid">
+                    
+                    <!-- Report Toolbar -->
+                    <div class="report-toolbar no-print">
+                        <div>
+                            <h5><i data-lucide="file-text" class="me-2"></i> <span id="toolbarTitle">Report Viewer</span></h5>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-light" onclick="window.history.back()">
+                                <i data-lucide="arrow-left" class="icon-sm me-1"></i> Back
+                            </button>
+                            <button class="btn btn-warning" onclick="window.print()">
+                                <i data-lucide="printer" class="icon-sm me-1"></i> Print
+                            </button>
+                            <button class="btn btn-success" onclick="exportToPDF()">
+                                <i data-lucide="download" class="icon-sm me-1"></i> Export PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Report Container -->
+                    <div class="report-container" id="reportContainer">
+                        <!-- Report Header -->
+                        <div class="report-header">
+                            <div class="company-logo-container">
+                                <div class="company-logo-text">
+                                    <span class="i">I</span><span class="amp">&</span><span class="c">C</span>
+                                </div>
+                            </div>
+                            <div class="company-name">INSURANCE BROKERS</div>
+                            <div class="company-location">ST. LUCIA</div>
+                            <div class="report-title" id="reportTitle">Report</div>
+                        </div>
+                        
+                        <!-- Report Meta -->
+                        <div class="report-meta" id="reportMeta">
+                            <div class="meta-item">
+                                <span>Report Date</span>
+                                <strong id="metaReportDate">--</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span>Generated By</span>
+                                <strong id="metaGeneratedBy">--</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span>Date Range</span>
+                                <strong id="metaDateRange">--</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span>Report ID</span>
+                                <strong id="metaReportId">--</strong>
+                            </div>
+                        </div>
+                        
+                        <!-- Report Summary -->
+                        <div class="report-summary" id="reportSummary">
+                            <h5><i data-lucide="bar-chart-2" class="me-2" style="width:18px;height:18px;"></i> Summary</h5>
+                            <div class="summary-grid" id="summaryGrid">
+                                <!-- Summary items will be inserted here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Report Content -->
+                        <div class="report-content">
+                            <table class="report-table" id="reportTable">
+                                <thead id="reportTableHead">
+                                    <!-- Headers will be inserted here -->
+                                </thead>
+                                <tbody id="reportTableBody">
+                                    <!-- Data will be inserted here -->
+                                </tbody>
+                                <tfoot id="reportTableFoot">
+                                    <!-- Totals will be inserted here -->
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <!-- Report Footer -->
+                        <div class="report-footer">
+                            <p class="certification-text">
+                                I certify that the information contained in this report is accurate and complete to the best of my knowledge.
+                            </p>
+                            
+                            <div class="signature-section">
+                                <div class="signature-box">
+                                    <div class="signature-line">
+                                        <div class="signature-title">Prepared By</div>
+                                    </div>
+                                </div>
+                                <div class="signature-box">
+                                    <div class="signature-line">
+                                        <div class="signature-title">Authorized Signature</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="generated-info" id="generatedInfo">
+                                Report generated on <span id="generatedDate">--</span> at <span id="generatedTime">--</span>
+                                by <span id="generatedUser">--</span> | I&C Insurance Brokers, St. Lucia
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            @@include('partials/footer.html')
+        </div>
+    </div>
+
+    @@include('partials/footer-scripts.html')
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script>
+        // Get report data from URL or session storage
+        let reportData = null;
+        
+        $(document).ready(function() {
+            lucide.createIcons();
+            
+            // Get report data from session storage
+            const storedData = sessionStorage.getItem('reportData');
+            if (storedData) {
+                reportData = JSON.parse(storedData);
+                renderReport(reportData);
+            } else {
+                // Show error if no data
+                $('#reportTableBody').html('<tr><td colspan="10" class="text-center py-5">No report data available. Please generate a report first.</td></tr>');
+            }
+        });
+        
+        function renderReport(data) {
+            const now = new Date();
+            const userDataStr = localStorage.getItem('userData');
+            const userData = userDataStr ? JSON.parse(userDataStr) : { fullName: 'System', role: 'Admin' };
+            
+            // Set meta information
+            $('#toolbarTitle').text(data.title || 'Report');
+            $('#reportTitle').text(data.title || 'Report');
+            $('#metaReportDate').text(now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+            $('#metaGeneratedBy').text(`${userData.fullName} (${userData.role})`);
+            $('#metaDateRange').text(data.dateRange || 'All Time');
+            $('#metaReportId').text('RPT-' + Date.now().toString(36).toUpperCase());
+            
+            // Set generated info
+            $('#generatedDate').text(now.toLocaleDateString());
+            $('#generatedTime').text(now.toLocaleTimeString());
+            $('#generatedUser').text(userData.fullName);
+            
+            // Render summary
+            if (data.summary) {
+                let summaryHtml = '';
+                data.summary.forEach(item => {
+                    summaryHtml += `
+                        <div class="summary-item">
+                            <div class="value">${item.value}</div>
+                            <div class="label">${item.label}</div>
+                        </div>
+                    `;
+                });
+                $('#summaryGrid').html(summaryHtml);
+            }
+            
+            // Render table headers
+            if (data.headers) {
+                let headerHtml = '<tr>';
+                data.headers.forEach(h => {
+                    headerHtml += `<th>${h}</th>`;
+                });
+                headerHtml += '</tr>';
+                $('#reportTableHead').html(headerHtml);
+            }
+            
+            // Render table body
+            if (data.rows) {
+                let bodyHtml = '';
+                data.rows.forEach(row => {
+                    bodyHtml += '<tr>';
+                    row.forEach((cell, idx) => {
+                        let cellClass = '';
+                        if (typeof cell === 'string') {
+                            if (cell.startsWith('$') || cell.match(/^\d+\.\d{2}$/)) {
+                                cellClass = 'amount-cell';
+                            }
+                            if (cell === 'Active' || cell === 'Paid') {
+                                cell = `<span class="status-badge status-active">${cell}</span>`;
+                            } else if (cell === 'Pending') {
+                                cell = `<span class="status-badge status-pending">${cell}</span>`;
+                            } else if (cell === 'Overdue') {
+                                cell = `<span class="status-badge status-overdue">${cell}</span>`;
+                            }
+                        }
+                        bodyHtml += `<td class="${cellClass}">${cell}</td>`;
+                    });
+                    bodyHtml += '</tr>';
+                });
+                $('#reportTableBody').html(bodyHtml);
+            }
+            
+            // Render footer/totals
+            if (data.totals) {
+                let footHtml = '<tr>';
+                data.totals.forEach(t => {
+                    footHtml += `<td>${t}</td>`;
+                });
+                footHtml += '</tr>';
+                $('#reportTableFoot').html(footHtml);
+            }
+            
+            // Re-initialize icons
+            lucide.createIcons();
+        }
+        
+        function exportToPDF() {
+            const element = document.getElementById('reportContainer');
+            const reportTitle = reportData?.title || 'Report';
+            
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: `IC_${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait' 
+                }
+            };
+            
+            // Show loading
+            Swal.fire({
+                title: 'Generating PDF...',
+                text: 'Please wait...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'PDF has been downloaded',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            });
+        }
+    </script>
+</body>
+</html>
+

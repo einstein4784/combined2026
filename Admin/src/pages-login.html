@@ -2,120 +2,306 @@
 
 <head>
     @@include("partials/title-meta.html", {"title": "Log In"})
-
     @@include('partials/head-css.html')
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 40%, #4fa896 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 250px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%239dd5c4' fill-opacity='0.2' d='M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,133.3C672,139,768,181,864,181.3C960,181,1056,139,1152,122.7C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+            background-size: cover;
+            pointer-events: none;
+        }
+        
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23c9a962' fill-opacity='0.2' d='M0,192L48,186.7C96,181,192,171,288,176C384,181,480,203,576,208C672,213,768,203,864,181.3C960,160,1056,128,1152,128C1248,128,1344,160,1392,176L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+            background-size: cover;
+            pointer-events: none;
+        }
+        
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .login-card {
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            width: 100%;
+            max-width: 450px;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+            padding: 40px 40px 50px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .login-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100'%3E%3Cpath fill='%23ffffff' d='M0,50L60,45C120,40,240,30,360,35C480,40,600,60,720,65C840,70,960,60,1080,50C1200,40,1320,30,1380,25L1440,20L1440,100L0,100Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+            background-size: cover;
+        }
+        
+        .logo-text {
+            font-size: 56px;
+            font-weight: 800;
+            letter-spacing: -3px;
+            margin-bottom: 5px;
+        }
+        
+        .logo-text .i { color: #fff; }
+        .logo-text .amp { color: #c9a962; font-size: 42px; vertical-align: middle; }
+        .logo-text .c { color: #9dd5c4; }
+        
+        .company-name {
+            color: #fff;
+            font-size: 14px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .company-location {
+            color: rgba(255,255,255,0.7);
+            font-size: 11px;
+            letter-spacing: 2px;
+            margin-top: 3px;
+        }
+        
+        .login-body {
+            padding: 30px 40px 40px;
+        }
+        
+        .login-title {
+            color: #1a365d;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .login-subtitle {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        .form-label {
+            color: #1a365d;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        
+        .form-control {
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #4fa896;
+            box-shadow: 0 0 0 4px rgba(79, 168, 150, 0.15);
+        }
+        
+        .form-control::placeholder {
+            color: #adb5bd;
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-login:hover {
+            background: linear-gradient(135deg, #0f2340 0%, #1a365d 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(26, 54, 93, 0.35);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .form-check-input:checked {
+            background-color: #4fa896;
+            border-color: #4fa896;
+        }
+        
+        .form-check-label {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .login-footer {
+            text-align: center;
+            padding-top: 25px;
+            border-top: 1px solid #eee;
+            margin-top: 25px;
+        }
+        
+        .login-footer p {
+            color: #6c757d;
+            font-size: 13px;
+            margin: 0;
+        }
+        
+        .login-footer a {
+            color: #4fa896;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        
+        .login-footer a:hover {
+            color: #3d8a7a;
+            text-decoration: underline;
+        }
+        
+        .decorative-circle {
+            position: fixed;
+            border-radius: 50%;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        
+        .circle-1 {
+            width: 400px;
+            height: 400px;
+            background: #9dd5c4;
+            top: -100px;
+            right: -100px;
+        }
+        
+        .circle-2 {
+            width: 300px;
+            height: 300px;
+            background: #c9a962;
+            bottom: 100px;
+            left: -80px;
+        }
+        
+        .powered-by {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+    </style>
 </head>
 
 <body>
-    <div>
-        <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <div class="d-flex align-items-center min-vh-100">
-                        <div class="w-100 d-block card shadow-lg rounded my-5 overflow-hidden">
-                            <div class="row">
-                                <div class="col-lg-5 d-none d-lg-block bg-login rounded-left"></div>
-                                <div class="col-lg-7">
-                                    <div class="p-5">
-                                        <div class="text-center w-75 mx-auto auth-logo mb-4">
-                                            <a href="index.html" class="logo-dark">
-                                                <span><img src="assets/images/logo-dark.png" alt="" height="32"></span>
-                                            </a>
+    <!-- Decorative Elements -->
+    <div class="decorative-circle circle-1"></div>
+    <div class="decorative-circle circle-2"></div>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Header with Logo -->
+            <div class="login-header">
+                <div class="logo-text">
+                    <span class="i">I</span><span class="amp">&</span><span class="c">C</span>
+                </div>
+                <div class="company-name">Insurance Brokers</div>
+                <div class="company-location">St. Lucia</div>
+            </div>
+            
+            <!-- Login Form -->
+            <div class="login-body">
+                <h1 class="login-title">Welcome Back</h1>
+                <p class="login-subtitle">Enter your credentials to access the system</p>
+                
+                <form id="loginForm">
+                    <div class="mb-4">
+                        <label class="form-label" for="emailaddress">Username or Email</label>
+                        <input class="form-control" type="text" id="emailaddress" required
+                            placeholder="Enter your username or email" autocomplete="username">
+                    </div>
 
-                                            <a href="index.html" class="logo-light">
-                                                <span><img src="assets/images/logo-light.png" alt="" height="32"></span>
-                                            </a>
-                                        </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="password">Password</label>
+                        <input class="form-control" type="password" required id="password"
+                            placeholder="Enter your password" autocomplete="current-password">
+                    </div>
 
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="checkbox-signin" checked>
+                            <label class="form-check-label" for="checkbox-signin">Remember me</label>
+                        </div>
+                    </div>
 
-                                        <h1 class="h5 mb-1">Welcome to I&C Insurance Brokers</h1>
-
-                                        <p class="text-muted mb-4">Enter your username/email and password to access the system.</p>
-
-                                        <form id="loginForm">
-
-                                            <div class="form-group mb-3">
-                                                <label class="form-label" for="emailaddress">Username or Email</label>
-                                                <input class="form-control" type="text" id="emailaddress" required=""
-                                                    placeholder="Enter your username or email">
-                                            </div>
-
-                                            <div class="form-group mb-3">
-                                                <a href="pages-recoverpw.html"
-                                                    class="text-muted float-end"><small></small></a>
-                                                <label class="form-label" for="password">Password</label>
-                                                <input class="form-control" type="password" required="" id="password"
-                                                    placeholder="Enter your password">
-                                            </div>
-
-                                            <div class="form-group mb-3">
-                                                <div class="">
-                                                    <input class="form-check-input" type="checkbox" id="checkbox-signin"
-                                                        checked>
-                                                    <label class="form-check-label ms-2" for="checkbox-signin">Remember
-                                                        me</label>
-                                                </div>
-                                            </div>
-
-                                            <div class="form-group mb-0 text-center">
-                                                <button class="btn btn-primary w-100" type="submit"> Log In </button>
-                                            </div>
-                                        </form>
-
-
-                                        <div class="text-center mt-4">
-                                            <h5 class="text-muted font-size-16">Sign in using</h5>
-
-                                            <ul class="list-inline mt-3 mb-0">
-                                                <li class="list-inline-item">
-                                                    <a href="javascript: void(0);"
-                                                        class="social-list-item border border-primary text-primary"><i
-                                                            class="mdi mdi-facebook"></i></a>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <a href="javascript: void(0);"
-                                                        class="social-list-item border border-danger text-danger"><i
-                                                            class="mdi mdi-google"></i></a>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <a href="javascript: void(0);"
-                                                        class="social-list-item border border-info text-info"><i
-                                                            class="mdi mdi-twitter"></i></a>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <a href="javascript: void(0);"
-                                                        class="social-list-item border border-secondary text-secondary"><i
-                                                            class="mdi mdi-github"></i></a>
-                                                </li>
-                                            </ul>
-                                        </div>
-
-                                        <div class="row mt-4">
-                                            <div class="col-12 text-center">
-                                                <p class="text-muted mb-2">
-                                                    <a class="text-muted font-weight-medium ms-1"
-                                                        href='pages-recoverpw.html'>Forgot your password?</a>
-                                                </p>
-                                                <p class="text-muted mb-0">Don't have an account?
-                                                    <a class="text-muted font-weight-medium ms-1"
-                                                        href='pages-register.html'><b>Sign Up</b></a>
-                                                </p>
-                                            </div> <!-- end col -->
-                                        </div>
-                                        <!-- end row -->
-                                    </div> <!-- end .padding-5 -->
-                                </div> <!-- end col -->
-                            </div> <!-- end row -->
-                        </div> <!-- end .w-100 -->
-                    </div> <!-- end .d-flex -->
-                </div> <!-- end col-->
-            </div> <!-- end row -->
+                    <button class="btn btn-primary btn-login w-100" type="submit">
+                        Sign In
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    <p>Need help? Contact <a href="mailto:support@ic-insurance.com">support@ic-insurance.com</a></p>
+                </div>
+            </div>
         </div>
-        <!-- end container -->
     </div>
-    <!-- end page -->
+    
+    <div class="powered-by">
+        Powered by I&C Insurance Brokers Management System
+    </div>
 
     @@include('partials/footer-scripts.html')
+    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
     <script>
         $(document).ready(function() {
             // Check if already logged in and redirect to dashboard
@@ -137,19 +323,22 @@
                 const password = $('#password').val();
                 
                 if (!username || !password) {
-                    Swal.fire('Error', 'Please enter both username and password', 'error');
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Please enter both username and password',
+                        icon: 'error',
+                        confirmButtonColor: '#1a365d'
+                    });
                     return;
                 }
                 
                 // Show loading
                 const submitBtn = $('#loginForm button[type="submit"]');
                 const originalText = submitBtn.html();
-                submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Logging in...');
+                submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Signing in...');
                 
                 try {
-                    console.log('Attempting login with username:', username);
                     const result = await api.login(username, password);
-                    console.log('Login result:', result);
                     
                     if (result.success) {
                         // Clear any previous errors
@@ -168,10 +357,15 @@
                     if (error.message) {
                         errorMessage = error.message;
                     } else if (error.toString().includes('Failed to fetch') || error.toString().includes('NetworkError')) {
-                        errorMessage = 'Cannot connect to server. Please ensure the backend server is running on port 3001.';
+                        errorMessage = 'Cannot connect to server. Please ensure the backend server is running.';
                     }
                     
-                    Swal.fire('Login Failed', errorMessage, 'error');
+                    Swal.fire({
+                        title: 'Login Failed',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonColor: '#1a365d'
+                    });
                 } finally {
                     submitBtn.prop('disabled', false).html(originalText);
                 }

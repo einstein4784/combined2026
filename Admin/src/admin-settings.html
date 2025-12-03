@@ -215,47 +215,69 @@
 
                         <!-- Reports Tab -->
                         <div class="tab-pane fade" id="reports" role="tabpanel">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="alert alert-info border-0" style="background: linear-gradient(135deg, rgba(79, 168, 150, 0.1) 0%, rgba(157, 213, 196, 0.1) 100%);">
+                                        <i data-lucide="info" class="icon-sm me-2"></i>
+                                        <strong>Professional Reports:</strong> Click generate to view reports in a clean, printable format with PDF export option.
+                                    </div>
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="card">
-                                        <div class="card-body text-center">
-                                            <i data-lucide="users" class="text-primary mb-3" style="width: 48px; height: 48px;"></i>
-                                            <h5>User Report</h5>
-                                            <p class="text-muted">Generate a report of all system users and their activity</p>
-                                            <button class="btn btn-primary" onclick="generateUserReport()">
-                                                <i data-lucide="download" class="icon-sm me-1"></i> Generate
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card">
-                                        <div class="card-body text-center">
-                                            <i data-lucide="dollar-sign" class="text-success mb-3" style="width: 48px; height: 48px;"></i>
-                                            <h5>Cash Statement</h5>
-                                            <p class="text-muted">Generate cash statements for any date range</p>
-                                            <div class="row mb-3">
-                                                <div class="col-6">
-                                                    <input type="date" class="form-control form-control-sm" id="reportStartDate">
-                                                </div>
-                                                <div class="col-6">
-                                                    <input type="date" class="form-control form-control-sm" id="reportEndDate">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center d-flex flex-column">
+                                            <div class="mb-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                                                    <i data-lucide="users" class="text-primary" style="width: 32px; height: 32px;"></i>
                                                 </div>
                                             </div>
-                                            <button class="btn btn-success" onclick="generateCashStatement()">
-                                                <i data-lucide="download" class="icon-sm me-1"></i> Generate
+                                            <h5 class="mb-2">User Activity Report</h5>
+                                            <p class="text-muted small flex-grow-1">Complete report of all system users, their roles, and activity metrics</p>
+                                            <button class="btn btn-primary w-100" onclick="generateUserReport()">
+                                                <i data-lucide="eye" class="icon-sm me-1"></i> View Report
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card">
-                                        <div class="card-body text-center">
-                                            <i data-lucide="file-text" class="text-info mb-3" style="width: 48px; height: 48px;"></i>
-                                            <h5>Policy Report</h5>
-                                            <p class="text-muted">Generate a report of all policies and their status</p>
-                                            <button class="btn btn-info" onclick="generatePolicyReport()">
-                                                <i data-lucide="download" class="icon-sm me-1"></i> Generate
+                                    <div class="card h-100">
+                                        <div class="card-body text-center d-flex flex-column">
+                                            <div class="mb-3">
+                                                <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                                                    <i data-lucide="dollar-sign" class="text-success" style="width: 32px; height: 32px;"></i>
+                                                </div>
+                                            </div>
+                                            <h5 class="mb-2">Daily Cash Statement</h5>
+                                            <p class="text-muted small">Select date range for cash collections</p>
+                                            <div class="row mb-3 text-start">
+                                                <div class="col-6">
+                                                    <label class="form-label small text-muted">From</label>
+                                                    <input type="date" class="form-control form-control-sm" id="cashStatementStartDate">
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label small text-muted">To</label>
+                                                    <input type="date" class="form-control form-control-sm" id="cashStatementEndDate">
+                                                </div>
+                                            </div>
+                                            <button class="btn btn-success w-100 mt-auto" onclick="generateCashStatement()">
+                                                <i data-lucide="eye" class="icon-sm me-1"></i> View Statement
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center d-flex flex-column">
+                                            <div class="mb-3">
+                                                <div class="rounded-circle bg-info bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                                                    <i data-lucide="file-text" class="text-info" style="width: 32px; height: 32px;"></i>
+                                                </div>
+                                            </div>
+                                            <h5 class="mb-2">Policy Report</h5>
+                                            <p class="text-muted small flex-grow-1">Complete report of all policies with premium and payment status</p>
+                                            <button class="btn btn-info w-100" onclick="generatePolicyReport()">
+                                                <i data-lucide="eye" class="icon-sm me-1"></i> View Report
                                             </button>
                                         </div>
                                     </div>
