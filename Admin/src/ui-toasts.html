@@ -1,0 +1,291 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Toasts"})
+
+    @@include('partials/head-css.html')
+</head>
+
+<body>
+
+    <!-- Begin page -->
+    <div class="layout-wrapper">
+
+        @@include('partials/menu.html')
+
+        <!-- Start Page Content here -->
+        <div class="page-content">
+
+            @@include('partials/topbar.html')
+
+            <div class="px-3">
+
+                <div class="container-fluid">
+
+                    @@include("./partials/page-title.html", {"subtitle":"Base UI","title":"Toasts"})
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <h4 class="card-title">Bootstrap Toasts</h4>
+                                    <p class="card-subtitle mb-4">Push notifications to your visitors with a toast, a lightweight and easily customizable alert message.</p>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="mb-2">Basic</h6>
+                                            <p class="text-muted">Toasts are as flexible as you need and have very little required markup. At a minimum, we
+                                                require a single element to contain your “toasted” content and strongly encourage a dismiss button.</p>
+                                            <div class="p-3">
+                                                <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-toggle="toast">
+                                                    <div class="toast-header">
+                                                        <img src="assets/images/users/avatar-2.jpg" alt="brand-logo" height="28" class="mr-1 rounded" />
+                                                        <strong class="mr-auto">Myra</strong>
+                                                        <small>11 mins ago</small>
+                                                        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="toast-body">
+                                                        Hello, world! This is a toast message.
+                                                    </div>
+                                                </div> <!--end toast-->
+
+                                            </div>
+                                        </div> <!-- end col-->
+                                        <div class="col-md-6">
+                                            <h6 class="mb-2">Translucent</h6>
+                                            <p class="text-muted">Toasts are slightly translucent, too, so they blend over whatever they might appear over.
+                                                For browsers that support the backdrop-filter CSS property, we’ll also attempt to blur the elements under a toast.</p>
+
+                                            <div class="p-3 bg-secondary">
+                                                <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-toggle="toast">
+                                                    <div class="toast-header">
+                                                        <img src="assets/images/users/avatar-3.jpg" alt="brand-logo" height="28" class="mr-1 rounded" />
+                                                        <strong class="mr-auto">Myra</strong>
+                                                        <small>11 mins ago</small>
+                                                        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="toast-body">
+                                                        Hello, world! This is a toast message.
+                                                    </div>
+                                                </div> <!--end toast-->
+                                            </div>
+                                        </div> <!-- end col-->
+                                    </div>
+                                    <!-- end row-->
+
+                                    <div class="row">
+                                        <div class="col-md-6 mt-4">
+                                            <h6 class="mb-2">Stacking</h6>
+                                            <p class="text-muted">When you have multiple toasts, we default to vertiaclly stacking them in a readable manner.</p>
+                                            <div class="p-3">
+                                                <div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;">
+                                                    <!-- Position it -->
+                                                    <div style="position: absolute; top: 0; right: 0;">
+
+                                                        <!-- Then put toasts within -->
+                                                        <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-toggle="toast">
+                                                            <div class="toast-header">
+                                                                <img src="assets/images/users/avatar-4.jpg" alt="brand-logo" height="28" class="mr-1 rounded" />
+                                                                <strong class="mr-auto">Myra</strong>
+                                                                <small class="text-muted">just now</small>
+                                                                <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="toast-body">
+                                                                See? Just like this.
+                                                            </div>
+                                                        </div> <!--end toast-->
+
+                                                        <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-toggle="toast">
+                                                            <div class="toast-header">
+                                                                <img src="assets/images/users/avatar-5.jpg" alt="brand-logo" height="28" class="mr-1 rounded" />
+                                                                <strong class="mr-auto">Myra</strong>
+                                                                <small class="text-muted">2 seconds ago</small>
+                                                                <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="toast-body">
+                                                                Heads up, toasts will stack automatically
+                                                            </div>
+                                                        </div> <!--end toast-->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div> <!-- end col-->
+                                        <div class="col-md-6 mt-4">
+                                            <h6 class="mb-2">Placement</h6>
+                                            <p class="text-muted">Place toasts with custom CSS as you need them. The top right is often used for
+                                                notifications, as is the top middle. If you’re only ever going to show one toast at a time, put the positioning
+                                                styles right on the <code>.toast</code>.</p>
+                                            <div class="p-3">
+                                                <div aria-live="polite" aria-atomic="true" class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+
+                                                    <!-- Then put toasts within -->
+                                                    <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-toggle="toast">
+                                                        <div class="toast-header">
+                                                            <img src="assets/images/users/avatar-6.jpg" alt="brand-logo" height="28" class="mr-2 rounded-circle" />
+                                                            <strong class="mr-auto">Myra</strong>
+                                                            <small>11 mins ago</small>
+                                                            <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <div class="toast-body">
+                                                            Hello, world! This is a toast message.
+                                                        </div>
+                                                    </div> <!--end toast-->
+                                                </div>
+                                            </div>
+                                        </div> <!-- end col-->
+                                    </div>
+                                    <!-- end row-->
+
+                                </div> <!-- end card-body-->
+                            </div> <!-- end card-->
+                        </div> <!-- end col-->
+                    </div>
+                    <!-- end row -->
+
+                    <div class="row">
+                        <div class="col-12">
+                            <h4 class="mb-4">Alerts</h4>
+                        </div> <!-- end col -->
+                    </div>
+
+                    <div class="row">
+                        <div class="col-xl-6">
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <h4 class="card-title">Examples</h4>
+                                    <p class="card-subtitle mb-4">Alerts are available for any length of text, as well as an optional dismiss button. For proper styling, use one of the eight <strong>required</strong> contextual classes (e.g., <code>.alert-success</code>).</p>
+
+                                    <div class="alert alert-primary" role="alert">
+                                        A simple primary alert—check it out!
+                                    </div>
+                                    <div class="alert alert-secondary" role="alert">
+                                        A simple secondary alert—check it out!
+                                    </div>
+                                    <div class="alert alert-success" role="alert">
+                                        A simple success alert—check it out!
+                                    </div>
+                                    <div class="alert alert-danger" role="alert">
+                                        A simple danger alert—check it out!
+                                    </div>
+                                    <div class="alert alert-warning" role="alert">
+                                        A simple warning alert—check it out!
+                                    </div>
+                                    <div class="alert alert-info" role="alert">
+                                        A simple info alert—check it out!
+                                    </div>
+                                    <div class="alert alert-light" role="alert">
+                                        A simple light alert—check it out!
+                                    </div>
+                                    <div class="alert alert-dark mb-0" role="alert">
+                                        A simple dark alert—check it out!
+                                    </div>
+                                </div> <!-- end card-body-->
+                            </div> <!-- end card-->
+                        </div> <!-- end col -->
+
+                        <div class="col-xl-6">
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <h4 class="card-title">Link Color</h4>
+                                    <p class="card-subtitle mb-4">Use the <code>.alert-link</code> utility class to quickly provide matching colored links within any alert.</p>
+
+                                    <div class="alert alert-primary" role="alert">
+                                        A simple primary alert with <a href="#" class="alert-link">an example link</a>. Give it a click if you like.
+                                    </div>
+                                    <div class="alert alert-secondary" role="alert">
+                                        A simple secondary alert with <a href="#" class="alert-link">an example link</a>. Give it a click if you like.
+                                    </div>
+                                    <div class="alert alert-success" role="alert">
+                                        A simple success alert with <a href="#" class="alert-link">an example link</a>. Give it a click if you like.
+                                    </div>
+                                    <div class="alert alert-danger" role="alert">
+                                        A simple danger alert with <a href="#" class="alert-link">an example link</a>. Give it a click if you like.
+                                    </div>
+                                    <div class="alert alert-warning" role="alert">
+                                        A simple warning alert with <a href="#" class="alert-link">an example link</a>. Give it a click if you like.
+                                    </div>
+                                    <div class="alert alert-info" role="alert">
+                                        A simple info alert with <a href="#" class="alert-link">an example link</a>. Give it a click if you like.
+                                    </div>
+                                    <div class="alert alert-light" role="alert">
+                                        A simple light alert with <a href="#" class="alert-link">an example link</a>. Give it a click if you like.
+                                    </div>
+                                    <div class="alert alert-dark mb-0" role="alert">
+                                        A simple dark alert with <a href="#" class="alert-link">an example link</a>. Give it a click if you like.
+                                    </div>
+                                </div> <!-- end card-body-->
+                            </div> <!-- end card-->
+                        </div> <!-- end col -->
+                    </div>
+                    <!-- end row-->
+
+                    <div class="row">
+                        <div class="col-xl-6">
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <h4 class="card-title">Additional Content</h4>
+                                    <p class="card-subtitle mb-4">Alerts can also contain additional HTML elements like headings, paragraphs and dividers.</p>
+
+                                    <div class="alert alert-success mb-0" role="alert">
+                                        <h5 class="alert-heading">Well done!</h5>
+                                        <p>Aww yeah, you successfully read this important alert message. This example text is going to run a bit longer so that you can see how spacing within an alert works with this kind of content.</p>
+                                        <hr>
+                                        <p class="mb-0">Whenever you need to, be sure to use margin utilities to keep things nice and tidy.</p>
+                                    </div>
+                                </div> <!-- end card-body-->
+                            </div> <!-- end card-->
+                        </div> <!-- end col -->
+
+                        <div class="col-xl-6">
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <h4 class="card-title">Dismissing</h4>
+                                    <p class="card-subtitle mb-4">You can see this in action with a live demo:</p>
+
+                                    <div class="alert alert-warning alert-dismissible fade show mb-0" role="alert">
+                                        <strong>Holy guacamole!</strong> You should check in on some of those fields below.
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                </div> <!-- end card-body-->
+                            </div> <!-- end card-->
+                        </div> <!-- end col -->
+                    </div>
+                    <!-- end row-->
+
+
+                </div> <!-- container-fluid -->
+
+
+            </div> <!-- content -->
+
+            @@include('partials/footer.html')
+
+        </div>
+        <!-- End Page content -->
+
+
+    </div>
+    <!-- END wrapper -->
+
+    @@include('partials/footer-scripts.html')
+
+</body>
+
+</html>

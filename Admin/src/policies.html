@@ -1,0 +1,119 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Policies"})
+
+    <link href="assets/libs/datatables.net-bs5/css/dataTables.bootstrap5.min.css" rel="stylesheet" type="text/css" />
+    <link href="assets/libs/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css" rel="stylesheet" type="text/css" />
+    <link href="assets/libs/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css" rel="stylesheet" type="text/css" />
+    <link href="assets/libs/select2/css/select2.min.css" rel="stylesheet" type="text/css" />
+
+    @@include('partials/head-css.html')
+</head>
+
+<body>
+    <div class="layout-wrapper">
+        @@include('partials/menu.html')
+
+        <div class="page-content">
+            @@include('partials/topbar.html')
+
+            <div class="px-3">
+                <div class="container-fluid">
+                    @@include("./partials/page-title.html", {"subtitle":"I&C Insurance","title":"Policy Management"})
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h4 class="header-title">Policies</h4>
+                                        <button type="button" class="btn btn-primary" onclick="openPolicyModal()">
+                                            <i data-lucide="plus" class="icon-sm me-1"></i> Create Policy
+                                        </button>
+                                    </div>
+
+                                    <table id="policies-table" class="table dt-responsive nowrap w-100">
+                                        <thead>
+                                            <tr>
+                                                <th>Policy Number</th>
+                                                <th>Customer</th>
+                                                <th>Total Premium</th>
+                                                <th>Amount Paid</th>
+                                                <th>Outstanding</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @@include('partials/footer.html')
+        </div>
+    </div>
+
+    <!-- Policy Modal -->
+    <div class="modal fade" id="policyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="policyModalTitle">Create Policy</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="policyForm">
+                        <input type="hidden" id="policyId">
+                        <div class="mb-3">
+                            <label class="form-label">Customer <span class="text-danger">*</span></label>
+                            <select class="form-select" id="customerId" required data-toggle="select2" data-placeholder="Search customer by name, ID number, email, or contact...">
+                                <option value="">Search customer...</option>
+                            </select>
+                            <small class="text-muted">Type to search by name, ID number, email, or contact number</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Policy Number</label>
+                                    <input type="text" class="form-control" id="policyNumber" placeholder="Auto-generated if left empty">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Total Premium Due <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.01" class="form-control" id="totalPremiumDue" required>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="resetPolicyForm()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="savePolicy()" id="savePolicyBtn">Save Policy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @@include('partials/footer-scripts.html')
+
+    <script src="assets/libs/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="assets/libs/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="assets/libs/datatables.net-responsive-bs5/js/responsive.bootstrap5.min.js"></script>
+    <script src="assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="assets/libs/datatables.net-buttons-bs5/js/buttons.bootstrap5.min.js"></script>
+    <script src="assets/libs/datatables.net-buttons/js/buttons.html5.min.js"></script>
+    <script src="assets/libs/datatables.net-buttons/js/buttons.print.min.js"></script>
+    <script src="assets/libs/select2/js/select2.min.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/pages/policies.js"></script>
+</body>
+</html>
+
+

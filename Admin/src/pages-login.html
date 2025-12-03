@@ -1,0 +1,184 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Log In"})
+
+    @@include('partials/head-css.html')
+</head>
+
+<body>
+    <div>
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex align-items-center min-vh-100">
+                        <div class="w-100 d-block card shadow-lg rounded my-5 overflow-hidden">
+                            <div class="row">
+                                <div class="col-lg-5 d-none d-lg-block bg-login rounded-left"></div>
+                                <div class="col-lg-7">
+                                    <div class="p-5">
+                                        <div class="text-center w-75 mx-auto auth-logo mb-4">
+                                            <a href="index.html" class="logo-dark">
+                                                <span><img src="assets/images/logo-dark.png" alt="" height="32"></span>
+                                            </a>
+
+                                            <a href="index.html" class="logo-light">
+                                                <span><img src="assets/images/logo-light.png" alt="" height="32"></span>
+                                            </a>
+                                        </div>
+
+
+                                        <h1 class="h5 mb-1">Welcome to I&C Insurance Brokers</h1>
+
+                                        <p class="text-muted mb-4">Enter your username/email and password to access the system.</p>
+
+                                        <form id="loginForm">
+
+                                            <div class="form-group mb-3">
+                                                <label class="form-label" for="emailaddress">Username or Email</label>
+                                                <input class="form-control" type="text" id="emailaddress" required=""
+                                                    placeholder="Enter your username or email">
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <a href="pages-recoverpw.html"
+                                                    class="text-muted float-end"><small></small></a>
+                                                <label class="form-label" for="password">Password</label>
+                                                <input class="form-control" type="password" required="" id="password"
+                                                    placeholder="Enter your password">
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <div class="">
+                                                    <input class="form-check-input" type="checkbox" id="checkbox-signin"
+                                                        checked>
+                                                    <label class="form-check-label ms-2" for="checkbox-signin">Remember
+                                                        me</label>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group mb-0 text-center">
+                                                <button class="btn btn-primary w-100" type="submit"> Log In </button>
+                                            </div>
+                                        </form>
+
+
+                                        <div class="text-center mt-4">
+                                            <h5 class="text-muted font-size-16">Sign in using</h5>
+
+                                            <ul class="list-inline mt-3 mb-0">
+                                                <li class="list-inline-item">
+                                                    <a href="javascript: void(0);"
+                                                        class="social-list-item border border-primary text-primary"><i
+                                                            class="mdi mdi-facebook"></i></a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="javascript: void(0);"
+                                                        class="social-list-item border border-danger text-danger"><i
+                                                            class="mdi mdi-google"></i></a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="javascript: void(0);"
+                                                        class="social-list-item border border-info text-info"><i
+                                                            class="mdi mdi-twitter"></i></a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="javascript: void(0);"
+                                                        class="social-list-item border border-secondary text-secondary"><i
+                                                            class="mdi mdi-github"></i></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="row mt-4">
+                                            <div class="col-12 text-center">
+                                                <p class="text-muted mb-2">
+                                                    <a class="text-muted font-weight-medium ms-1"
+                                                        href='pages-recoverpw.html'>Forgot your password?</a>
+                                                </p>
+                                                <p class="text-muted mb-0">Don't have an account?
+                                                    <a class="text-muted font-weight-medium ms-1"
+                                                        href='pages-register.html'><b>Sign Up</b></a>
+                                                </p>
+                                            </div> <!-- end col -->
+                                        </div>
+                                        <!-- end row -->
+                                    </div> <!-- end .padding-5 -->
+                                </div> <!-- end col -->
+                            </div> <!-- end row -->
+                        </div> <!-- end .w-100 -->
+                    </div> <!-- end .d-flex -->
+                </div> <!-- end col-->
+            </div> <!-- end row -->
+        </div>
+        <!-- end container -->
+    </div>
+    <!-- end page -->
+
+    @@include('partials/footer-scripts.html')
+    <script src="assets/js/api.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Check if already logged in and redirect to dashboard
+            (async function() {
+                try {
+                    const user = await api.getCurrentUser();
+                    if (user) {
+                        window.location.href = 'index.html';
+                    }
+                } catch (error) {
+                    // Not logged in, stay on login page
+                }
+            })();
+            
+            $('#loginForm').on('submit', async function(e) {
+                e.preventDefault();
+                
+                const username = $('#emailaddress').val().trim();
+                const password = $('#password').val();
+                
+                if (!username || !password) {
+                    Swal.fire('Error', 'Please enter both username and password', 'error');
+                    return;
+                }
+                
+                // Show loading
+                const submitBtn = $('#loginForm button[type="submit"]');
+                const originalText = submitBtn.html();
+                submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Logging in...');
+                
+                try {
+                    console.log('Attempting login with username:', username);
+                    const result = await api.login(username, password);
+                    console.log('Login result:', result);
+                    
+                    if (result.success) {
+                        // Clear any previous errors
+                        $('#emailaddress').removeClass('is-invalid');
+                        $('#password').removeClass('is-invalid');
+                        
+                        // Redirect to dashboard
+                        window.location.href = 'index.html';
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    $('#emailaddress').addClass('is-invalid');
+                    $('#password').addClass('is-invalid');
+                    
+                    let errorMessage = 'Invalid username or password';
+                    if (error.message) {
+                        errorMessage = error.message;
+                    } else if (error.toString().includes('Failed to fetch') || error.toString().includes('NetworkError')) {
+                        errorMessage = 'Cannot connect to server. Please ensure the backend server is running on port 3001.';
+                    }
+                    
+                    Swal.fire('Login Failed', errorMessage, 'error');
+                } finally {
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

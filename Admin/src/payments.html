@@ -1,0 +1,119 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Payments"})
+
+    <link href="assets/libs/datatables.net-bs5/css/dataTables.bootstrap5.min.css" rel="stylesheet" type="text/css" />
+    <link href="assets/libs/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css" rel="stylesheet" type="text/css" />
+    <link href="assets/libs/select2/css/select2.min.css" rel="stylesheet" type="text/css" />
+
+    @@include('partials/head-css.html')
+</head>
+
+<body>
+    <div class="layout-wrapper">
+        @@include('partials/menu.html')
+
+        <div class="page-content">
+            @@include('partials/topbar.html')
+
+            <div class="px-3">
+                <div class="container-fluid">
+                    @@include("./partials/page-title.html", {"subtitle":"I&C Insurance","title":"Payment Management"})
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h4 class="header-title">Payments</h4>
+                                        <button type="button" class="btn btn-primary" onclick="openPaymentModal()">
+                                            <i data-lucide="plus" class="icon-sm me-1"></i> Record Payment
+                                        </button>
+                                    </div>
+
+                                    <table id="payments-table" class="table dt-responsive nowrap w-100">
+                                        <thead>
+                                            <tr>
+                                                <th>Receipt Number</th>
+                                                <th>Policy Number</th>
+                                                <th>Customer</th>
+                                                <th>Amount</th>
+                                                <th>Payment Method</th>
+                                                <th>Payment Date</th>
+                                                <th>Received By</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @@include('partials/footer.html')
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="paymentForm">
+                        <div class="mb-3">
+                            <label class="form-label">Policy <span class="text-danger">*</span></label>
+                            <select class="form-select" id="policyId" required data-toggle="select2" data-placeholder="Search policy by customer name, ID number, policy number...">
+                                <option value="">Search policy...</option>
+                            </select>
+                            <small class="text-muted">Type to search by customer name, ID number, email, policy number, or contact</small>
+                            <div id="policyInfo" class="mt-2"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Amount <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control" id="amount" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method</label>
+                            <select class="form-select" id="paymentMethod">
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Mobile Money">Mobile Money</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="savePayment()" id="savePaymentBtn">Record Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @@include('partials/footer-scripts.html')
+
+    <script src="assets/libs/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="assets/libs/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="assets/libs/datatables.net-responsive-bs5/js/responsive.bootstrap5.min.js"></script>
+    <script src="assets/libs/select2/js/select2.min.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/pages/payments.js"></script>
+</body>
+</html>
+
+

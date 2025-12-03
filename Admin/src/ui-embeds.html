@@ -1,0 +1,105 @@
+@@include('partials/main.html')
+
+    <head>
+        @@include("partials/title-meta.html", {"title": "Ratio"})
+
+		@@include('partials/head-css.html')
+    </head>
+
+    <body>
+
+        <!-- Begin page -->
+        <div class="layout-wrapper">
+
+            @@include('partials/menu.html')
+
+            <!-- Start Page Content here -->
+            <div class="page-content">
+
+                @@include('partials/topbar.html')
+
+                <div class="px-3">
+
+                    <div class="container-fluid">
+
+                        @@include("./partials/page-title.html", {"subtitle":"Base UI","title":"Ratio"})
+
+                        <div class="row">
+                            <div class="col-xl-6">
+                                <div class="card">
+                                    <div class="card-body">
+                        
+                                        <h4 class="card-title">Responsive embed video 21:9</h4>
+                                        <p class="card-subtitle mb-4">Wrap any embed like an <code>&lt;iframe&gt;</code> in a parent element with <code>.embed-responsive</code> and an aspect ratio. The <code>.embed-responsive-item</code> isn’t strictly required, but we encourage it.</p>
+                                        
+                                        <!-- 21:9 aspect ratio -->
+                                        <div class="embed-responsive embed-responsive-21by9">
+                                            <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/hihYqk15e6Y?autohide=0&showinfo=0&controls=0"></iframe>
+                                        </div>
+                                    </div> <!-- end card-body-->
+                                </div> <!-- end card-->
+    
+                                <div class="card">
+                                    <div class="card-body">
+                        
+                                        <h4 class="card-title">Responsive embed video 1:1</h4>
+                                        <p class="card-subtitle mb-4">Please use class <code>.embed-responsive-1by1</code> with div.</p>
+                                        
+                                        <!-- 1:1 aspect ratio -->
+                                        <div class="embed-responsive embed-responsive-1by1">
+                                            <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/hihYqk15e6Y?ecver=1"></iframe>
+                                        </div>
+    
+                                    </div> <!-- end card-body-->
+                                </div> <!-- end card-->
+                            </div> <!-- end col -->
+                        
+                            <div class="col-xl-6">
+                                <div class="card">
+                                    <div class="card-body">
+                        
+                                        <h4 class="card-title">Responsive embed video 16:9</h4>
+                                        <p class="card-subtitle mb-4">Please use class <code>.embed-responsive-16by9</code> with div.</p>
+                                        
+                                        <!-- 16:9 aspect ratio -->
+                                        <div class="embed-responsive embed-responsive-16by9">
+                                            <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/hihYqk15e6Y?ecver=1"></iframe>
+                                        </div>
+                        
+                                    </div> <!-- end card-body-->
+                                </div> <!-- end card-->
+    
+                                <div class="card">
+                                    <div class="card-body">
+                        
+                                        <h4 class="card-title">Responsive embed video 4:3</h4>
+                                        <p class="card-subtitle mb-4">Please use class <code>.embed-responsive-4by3</code> with div.</p>
+                                        
+                                        <!-- 4:3 aspect ratio -->
+                                        <div class="embed-responsive embed-responsive-4by3">
+                                            <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/hihYqk15e6Y?ecver=1"></iframe>
+                                        </div>
+                        
+                                    </div> <!-- end card-body-->
+                                </div> <!-- end card-->
+                            </div> <!-- end col -->
+                        </div>
+                        <!-- end row-->
+    
+                    </div> <!-- container-fluid -->
+
+                </div> <!-- content -->
+
+                @@include('partials/footer.html')
+
+            </div>
+            <!-- End Page content -->
+
+
+        </div>
+        <!-- END wrapper -->
+        
+        @@include('partials/footer-scripts.html')
+
+    </body>
+</html>

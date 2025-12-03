@@ -1,0 +1,12 @@
+//
+// vector-maps.scss
+//
+
+.jvectormap-label {
+    border: none;
+    background: var(--#{$prefix}dark);
+    color: var(--#{$prefix}secondary-bg-subtle);
+    font-family: $font-family-primary;
+    font-size: $font-size-base;
+    padding: 5px 8px;
+}

@@ -1,0 +1,94 @@
+// 
+// light-mode.scss
+// 
+
+:root {
+    --#{$prefix}sidebar-width:            250px;
+    --#{$prefix}sidebar-width-sm:         80px;
+
+    --#{$prefix}topbar-height:             80px;
+
+    --#{$prefix}horizontal-menu-height:    55px;
+
+    --#{$prefix}menu-transition:            all .2s ease-in-out;
+
+    --#{$prefix}menu-item-padding-x:        0px;
+    --#{$prefix}menu-item-gap:              8px;
+    
+    --#{$prefix}menu-link-padding-x:       24px;
+    --#{$prefix}menu-link-padding-y:       12px;
+    
+    --#{$prefix}menu-link-item-gap:        10px;
+
+    --#{$prefix}menu-item-icon-size:       16px;
+    --#{$prefix}menu-item-font-size:       15px;
+}
+
+html[data-bs-theme="dark"] {
+    --#{$prefix}light:                  #32363b;
+    --#{$prefix}light-rgb:                #{to-rgb(#32363b)};
+    --#{$prefix}dark:                   #f3f7f9;
+    --#{$prefix}dark-rgb:                 #{to-rgb(#f3f7f9)};
+
+    --#{$prefix}box-shadow:               0px 0px 35px 0px #{rgba(66, 72, 80, 0.15)};
+    --#{$prefix}box-shadow-sm:            0 0.75rem 6rem #{rgba(56, 65, 74, 0.03)};
+    --#{$prefix}box-shadow-lg:            0 0 45px 0 #{rgba(0, 0, 0, 0.12)};
+    --#{$prefix}box-shadow-inset:         inset 0 -0.1rem 0 #{rgba($black, 0.075)};
+}
+
+
+// light Menu 
+[data-menu-color="light"] {
+    --#{$prefix}menu-bg:                             #ffffff;
+    --#{$prefix}menu-item-color:                       #{$gray-700};
+    --#{$prefix}menu-item-hover-color:                 #{$primary};
+    --#{$prefix}menu-item-active-color:                #{$primary};
+}
+
+// Dark Menu
+[data-menu-color="dark"] {
+    --#{$prefix}menu-bg:                               #17263a;
+    --#{$prefix}menu-item-color:                       #9097a7;
+    --#{$prefix}menu-item-hover-color:                 #c8cddc;
+    --#{$prefix}menu-item-active-color:                #{$white};
+}
+
+// Dark Menu (Dark Mod)
+[data-menu-color="dark"][data-bs-theme="dark"],
+[data-bs-theme="dark"][data-menu-color="light"] {
+    --#{$prefix}menu-bg:                               #22262b;
+    --#{$prefix}menu-item-color:                       #9097a7;
+    --#{$prefix}menu-item-hover-color:                 #c8cddc;
+    --#{$prefix}menu-item-active-color:                #{$white};
+}
+
+// Brand Menu
+[data-menu-color="brand"] {
+    --#{$prefix}menu-bg:                             #{$primary};
+    --#{$prefix}menu-item-color:                     #cedce4;
+    --#{$prefix}menu-item-hover-color:               #ffffff;
+    --#{$prefix}menu-item-active-color:              #ffffff;
+}
+
+
+// Light Topbar
+[data-topbar-color="light"] {
+    --#{$prefix}topbar-bg:                         #ffffff;
+    --#{$prefix}topbar-item-color:                 #{$gray-700};
+    --#{$prefix}topbar-item-hover-color:           #{$primary};
+}
+
+// Dark Topbar
+[data-topbar-color="dark"],
+[data-bs-theme="dark"][data-topbar-color="light"] {
+    --#{$prefix}topbar-bg:                  #22262b;
+    --#{$prefix}topbar-item-color:          #a4b0be;
+    --#{$prefix}topbar-item-hover-color:    #bccee4;
+}
+
+// Brand Topbar
+[data-topbar-color="brand"] {
+    --#{$prefix}topbar-bg:                         #{$primary};
+    --#{$prefix}topbar-item-color:                 rgba(255, 255, 255, 0.7);
+    --#{$prefix}topbar-item-hover-color:           #ffffff;
+}

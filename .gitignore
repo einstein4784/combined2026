@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+Admin/node_modules/
+server/node_modules/
+
+# Build outputs
+Admin/dist/
+
+# Database
+server/database.sqlite
+server/database.sqlite-journal
+*.sqlite
+*.sqlite-journal
+
+# MongoDB
+*.db
+*.lock
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+

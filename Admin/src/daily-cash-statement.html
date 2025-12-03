@@ -1,0 +1,74 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Daily Cash Statement"})
+
+    @@include('partials/head-css.html')
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout-wrapper">
+        @@include('partials/menu.html')
+
+        <div class="page-content">
+            @@include('partials/topbar.html')
+
+            <div class="px-3">
+                <div class="container-fluid">
+                    @@include("./partials/page-title.html", {"subtitle":"I&C Insurance","title":"Daily Cash Statement"})
+
+                    <div class="row no-print">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Select Date</label>
+                                            <input type="date" class="form-control" id="statementDate" value="">
+                                        </div>
+                                        <div class="col-md-4 d-flex align-items-end">
+                                            <button type="button" class="btn btn-primary me-2" onclick="loadStatement()">
+                                                <i data-lucide="search" class="icon-sm me-1"></i> Load Statement
+                                            </button>
+                                            <button type="button" class="btn btn-success" onclick="window.print()">
+                                                <i data-lucide="printer" class="icon-sm me-1"></i> Print
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="statementContent">
+                                        <div class="text-center">
+                                            <p class="text-muted">Select a date and click "Load Statement" to view the daily cash statement.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @@include('partials/footer.html')
+        </div>
+    </div>
+
+    @@include('partials/footer-scripts.html')
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/pages/daily-cash-statement.js"></script>
+</body>
+</html>
+
+

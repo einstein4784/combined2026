@@ -1,0 +1,48 @@
+//
+// forms.scss
+//
+
+// Form-control light
+
+// Form elements (Color and Range)
+input.form-control[type="color"],
+input.form-control[type="range"] {
+    min-height: 39px;
+}
+
+select.form-control {
+    &:not([size]):not([multiple]) {
+        height: $input-height;
+    }
+}
+
+select.form-control-sm {
+    &:not([size]):not([multiple]) {
+        height: $input-height-sm;
+    }
+}
+
+// Form-control light
+.form-control-light {
+    background-color: var(--#{$prefix}light)  !important;
+    border-color: var(--#{$prefix}light)  !important;
+}
+
+// Search box
+.search-bar {
+    .form-control {
+        padding-left: 40px;
+        padding-right: 20px;
+        border-radius: 30px;
+    }
+
+    span {
+        position: absolute;
+        z-index: 10;
+        font-size: 16px;
+        line-height: $input-height;
+        left: 13px;
+        top: -2px;
+        color: $text-muted;
+    }
+}

@@ -1,0 +1,57 @@
+// 
+// components-demo.scss
+//
+
+// Demo Only
+.button-list {
+    margin-left: -8px;
+    margin-bottom: -12px;
+
+    .btn {
+        margin-bottom: 12px;
+        margin-left: 8px;
+    }
+}
+
+// Grid
+.grid-structure {
+    .grid-container {
+        background-color: var(--#{$prefix}secondary-bg-subtle);
+        margin-bottom: 10px;
+        font-size: 0.8rem;
+        font-weight: $font-weight-medium;
+        padding: 10px 20px;
+    }
+}
+
+// Icon demo ( Demo only )
+.icons-list {
+    div {
+        cursor: pointer;
+        line-height: 45px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: block;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    i,
+    svg {
+        font-size: 22px;
+        line-height: 30px;
+        display: block;
+        text-align: center;
+        margin: 0 auto;
+    }
+}
+
+
+// Scrollspy
+
+.scrollspy-example {
+    position: relative;
+    height: 200px;
+    margin-top: .5rem;
+    overflow: auto;
+}

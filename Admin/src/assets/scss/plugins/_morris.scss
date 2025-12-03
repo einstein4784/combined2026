@@ -1,0 +1,38 @@
+//
+// morris.scss
+//
+
+.morris-chart {
+    text {
+        font-family: $font-family-primary !important;
+        fill: var(--#{$prefix}body-color);
+    }
+}
+
+.morris-hover {
+    position: absolute;
+    z-index: 10;
+
+    &.morris-default-style {
+        font-size: 12px;
+        text-align: center;
+        border-radius: 5px;
+        padding: 10px 12px;
+        background: $dark;
+        border: 1px solid var(--#{$prefix}light);
+        color: $white;
+        font-family: $font-family-primary !important;
+
+        .morris-hover-row-label {
+            font-weight: bold;
+            margin: 0.25em 0;
+            font-family: $font-family-primary !important;
+        }
+
+        .morris-hover-point {
+            white-space: nowrap;
+            margin: 0.1em 0;
+            color: $white;
+        }
+    }
+}

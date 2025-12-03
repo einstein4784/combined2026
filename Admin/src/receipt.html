@@ -1,0 +1,75 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Receipt"})
+
+    @@include('partials/head-css.html')
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-area { margin: 0; padding: 20px; }
+        }
+        .receipt-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout-wrapper">
+        @@include('partials/menu.html')
+
+        <div class="page-content">
+            @@include('partials/topbar.html')
+
+            <div class="px-3">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card no-print">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h4 class="header-title">Receipt</h4>
+                                        <button type="button" class="btn btn-primary" onclick="window.print()">
+                                            <i data-lucide="printer" class="icon-sm me-1"></i> Print Receipt
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="receipt-container print-area" id="receiptContent">
+                                <div class="text-center mb-4">
+                                    <h2>I&C Insurance Brokers</h2>
+                                    <p class="text-muted">Payment Receipt</p>
+                                </div>
+                                
+                                <div id="receiptDetails">
+                                    <div class="text-center">
+                                        <p>Loading receipt...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @@include('partials/footer.html')
+        </div>
+    </div>
+
+    @@include('partials/footer-scripts.html')
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/pages/receipt.js"></script>
+</body>
+</html>
+
+

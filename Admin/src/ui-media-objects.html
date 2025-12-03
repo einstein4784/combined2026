@@ -1,0 +1,271 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Media Object"})
+
+    @@include('partials/head-css.html')
+</head>
+
+<body>
+
+    <!-- Begin page -->
+    <div class="layout-wrapper">
+
+        @@include('partials/menu.html')
+
+        <!-- ============================================================== -->
+        <!-- Start Page Content here -->
+        <!-- ============================================================== -->
+
+        <div class="page-content">
+
+            @@include('partials/topbar.html')
+
+            <div class="px-3">
+
+                <div class="container-fluid">
+
+                    @@include("./partials/page-title.html", {"subtitle":"Base UI","title":"Media Object"})
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <h4 class="card-title">Default Media Object</h4>
+                                    <p class="card-subtitle mb-4">The default media displays a media object (images,
+                                        video, audio) to the left or right of a content block.</p>
+
+                                    <div class="media mb-3">
+                                        <img class="d-flex me-3 rounded-circle" src="assets/images/users/avatar-8.jpg"
+                                            alt="Generic placeholder image" height="48">
+                                        <div class="media-body">
+                                            <h6 class="mt-0">Media heading</h6>
+                                            Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque
+                                            ante sollicitudin. Cras purus odio, vestibulum in vulputate at, tempus
+                                            viverra turpis. Fusce condimentum nunc ac nisi vulputate fringilla. Donec
+                                            lacinia congue felis in faucibus.
+                                        </div>
+                                    </div>
+
+                                    <div class="media mb-3">
+                                        <img class="d-flex me-3 rounded-circle" src="assets/images/users/avatar-7.jpg"
+                                            alt="Generic placeholder image" height="48">
+                                        <div class="media-body">
+                                            <h6 class="mt-0">Media heading</h6>
+                                            Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque
+                                            ante sollicitudin. Cras purus odio, vestibulum in vulputate at, tempus
+                                            viverra turpis. Fusce condimentum nunc ac nisi vulputate fringilla. Donec
+                                            lacinia congue felis in faucibus.
+
+                                            <div class="media mt-3">
+                                                <a class="d-flex ps-3" href="#">
+                                                    <img src="assets/images/users/avatar-3.jpg"
+                                                        alt="Generic placeholder image" height="48"
+                                                        class="rounded-circle">
+                                                </a>
+                                                <div class="media-body">
+                                                    <h6 class="mt-0">Media heading</h6>
+                                                    Cras sit amet nibh libero, in gravida nulla. Nulla vel metus
+                                                    scelerisque ante sollicitudin. Cras purus odio, vestibulum in
+                                                    vulputate at, tempus viverra turpis. Fusce condimentum nunc ac nisi
+                                                    vulputate fringilla. Donec lacinia congue felis in faucibus.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="media">
+                                        <div class="media-body">
+                                            <h6 class="mt-0 mb-1">Media object</h6>
+                                            Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque
+                                            ante sollicitudin. Cras purus odio, vestibulum in vulputate at, tempus
+                                            viverra turpis. Fusce condimentum nunc ac nisi vulputate fringilla. Donec
+                                            lacinia congue felis in faucibus.
+                                        </div>
+                                        <img class="d-flex ms-3 rounded-circle" src="assets/images/users/avatar-4.jpg"
+                                            alt="Generic placeholder image" height="48">
+                                    </div>
+                                </div> <!-- end card-body-->
+                            </div> <!-- end card-->
+                        </div> <!-- end col -->
+                    </div>
+                    <!-- end row-->
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <h4 class="card-title">Media Alignment</h4>
+                                    <p class="card-subtitle mb-4">Media in a media object can be aligned with flexbox
+                                        utilities to the top (default), middle, or end of your <code>.media-body</code>
+                                        content.</p>
+
+                                    <div class="media mb-3">
+                                        <img class="d-flex align-self-start rounded me-3"
+                                            src="assets/images/users/avatar-5.jpg" alt="Generic placeholder image"
+                                            height="48">
+                                        <div class="media-body">
+                                            <h6 class="mt-0">Top-aligned media</h6>
+                                            <p class="mb-1">Cras sit amet nibh libero, in gravida nulla. Nulla vel metus
+                                                scelerisque ante sollicitudin. Cras purus odio, vestibulum in vulputate
+                                                at, tempus viverra turpis. Fusce condimentum nunc ac nisi vulputate
+                                                fringilla. Donec lacinia congue felis in faucibus.</p>
+                                            <p class="mb-0">Donec sed odio dui. Nullam quis risus eget urna mollis
+                                                ornare vel eu leo. Cum sociis natoque penatibus et magnis dis parturient
+                                                montes, nascetur ridiculus mus.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="media mb-3">
+                                        <img class="d-flex align-self-center rounded me-3"
+                                            src="assets/images/users/avatar-3.jpg" alt="Generic placeholder image"
+                                            height="48">
+                                        <div class="media-body">
+                                            <h6 class="mt-0">Center-aligned media</h6>
+                                            <p class="mb-1">Cras sit amet nibh libero, in gravida nulla. Nulla vel metus
+                                                scelerisque ante sollicitudin. Cras purus odio, vestibulum in vulputate
+                                                at, tempus viverra turpis. Fusce condimentum nunc ac nisi vulputate
+                                                fringilla. Donec lacinia congue felis in faucibus.</p>
+                                            <p class="mb-0">Donec sed odio dui. Nullam quis risus eget urna mollis
+                                                ornare vel eu leo. Cum sociis natoque penatibus et magnis dis parturient
+                                                montes, nascetur ridiculus mus.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="media">
+                                        <img class="d-flex align-self-end rounded me-3"
+                                            src="assets/images/users/avatar-7.jpg" alt="Generic placeholder image"
+                                            height="48">
+                                        <div class="media-body">
+                                            <h6 class="mt-0">Bottom-aligned media</h6>
+                                            <p class="mb-1">Cras sit amet nibh libero, in gravida nulla. Nulla vel metus
+                                                scelerisque ante sollicitudin. Cras purus odio, vestibulum in vulputate
+                                                at, tempus viverra turpis. Fusce condimentum nunc ac nisi vulputate
+                                                fringilla. Donec lacinia congue felis in faucibus.</p>
+                                            <p class="mb-0">Donec sed odio dui. Nullam quis risus eget urna mollis
+                                                ornare vel eu leo. Cum sociis natoque penatibus et magnis dis parturient
+                                                montes, nascetur ridiculus mus.</p>
+                                        </div>
+                                    </div>
+
+                                </div> <!-- end card-body-->
+                            </div> <!-- end card-->
+                        </div> <!-- end col -->
+                    </div>
+                    <!-- end row-->
+
+                    <div class="row">
+                        <div class="col-xl-6">
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <h4 class="card-title">Images Shapes</h4>
+                                    <p class="card-subtitle mb-4">Add classes to an <code>&lt;img&gt;</code> element to
+                                        easily style
+                                        images in any project.</p>
+
+                                    <div class="row">
+                                        <div class="col-sm-4">
+                                            <img src="assets/images/media/img-1.jpg" alt="image"
+                                                class="img-fluid rounded" width="200" />
+                                            <p class="mb-0">
+                                                <code>.rounded</code>
+                                            </p>
+                                        </div>
+
+                                        <div class="col-sm-4 text-center">
+                                            <img src="assets/images/users/avatar-6.jpg" alt="image"
+                                                class="img-fluid rounded-circle" width="120" />
+                                            <p class="mb-0">
+                                                <code>.rounded-circle</code>
+                                            </p>
+                                        </div>
+
+                                        <div class="col-sm-4">
+                                            <img src="assets/images/media/img-3.jpg" alt="image"
+                                                class="img-fluid img-thumbnail" width="200" />
+                                            <p class="mb-0">
+                                                <code>.img-thumbnail</code>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                </div> <!-- end card-body-->
+                            </div> <!-- end card-->
+                        </div> <!-- end col -->
+
+                        <div class="col-xl-6">
+                            <div class="card">
+                                <div class="card-body">
+
+                                    <h4 class="card-title">Avatar Sizes</h4>
+                                    <p class="card-subtitle mb-4">Available avatar sizes.</p>
+
+                                    <div class="row">
+                                        <div class="col-sm-3">
+                                            <img src="assets/images/users/avatar-1.jpg" alt="image"
+                                                class="img-fluid avatar-xs rounded" />
+                                            <p class="mb-0">
+                                                <code>.avatar-xs</code>
+                                            </p>
+                                            <img src="assets/images/users/avatar-1.jpg" alt="image"
+                                                class="img-fluid avatar-sm rounded mt-2" />
+                                            <p class="mb-0">
+                                                <code>.avatar-sm</code>
+                                            </p>
+                                        </div>
+
+                                        <div class="col-sm-3">
+                                            <img src="assets/images/users/avatar-1.jpg" alt="image"
+                                                class="img-fluid avatar-md rounded" />
+                                            <p class="mb-0">
+                                                <code>.avatar-md</code>
+                                            </p>
+                                        </div>
+
+                                        <div class="col-sm-3">
+                                            <img src="assets/images/users/avatar-1.jpg" alt="image"
+                                                class="img-fluid avatar-lg rounded" />
+                                            <p class="mb-0">
+                                                <code>.avatar-lg</code>
+                                            </p>
+                                        </div>
+
+                                        <div class="col-sm-3">
+                                            <img src="assets/images/users/avatar-1.jpg" alt="image"
+                                                class="img-fluid avatar-xl rounded" />
+                                            <p class="mb-0">
+                                                <code>.avatar-xl</code>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                </div> <!-- end card-body-->
+                            </div> <!-- end card-->
+                        </div> <!-- end col -->
+                    </div>
+                    <!-- end row-->
+
+                </div> <!-- container-fluid -->
+
+            </div> <!-- content -->
+
+            @@include('partials/footer.html')
+
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- End Page content -->
+        <!-- ============================================================== -->
+
+
+    </div>
+    <!-- END wrapper -->
+
+    @@include('partials/footer-scripts.html')
+
+</body>
+
+</html>

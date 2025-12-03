@@ -1,0 +1,183 @@
+@@include('partials/main.html')
+
+    <head>
+        @@include("partials/title-meta.html", {"title": "Sweet Alerts"})
+
+		@@include('partials/head-css.html')
+    </head>
+
+    <body>
+
+        <!-- Begin page -->
+        <div class="layout-wrapper">
+
+            @@include('partials/menu.html')
+
+            <!-- Start Page Content here -->
+            <div class="page-content">
+
+                @@include('partials/topbar.html')
+
+                <div class="px-3">
+
+                    <div class="container-fluid">
+
+                        @@include("./partials/page-title.html", {"subtitle":"Base UI","title":"Sweet Alerts"})
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="card-title">Examples</h4>
+    
+                                        <p class="card-subtitle mb-4">
+                                            A beautiful, responsive, customizable, accessible (WAI-ARIA) replacement for JavaScript's popup boxes
+                                        </p>
+    
+                                        <div class="row">
+                                            <div class="col-xl-6">
+                                                <table class="table table-borderless table-centered mb-0">
+                                                    <thead class="thead-light">
+                                                        <tr>
+                                                            <th>Alert Type</th>
+                                                            <th>Example</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>A basic message</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-basic">Click me</button>
+                                                            </td>
+                                                        </tr>
+                        
+                                                        <tr>
+                                                            <td>A title with a text under</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-title">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>A success message!</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-success">Click me</button>
+                                                            </td>
+                                                        </tr>
+                
+                                                        <tr>
+                                                            <td>A modal window with a long content inside:</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-long-content">Click me</button>
+                                                            </td>
+                                                        </tr>
+                
+                                                        <tr>
+                                                            <td>A custom positioned dialog</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-custom-position">Click me</button>
+                                                            </td>
+                                                        </tr>
+                
+                                                        <tr>
+                                                            <td>A modal with a title, an error icon, a text, and a footer</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-error">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>A confirm dialog, with a function attached to the "Confirm"-button...</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-warning">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>By passing a parameter, you can execute something else for "Cancel".</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-params">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                    
+                                                    </tbody>
+                                                </table>
+                                            </div> <!-- end col -->
+                                            <div class="col-xl-6">
+                                                <table class="table table-borderless table-centered mb-0">
+                                                    <thead class="thead-light">
+                                                        <tr>
+                                                            <th>Alert Type</th>
+                                                            <th>Example</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>A message with custom Image Header</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-image">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>A message with auto close timer</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="sa-close">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Custom HTML description and buttons</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="custom-html-alert">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>A message with custom width, padding and background</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="custom-padding-width-alert">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Ajax request example</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="ajax-alert">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Chaining modals (queue) example</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="chaining-alert">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Dynamic queue example</td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-info btn-sm waves-effect waves-light" id="dynamic-alert">Click me</button>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <!-- end row -->
+                                    </div> <!-- end card-body -->
+                                </div> <!-- end card-->
+                            </div>
+                            <!-- end col -->
+    
+                        </div>
+                        <!-- end row -->
+    
+                    </div> <!-- container-fluid -->
+
+                </div> <!-- content -->
+
+                @@include('partials/footer.html')
+
+            </div>
+            <!-- End Page content -->
+
+
+        </div>
+        <!-- END wrapper -->
+        
+        @@include('partials/footer-scripts.html')
+
+    </body>
+</html>

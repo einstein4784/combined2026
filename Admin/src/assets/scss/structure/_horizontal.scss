@@ -1,0 +1,174 @@
+//
+// _horizontal.scss
+//
+
+@include media-breakpoint-up(xl) {
+    html[data-layout="horizontal"] {
+
+        .layout-wrapper {
+            flex-direction: column;
+        }
+
+        .container-fluid,
+        .topbar,
+        .app-menu {
+            width: 85%;
+            min-width: 85%;
+            max-width: 85%;
+            margin: 0 auto;
+            padding: 0 calc($spacer * 0.75);
+        }
+
+        .navbar-custom {
+            margin-top: calc($topbar-height * -1);
+            margin-bottom: $topbar-height;
+            box-shadow: none;
+            border-bottom: 1px solid rgba(131, 131, 131, 0.1);
+
+            .topbar {
+
+                .logo-box {
+                    display: flex;
+                    background: transparent;
+                }
+
+                .button-toggle-menu {
+                    display: none;
+                }
+            }
+        }
+
+        .main-menu {
+            display: block;
+            height: $horizontal-menu-height;
+            min-height: $horizontal-menu-height;
+            max-height: $horizontal-menu-height;
+            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+            z-index: 999;
+            top: $topbar-height;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: var(--#{$prefix}box-shadow-sm);
+
+            .logo-box {
+                display: none;
+            }
+
+            .app-menu {
+                flex-direction: row;
+
+                >.menu-item {
+                    >.menu-link {
+                        height: $horizontal-menu-height;
+                    }
+
+                    &:first-of-type {
+                        >.menu-link {
+                            padding-left: 0;
+                        }
+                    }
+                }
+
+                .menu-item {
+                    position: relative;
+                    padding: 0 $menu-item-gap;
+
+                    .menu-link {
+                        border-radius: 4px;
+
+                        >.menu-text {
+                            padding-left: 0;
+                        }
+
+                        .menu-arrow {
+                            transform: rotate(0deg);
+                        }
+                    }
+
+                    &:hover {
+
+                        >.collapse,
+                        >.collapsing {
+                            display: block !important;
+                            position: absolute;
+                            height: inherit !important;
+                            transition: none !important;
+                        }
+                    }
+
+                    // Mutli Level Menu
+                    .sub-menu {
+                        padding: $menu-item-gap 0;
+                        gap: $menu-item-gap;
+
+
+                        .menu-arrow {
+                            transform: rotate(270deg);
+                        }
+                    }
+
+                }
+            }
+
+            .collapse,
+            .collapsing {
+                width: 200px;
+                display: none;
+                animation-duration: 0.3s;
+                animation-fill-mode: both;
+                background-clip: padding-box;
+                background: $dropdown-bg;
+                animation-name: DropDownSlide;
+                z-index: $zindex-dropdown;
+                box-shadow: var(--#{$prefix}box-shadow-lg);
+                border-radius: $dropdown-border-radius;
+                border: $dropdown-border-width solid $dropdown-border-color;
+
+                .menu-item {
+                    .menu-link {
+                        color: $dropdown-color;
+
+                        &[aria-expanded="true"],
+                        &.show,
+                        &:focus,
+                        &:hover {
+                            color: $dropdown-link-hover-color;
+                            background-color: $dropdown-link-hover-bg;
+                        }
+                    }
+
+                    &.active {
+
+                        >.menu-link {
+                            color: $dropdown-link-active-color;
+                            background-color: $dropdown-link-active-bg;
+                        }
+                    }
+
+                    .collapse,
+                    .collapsing {
+                        top: 0;
+                        left: 100%;
+                        right: auto;
+                    }
+                }
+            }
+        }
+
+        .menu-title {
+            display: none;
+        }
+    }
+}
+
+html[data-layout="horizontal"][data-sidebar-size="full"] {
+    .main-menu {
+        overflow-y: auto;
+
+        .logo-box {
+            background-color: $menu-bg;
+        }
+    }
+}
