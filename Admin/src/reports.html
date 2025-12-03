@@ -1,0 +1,353 @@
+@@include('partials/main.html')
+
+<head>
+    @@include("partials/title-meta.html", {"title": "Reports"})
+
+    @@include('partials/head-css.html')
+    <link href="assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
+    
+    <style>
+        .report-card {
+            border: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(26, 54, 93, 0.15);
+        }
+        
+        .report-card .card-header {
+            padding: 20px;
+            border: none;
+        }
+        
+        .report-card .card-body {
+            padding: 20px;
+        }
+        
+        .report-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .quick-btn-group .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 8px 16px;
+        }
+        
+        .date-range-group {
+            background: rgba(0,0,0,0.02);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+        
+        .page-header h2 {
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        .page-header p {
+            margin: 10px 0 0;
+            opacity: 0.8;
+        }
+        
+        .access-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+
+        @@include('partials/sidenav.html')
+
+        <div class="content-page">
+
+            @@include('partials/topbar.html')
+
+            <div class="content">
+                <!-- Start Content-->
+                <div class="container-fluid">
+                    
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <h2><i data-lucide="file-bar-chart" class="me-2" style="width:32px;height:32px;"></i> Reports Center</h2>
+                                <p class="mb-0">Generate and view all system reports</p>
+                            </div>
+                            <div class="access-badge">
+                                <i data-lucide="shield-check" class="me-1" style="width:14px;height:14px;"></i>
+                                Admin & Supervisor Access Only
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cash Statement Report -->
+                    <div class="card report-card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon bg-white bg-opacity-20 me-3">
+                                    <i data-lucide="dollar-sign" style="width:24px;height:24px;"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 text-white">Cash Statement</h5>
+                                    <small class="opacity-75">Daily collections and payment records</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-end">
+                                <div class="col-lg-5 mb-3 mb-lg-0">
+                                    <label class="form-label fw-semibold text-muted small">QUICK GENERATE</label>
+                                    <div class="quick-btn-group d-flex gap-2">
+                                        <button class="btn btn-outline-success flex-fill" onclick="generateCashStatement('today')">
+                                            <i data-lucide="calendar" class="me-1" style="width:16px;height:16px;"></i> Today
+                                        </button>
+                                        <button class="btn btn-outline-success flex-fill" onclick="generateCashStatement('week')">
+                                            <i data-lucide="calendar-days" class="me-1" style="width:16px;height:16px;"></i> This Week
+                                        </button>
+                                        <button class="btn btn-outline-success flex-fill" onclick="generateCashStatement('month')">
+                                            <i data-lucide="calendar-range" class="me-1" style="width:16px;height:16px;"></i> This Month
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-lg-7">
+                                    <label class="form-label fw-semibold text-muted small">CUSTOM DATE RANGE</label>
+                                    <div class="date-range-group">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">From</span>
+                                            <input type="date" class="form-control" id="cashStartDate">
+                                            <span class="input-group-text bg-white">To</span>
+                                            <input type="date" class="form-control" id="cashEndDate">
+                                            <button class="btn btn-success px-4" onclick="generateCashStatement('custom')">
+                                                <i data-lucide="eye" class="me-1" style="width:16px;height:16px;"></i> Generate
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Activity Report -->
+                    <div class="card report-card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon bg-white bg-opacity-20 me-3">
+                                    <i data-lucide="users" style="width:24px;height:24px;"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 text-white">User Activity Report</h5>
+                                    <small class="opacity-75">User actions, logins, and system activity</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-end">
+                                <div class="col-lg-5 mb-3 mb-lg-0">
+                                    <label class="form-label fw-semibold text-muted small">QUICK GENERATE</label>
+                                    <div class="quick-btn-group d-flex gap-2">
+                                        <button class="btn btn-outline-primary flex-fill" onclick="generateUserReport('today')">
+                                            <i data-lucide="calendar" class="me-1" style="width:16px;height:16px;"></i> Today
+                                        </button>
+                                        <button class="btn btn-outline-primary flex-fill" onclick="generateUserReport('week')">
+                                            <i data-lucide="calendar-days" class="me-1" style="width:16px;height:16px;"></i> This Week
+                                        </button>
+                                        <button class="btn btn-outline-primary flex-fill" onclick="generateUserReport('all')">
+                                            <i data-lucide="infinity" class="me-1" style="width:16px;height:16px;"></i> All Time
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-lg-7">
+                                    <label class="form-label fw-semibold text-muted small">CUSTOM DATE RANGE</label>
+                                    <div class="date-range-group">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">From</span>
+                                            <input type="date" class="form-control" id="userStartDate">
+                                            <span class="input-group-text bg-white">To</span>
+                                            <input type="date" class="form-control" id="userEndDate">
+                                            <button class="btn btn-primary px-4" onclick="generateUserReport('custom')">
+                                                <i data-lucide="eye" class="me-1" style="width:16px;height:16px;"></i> Generate
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Policy Report -->
+                    <div class="card report-card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon bg-white bg-opacity-20 me-3">
+                                    <i data-lucide="file-text" style="width:24px;height:24px;"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 text-white">Policy Report</h5>
+                                    <small class="opacity-75">Policy status, premiums, and balances</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-end">
+                                <div class="col-lg-5 mb-3 mb-lg-0">
+                                    <label class="form-label fw-semibold text-muted small">QUICK GENERATE</label>
+                                    <div class="quick-btn-group d-flex gap-2">
+                                        <button class="btn btn-outline-info flex-fill" onclick="generatePolicyReport('today')">
+                                            <i data-lucide="calendar" class="me-1" style="width:16px;height:16px;"></i> Today
+                                        </button>
+                                        <button class="btn btn-outline-info flex-fill" onclick="generatePolicyReport('month')">
+                                            <i data-lucide="calendar-range" class="me-1" style="width:16px;height:16px;"></i> This Month
+                                        </button>
+                                        <button class="btn btn-outline-info flex-fill" onclick="generatePolicyReport('all')">
+                                            <i data-lucide="infinity" class="me-1" style="width:16px;height:16px;"></i> All Policies
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-lg-7">
+                                    <label class="form-label fw-semibold text-muted small">CUSTOM DATE RANGE</label>
+                                    <div class="date-range-group">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">From</span>
+                                            <input type="date" class="form-control" id="policyStartDate">
+                                            <span class="input-group-text bg-white">To</span>
+                                            <input type="date" class="form-control" id="policyEndDate">
+                                            <button class="btn btn-info px-4" onclick="generatePolicyReport('custom')">
+                                                <i data-lucide="eye" class="me-1" style="width:16px;height:16px;"></i> Generate
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Report -->
+                    <div class="card report-card mb-4">
+                        <div class="card-header text-white" style="background: linear-gradient(135deg, #c9a962 0%, #b89952 100%);">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon bg-white bg-opacity-20 me-3">
+                                    <i data-lucide="credit-card" style="width:24px;height:24px;"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 text-white">Payment Report</h5>
+                                    <small class="opacity-75">All payments by method and status</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-end">
+                                <div class="col-lg-5 mb-3 mb-lg-0">
+                                    <label class="form-label fw-semibold text-muted small">QUICK GENERATE</label>
+                                    <div class="quick-btn-group d-flex gap-2">
+                                        <button class="btn btn-outline-warning flex-fill" onclick="generatePaymentReport('today')">
+                                            <i data-lucide="calendar" class="me-1" style="width:16px;height:16px;"></i> Today
+                                        </button>
+                                        <button class="btn btn-outline-warning flex-fill" onclick="generatePaymentReport('week')">
+                                            <i data-lucide="calendar-days" class="me-1" style="width:16px;height:16px;"></i> This Week
+                                        </button>
+                                        <button class="btn btn-outline-warning flex-fill" onclick="generatePaymentReport('month')">
+                                            <i data-lucide="calendar-range" class="me-1" style="width:16px;height:16px;"></i> This Month
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-lg-7">
+                                    <label class="form-label fw-semibold text-muted small">CUSTOM DATE RANGE</label>
+                                    <div class="date-range-group">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">From</span>
+                                            <input type="date" class="form-control" id="paymentStartDate">
+                                            <span class="input-group-text bg-white">To</span>
+                                            <input type="date" class="form-control" id="paymentEndDate">
+                                            <button class="btn btn-warning px-4" onclick="generatePaymentReport('custom')">
+                                                <i data-lucide="eye" class="me-1" style="width:16px;height:16px;"></i> Generate
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Report -->
+                    <div class="card report-card mb-4">
+                        <div class="card-header text-white" style="background: linear-gradient(135deg, #4fa896 0%, #3d8a7a 100%);">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon bg-white bg-opacity-20 me-3">
+                                    <i data-lucide="user-check" style="width:24px;height:24px;"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 text-white">Customer Report</h5>
+                                    <small class="opacity-75">Customer list with policies and balances</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-end">
+                                <div class="col-lg-5 mb-3 mb-lg-0">
+                                    <label class="form-label fw-semibold text-muted small">QUICK GENERATE</label>
+                                    <div class="quick-btn-group d-flex gap-2">
+                                        <button class="btn btn-outline-success flex-fill" onclick="generateCustomerReport('all')">
+                                            <i data-lucide="users" class="me-1" style="width:16px;height:16px;"></i> All Customers
+                                        </button>
+                                        <button class="btn btn-outline-success flex-fill" onclick="generateCustomerReport('arrears')">
+                                            <i data-lucide="alert-circle" class="me-1" style="width:16px;height:16px;"></i> With Arrears
+                                        </button>
+                                        <button class="btn btn-outline-success flex-fill" onclick="generateCustomerReport('new')">
+                                            <i data-lucide="user-plus" class="me-1" style="width:16px;height:16px;"></i> New This Month
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-lg-7">
+                                    <label class="form-label fw-semibold text-muted small">CUSTOMERS ADDED IN DATE RANGE</label>
+                                    <div class="date-range-group">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">From</span>
+                                            <input type="date" class="form-control" id="customerStartDate">
+                                            <span class="input-group-text bg-white">To</span>
+                                            <input type="date" class="form-control" id="customerEndDate">
+                                            <button class="btn btn-success px-4" onclick="generateCustomerReport('custom')">
+                                                <i data-lucide="eye" class="me-1" style="width:16px;height:16px;"></i> Generate
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            @@include('partials/footer.html')
+        </div>
+    </div>
+
+    @@include('partials/footer-scripts.html')
+    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
+    <script src="assets/js/pages/reports.js"></script>
+</body>
+</html>
+

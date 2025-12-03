@@ -957,14 +957,19 @@ app.get('/api/admin/reports/users', requireAuth, async (req, res) => {
             });
         });
     } else {
-        // Get all users with activity counts
+        // Get all users with activity counts (with optional date filtering)
+        let dateFilter = '';
+        if (startDate && endDate) {
+            dateFilter = `AND DATE(created_at) BETWEEN '${startDate}' AND '${endDate}'`;
+        }
+        
         const query = `
             SELECT u.id, u.username, u.full_name, u.email, u.role, u.created_at,
-                   (SELECT COUNT(*) FROM audit_log WHERE user_id = u.id) as total_actions,
-                   (SELECT COUNT(*) FROM audit_log WHERE user_id = u.id AND action = 'CREATE_CUSTOMER') as customers_created,
-                   (SELECT COUNT(*) FROM audit_log WHERE user_id = u.id AND action = 'CREATE_POLICY') as policies_created,
-                   (SELECT COUNT(*) FROM audit_log WHERE user_id = u.id AND action = 'RECEIVE_PAYMENT') as payments_received,
-                   (SELECT MAX(created_at) FROM audit_log WHERE user_id = u.id) as last_activity
+                   (SELECT COUNT(*) FROM audit_log WHERE user_id = u.id ${dateFilter}) as total_actions,
+                   (SELECT COUNT(*) FROM audit_log WHERE user_id = u.id AND action = 'CREATE_CUSTOMER' ${dateFilter}) as customers_created,
+                   (SELECT COUNT(*) FROM audit_log WHERE user_id = u.id AND action = 'CREATE_POLICY' ${dateFilter}) as policies_created,
+                   (SELECT COUNT(*) FROM audit_log WHERE user_id = u.id AND action = 'RECEIVE_PAYMENT' ${dateFilter}) as payments_received,
+                   (SELECT MAX(created_at) FROM audit_log WHERE user_id = u.id ${dateFilter}) as last_activity
             FROM users u
             ORDER BY u.created_at DESC
         `;
@@ -1016,23 +1021,116 @@ app.get('/api/admin/reports/cash-statement', requireAuth, async (req, res) => {
     });
 });
 
-// Generate policy report
+// Generate policy report with date filtering
 app.get('/api/admin/reports/policies', requireAuth, (req, res) => {
-    const query = `
+    const { startDate, endDate } = req.query;
+    
+    let query = `
         SELECT p.policy_number, 
                c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
                c.id_number as customer_id_number,
                p.total_premium_due, p.amount_paid, p.outstanding_balance, p.status, p.created_at
         FROM policies p
         JOIN customers c ON p.customer_id = c.id
-        ORDER BY p.created_at DESC
     `;
     
-    db.all(query, (err, policies) => {
+    const params = [];
+    if (startDate && endDate) {
+        query += ' WHERE DATE(p.created_at) BETWEEN ? AND ?';
+        params.push(startDate, endDate);
+    }
+    
+    query += ' ORDER BY p.created_at DESC';
+    
+    db.all(query, params, (err, policies) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
         res.json(policies);
+    });
+});
+
+// Generate payment report with date filtering
+app.get('/api/admin/reports/payments', requireAuth, async (req, res) => {
+    const allowed = await hasPermissionAsync(req.session.userId, 'generate_cash_statements');
+    if (!allowed) {
+        return res.status(403).json({ error: 'Permission denied' });
+    }
+    
+    const { startDate, endDate } = req.query;
+    
+    let query = `
+        SELECT py.payment_date as date, py.receipt_number, p.policy_number,
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               py.amount, py.payment_method, u.full_name as received_by
+        FROM payments py
+        JOIN policies p ON py.policy_id = p.id
+        JOIN customers c ON p.customer_id = c.id
+        LEFT JOIN users u ON py.received_by = u.id
+    `;
+    
+    const params = [];
+    if (startDate && endDate) {
+        query += ' WHERE DATE(py.payment_date) BETWEEN ? AND ?';
+        params.push(startDate, endDate);
+    }
+    
+    query += ' ORDER BY py.payment_date DESC';
+    
+    db.all(query, params, (err, payments) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        
+        const total = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+        
+        res.json({
+            startDate,
+            endDate,
+            total,
+            payments
+        });
+    });
+});
+
+// Generate customer report with filters
+app.get('/api/admin/reports/customers', requireAuth, (req, res) => {
+    const { startDate, endDate, filter } = req.query;
+    
+    let query = `
+        SELECT c.id, c.first_name, c.last_name, c.middle_name, c.id_number,
+               c.contact_number, c.email, c.address, c.created_at,
+               COUNT(DISTINCT p.id) as policy_count,
+               COALESCE(SUM(p.outstanding_balance), 0) as total_outstanding
+        FROM customers c
+        LEFT JOIN policies p ON c.id = p.customer_id
+    `;
+    
+    const params = [];
+    const conditions = [];
+    
+    if (startDate && endDate) {
+        conditions.push('DATE(c.created_at) BETWEEN ? AND ?');
+        params.push(startDate, endDate);
+    }
+    
+    if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    query += ' GROUP BY c.id';
+    
+    if (filter === 'arrears') {
+        query += ' HAVING total_outstanding > 0';
+    }
+    
+    query += ' ORDER BY c.last_name, c.first_name';
+    
+    db.all(query, params, (err, customers) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(customers);
     });
 });
 
