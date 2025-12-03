@@ -38,6 +38,8 @@
                                             <tr>
                                                 <th>Policy Number</th>
                                                 <th>Customer</th>
+                                                <th>Coverage Type</th>
+                                                <th>Coverage Period</th>
                                                 <th>Total Premium</th>
                                                 <th>Amount Paid</th>
                                                 <th>Outstanding</th>
@@ -83,6 +85,32 @@
                                     <input type="text" class="form-control" id="policyNumber" placeholder="Auto-generated if left empty">
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Coverage Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="coverageType" required>
+                                        <option value="">Select coverage type...</option>
+                                        <option value="Third Party">Third Party</option>
+                                        <option value="Fully Comprehensive">Fully Comprehensive</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Coverage Start Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="coverageStartDate" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Coverage End Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="coverageEndDate" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Total Premium Due <span class="text-danger">*</span></label>

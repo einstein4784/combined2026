@@ -379,18 +379,22 @@ app.get('/api/policies/:id', requireAuth, (req, res) => {
 });
 
 app.post('/api/policies', requireAuth, requireRole('Admin', 'Underwriter', 'Supervisor'), (req, res) => {
-    const { customerId, totalPremiumDue, policyNumber } = req.body;
+    const { customerId, totalPremiumDue, policyNumber, coverageType, coverageStartDate, coverageEndDate } = req.body;
     
     if (!customerId || !totalPremiumDue) {
         return res.status(400).json({ error: 'Customer ID and total premium are required' });
     }
     
+    if (!coverageType || !coverageStartDate || !coverageEndDate) {
+        return res.status(400).json({ error: 'Coverage type and dates are required' });
+    }
+    
     const polNumber = policyNumber || generatePolicyNumber();
     const outstandingBalance = totalPremiumDue;
     
-    db.run(`INSERT INTO policies (policy_number, customer_id, total_premium_due, outstanding_balance, created_by) 
-            VALUES (?, ?, ?, ?, ?)`,
-        [polNumber, customerId, totalPremiumDue, outstandingBalance, req.session.userId],
+    db.run(`INSERT INTO policies (policy_number, customer_id, coverage_type, coverage_start_date, coverage_end_date, total_premium_due, outstanding_balance, created_by) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [polNumber, customerId, coverageType, coverageStartDate, coverageEndDate, totalPremiumDue, outstandingBalance, req.session.userId],
         function(err) {
             if (err) {
                 if (err.message.includes('UNIQUE')) {
@@ -407,6 +411,9 @@ app.post('/api/policies', requireAuth, requireRole('Admin', 'Underwriter', 'Supe
                     policyNumber: polNumber, 
                     customerId, 
                     customerName,
+                    coverageType,
+                    coverageStartDate,
+                    coverageEndDate,
                     totalPremiumDue 
                 }, req.ip);
             });
@@ -567,13 +574,18 @@ app.post('/api/payments', requireAuth, requireRole('Admin', 'Cashier', 'Supervis
 app.get('/api/receipts/:receiptNumber', requireAuth, (req, res) => {
     const query = `
         SELECT r.*,
-               p.policy_number,
-               c.first_name, c.middle_name, c.last_name, c.address, c.email, c.contact_number, c.id_number,
-               u.full_name as generated_by_name
+               p.policy_number, p.coverage_type, p.coverage_start_date, p.coverage_end_date,
+               p.total_premium_due, p.amount_paid as amount_paid_before, p.outstanding_balance, p.status as policy_status,
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               c.address as customer_address, c.email as customer_email, 
+               c.contact_number as customer_contact, c.id_number as customer_id_number,
+               u.full_name as generated_by_name,
+               pay.payment_method
         FROM receipts r
         JOIN policies p ON r.policy_id = p.id
         JOIN customers c ON r.customer_id = c.id
         LEFT JOIN users u ON r.generated_by = u.id
+        LEFT JOIN payments pay ON r.payment_id = pay.id
         WHERE r.receipt_number = ?
     `;
     
@@ -1029,6 +1041,7 @@ app.get('/api/admin/reports/policies', requireAuth, (req, res) => {
         SELECT p.policy_number, 
                c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
                c.id_number as customer_id_number,
+               p.coverage_type, p.coverage_start_date, p.coverage_end_date,
                p.total_premium_due, p.amount_paid, p.outstanding_balance, p.status, p.created_at
         FROM policies p
         JOIN customers c ON p.customer_id = c.id

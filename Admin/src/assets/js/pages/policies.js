@@ -42,6 +42,9 @@ window.resetPolicyForm = function() {
     $('#policyForm')[0].reset();
     $('#policyId').val('');
     $('#policyNumber').val('');
+    $('#coverageType').val('');
+    $('#coverageStartDate').val('');
+    $('#coverageEndDate').val('');
     $('#policyModalTitle').text('Create Policy');
     editingPolicyId = null;
     
@@ -61,6 +64,9 @@ window.editPolicy = async function(id) {
         
         $('#policyId').val(policy.id);
         $('#policyNumber').val(policy.policy_number);
+        $('#coverageType').val(policy.coverage_type || 'Third Party');
+        $('#coverageStartDate').val(policy.coverage_start_date || '');
+        $('#coverageEndDate').val(policy.coverage_end_date || '');
         $('#totalPremiumDue').val(policy.total_premium_due);
         
         $('#policyModalTitle').text('Edit Policy');
@@ -208,16 +214,32 @@ window.savePolicy = async function() {
 
     const customerId = $('#customerId').val();
     const totalPremiumDue = parseFloat($('#totalPremiumDue').val());
+    const coverageType = $('#coverageType').val();
+    const coverageStartDate = $('#coverageStartDate').val();
+    const coverageEndDate = $('#coverageEndDate').val();
 
     if (!customerId || !totalPremiumDue || totalPremiumDue <= 0) {
         Swal.fire('Error', 'Please select a customer and enter a valid premium amount', 'error');
         return;
     }
 
+    if (!coverageType || !coverageStartDate || !coverageEndDate) {
+        Swal.fire('Error', 'Please select coverage type and enter coverage dates', 'error');
+        return;
+    }
+
+    if (new Date(coverageEndDate) <= new Date(coverageStartDate)) {
+        Swal.fire('Error', 'Coverage end date must be after start date', 'error');
+        return;
+    }
+
     const policyData = {
         customerId: customerId,
         totalPremiumDue: totalPremiumDue,
-        policyNumber: $('#policyNumber').val().trim() || null
+        policyNumber: $('#policyNumber').val().trim() || null,
+        coverageType: coverageType,
+        coverageStartDate: coverageStartDate,
+        coverageEndDate: coverageEndDate
     };
 
     // Show loading
@@ -289,6 +311,21 @@ function initPoliciesTable() {
             { data: 'policy_number' },
             { data: 'customer_name' },
             { 
+                data: 'coverage_type',
+                render: function(data) {
+                    const badgeClass = data === 'Fully Comprehensive' ? 'bg-primary' : 'bg-warning text-dark';
+                    return `<span class="badge ${badgeClass}">${data || 'Third Party'}</span>`;
+                }
+            },
+            { 
+                data: null,
+                render: function(data) {
+                    const start = data.coverage_start_date ? formatDate(data.coverage_start_date) : '-';
+                    const end = data.coverage_end_date ? formatDate(data.coverage_end_date) : '-';
+                    return `<small>${start}<br>to ${end}</small>`;
+                }
+            },
+            { 
                 data: 'total_premium_due',
                 render: function(data) {
                     return formatCurrency(data);
@@ -332,6 +369,12 @@ function initPoliciesTable() {
             }
         ]
     });
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function formatCurrency(amount) {
