@@ -540,7 +540,7 @@ app.post('/api/payments', requireAuth, requireRole('Admin', 'Cashier', 'Supervis
                         }
                         
                         db.run(`INSERT INTO receipts (receipt_number, payment_id, policy_id, customer_id, amount, payment_date, generated_by) 
-                                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
+                                VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`,
                             [receiptNumber, paymentId, policyId, policy.customer_id, amount, req.session.userId],
                             (err) => {
                                 if (err) {
@@ -580,7 +580,7 @@ app.get('/api/receipts/:receiptNumber', requireAuth, (req, res) => {
                c.address as customer_address, c.email as customer_email, 
                c.contact_number as customer_contact, c.id_number as customer_id_number,
                u.full_name as generated_by_name,
-               pay.payment_method
+               pay.payment_method, pay.payment_date
         FROM receipts r
         JOIN policies p ON r.policy_id = p.id
         JOIN customers c ON r.customer_id = c.id

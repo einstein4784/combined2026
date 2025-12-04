@@ -247,6 +247,9 @@
                                             <button type="button" class="btn btn-outline-secondary me-2" onclick="window.history.back()">
                                                 <i data-lucide="arrow-left" class="icon-sm me-1"></i> Back
                                             </button>
+                                            <button type="button" class="btn btn-success me-2" onclick="exportToPDF()">
+                                                <i data-lucide="download" class="icon-sm me-1"></i> Export PDF
+                                            </button>
                                             <button type="button" class="btn btn-primary" onclick="window.print()">
                                                 <i data-lucide="printer" class="icon-sm me-1"></i> Print Receipt
                                             </button>
@@ -506,7 +509,9 @@
                 
                 // Receipt info
                 if ($('#receiptNumber').length) $('#receiptNumber').text(data.receipt_number || '---');
-                if ($('#paymentDate').length) $('#paymentDate').text(formatDate(data.payment_date || data.payment_date));
+                // Use payment_date from payment table (from JOIN), fallback to receipt generated_at
+                const paymentDate = data.payment_date || data.generated_at;
+                if ($('#paymentDate').length) $('#paymentDate').text(formatDate(paymentDate));
                 
                 // Customer info
                 if ($('#customerName').length) $('#customerName').text(data.customer_name || '---');
@@ -542,9 +547,10 @@
                 if ($('#amountPaid').length) $('#amountPaid').text(formatCurrency(data.amount || 0));
                 if ($('#outstandingBalance').length) $('#outstandingBalance').text(formatCurrency(data.outstanding_balance || 0));
                 
-                // Timestamps
+                // Timestamps - use payment_date from payment if available, otherwise use receipt generated_at
                 if ($('#generatedTimestamp').length) {
-                    $('#generatedTimestamp').text(formatDateTime(data.generated_at || data.payment_date || new Date()));
+                    const timestamp = data.payment_date || data.generated_at || new Date();
+                    $('#generatedTimestamp').text(formatDateTime(timestamp));
                 }
                 if ($('#generatedBy').length) {
                     $('#generatedBy').text(data.generated_by_name || 'System');
@@ -599,6 +605,55 @@
                 currency: 'USD'
             }).format(amount || 0);
         }
+
+        // PDF Export function using html2pdf or browser print to PDF
+        async function exportToPDF() {
+            try {
+                // Check if html2pdf library is available
+                if (typeof html2pdf !== 'undefined') {
+                    const element = document.getElementById('receiptContent');
+                    const opt = {
+                        margin: 0.5,
+                        filename: `Receipt_${$('#receiptNumber').text() || 'receipt'}.pdf`,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2 },
+                        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                    };
+                    await html2pdf().set(opt).from(element).save();
+                } else {
+                    // Fallback: Use browser's print to PDF
+                    Swal.fire({
+                        title: 'Export to PDF',
+                        text: 'Please use the Print button and select "Save as PDF" as the destination.',
+                        icon: 'info',
+                        confirmButtonText: 'Print',
+                        showCancelButton: true,
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.print();
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('PDF export error:', error);
+                // Fallback to print
+                Swal.fire({
+                    title: 'Export to PDF',
+                    text: 'Please use the Print button and select "Save as PDF" as the destination.',
+                    icon: 'info',
+                    confirmButtonText: 'Print',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.print();
+                    }
+                });
+            }
+        }
     </script>
+    <!-- html2pdf library for PDF export (optional) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd41JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVidA0Phf/KEi6P0iINg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </body>
 </html>

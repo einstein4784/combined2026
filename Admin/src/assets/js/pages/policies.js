@@ -303,10 +303,100 @@ window.makePayment = function(id) {
     window.location.href = `payments.html?policyId=${id}`;
 };
 
+window.viewPaymentHistory = async function(policyId) {
+    try {
+        // Show modal
+        const modalElement = document.getElementById('paymentHistoryModal');
+        if (modalElement && typeof bootstrap !== 'undefined') {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        } else {
+            $('#paymentHistoryModal').modal('show');
+        }
+
+        // Reset content
+        $('#customerDetails p').text('-');
+        $('#policyDetails p').text('-');
+        $('#paymentHistoryBody').html('<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading...</td></tr>');
+        $('#noPaymentsMessage').addClass('d-none');
+        $('#totalPaymentsAmount').text('$0.00');
+
+        // Load policy data (includes customer info)
+        const policy = await api.getPolicy(policyId);
+        
+        // Display customer information
+        const customerName = `${policy.first_name} ${policy.middle_name || ''} ${policy.last_name}`.trim();
+        $('#customerName').text(customerName);
+        $('#customerIdNumber').text(policy.id_number || '-');
+        $('#customerEmail').text(policy.email || '-');
+        $('#customerContact').text(policy.contact_number || '-');
+        $('#customerSex').text(policy.sex || '-');
+        $('#customerAddress').text(policy.address || '-');
+
+        // Display policy information
+        $('#policyNumber').text(policy.policy_number || '-');
+        const coverageBadge = policy.coverage_type === 'Fully Comprehensive' 
+            ? '<span class="badge bg-primary">Fully Comprehensive</span>' 
+            : '<span class="badge bg-warning text-dark">Third Party</span>';
+        $('#policyCoverageType').html(coverageBadge);
+        
+        const startDate = policy.coverage_start_date ? formatDate(policy.coverage_start_date) : '-';
+        const endDate = policy.coverage_end_date ? formatDate(policy.coverage_end_date) : '-';
+        $('#policyCoveragePeriod').text(`${startDate} to ${endDate}`);
+        $('#policyTotalPremium').text(formatCurrency(policy.total_premium_due));
+        $('#policyAmountPaid').text(formatCurrency(policy.amount_paid));
+        $('#policyOutstanding').text(formatCurrency(policy.outstanding_balance));
+
+        // Load payment history
+        const payments = await api.getPaymentsByPolicy(policyId);
+        
+        if (payments && payments.length > 0) {
+            let totalAmount = 0;
+            let paymentRows = '';
+            
+            payments.forEach(payment => {
+                totalAmount += parseFloat(payment.amount || 0);
+                const paymentDate = payment.payment_date ? formatDate(payment.payment_date) : '-';
+                const receiptLink = `<a href="receipt.html?receipt=${payment.receipt_number}" class="text-primary">${payment.receipt_number}</a>`;
+                
+                paymentRows += `
+                    <tr>
+                        <td>${paymentDate}</td>
+                        <td>${receiptLink}</td>
+                        <td class="text-success fw-bold">${formatCurrency(payment.amount)}</td>
+                        <td><span class="badge bg-info">${payment.payment_method || 'Cash'}</span></td>
+                        <td>${payment.received_by_name || '-'}</td>
+                        <td>${payment.notes || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            $('#paymentHistoryBody').html(paymentRows);
+            $('#totalPaymentsAmount').text(formatCurrency(totalAmount));
+            $('#noPaymentsMessage').addClass('d-none');
+        } else {
+            $('#paymentHistoryBody').html('');
+            $('#noPaymentsMessage').removeClass('d-none');
+        }
+
+        // Refresh icons
+        setTimeout(() => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }, 100);
+
+    } catch (error) {
+        console.error('Error loading payment history:', error);
+        Swal.fire('Error', error.message || 'Failed to load payment history', 'error');
+    }
+};
+
 function initPoliciesTable() {
     policiesTable = $('#policies-table').DataTable({
         responsive: true,
         order: [[0, 'desc']],
+        orderMulti: false,
         columns: [
             { data: 'policy_number' },
             { data: 'customer_name' },
@@ -361,8 +451,11 @@ function initPoliciesTable() {
                         <button class="btn btn-sm btn-primary me-1" onclick="window.editPolicy('${data.id}')" title="Edit">
                             <i data-lucide="edit" class="icon-sm"></i>
                         </button>
-                        <button class="btn btn-sm btn-success" onclick="window.makePayment('${data.id}')" title="Make Payment">
+                        <button class="btn btn-sm btn-success me-1" onclick="window.makePayment('${data.id}')" title="Make Payment">
                             <i data-lucide="dollar-sign" class="icon-sm"></i>
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="window.viewPaymentHistory('${data.id}')" title="Payment History">
+                            <i data-lucide="history" class="icon-sm"></i>
                         </button>
                     `;
                 }

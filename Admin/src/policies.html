@@ -60,6 +60,133 @@
         </div>
     </div>
 
+    <!-- Payment History Modal -->
+    <div class="modal fade" id="paymentHistoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentHistoryModalTitle">Payment History & Customer Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Customer Details Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i data-lucide="user" class="icon-sm me-2"></i>Customer Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="customerDetails">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Full Name</label>
+                                    <p class="mb-0" id="customerName">-</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">ID Number</label>
+                                    <p class="mb-0" id="customerIdNumber">-</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Email</label>
+                                    <p class="mb-0" id="customerEmail">-</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Contact Number</label>
+                                    <p class="mb-0" id="customerContact">-</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Gender</label>
+                                    <p class="mb-0" id="customerSex">-</p>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-semibold">Address</label>
+                                    <p class="mb-0" id="customerAddress">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Policy Information Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i data-lucide="file-text" class="icon-sm me-2"></i>Policy Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="policyDetails">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Policy Number</label>
+                                    <p class="mb-0" id="policyNumber">-</p>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Coverage Type</label>
+                                    <p class="mb-0" id="policyCoverageType">-</p>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Coverage Period</label>
+                                    <p class="mb-0" id="policyCoveragePeriod">-</p>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Total Premium</label>
+                                    <p class="mb-0 fw-bold" id="policyTotalPremium">-</p>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Amount Paid</label>
+                                    <p class="mb-0 text-success fw-bold" id="policyAmountPaid">-</p>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Outstanding Balance</label>
+                                    <p class="mb-0 text-danger fw-bold" id="policyOutstanding">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment History Section -->
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i data-lucide="history" class="icon-sm me-2"></i>Payment History</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="paymentHistoryTable" class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Receipt Number</th>
+                                            <th>Amount</th>
+                                            <th>Payment Method</th>
+                                            <th>Received By</th>
+                                            <th>Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="paymentHistoryBody">
+                                        <tr>
+                                            <td colspan="6" class="text-center">
+                                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                                Loading payment history...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-info">
+                                            <th colspan="2" class="text-end">Total Payments:</th>
+                                            <th id="totalPaymentsAmount" class="text-success">$0.00</th>
+                                            <th colspan="3"></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div id="noPaymentsMessage" class="alert alert-info d-none">
+                                <i data-lucide="info" class="icon-sm me-2"></i>No payments have been made for this policy yet.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Policy Modal -->
     <div class="modal fade" id="policyModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">

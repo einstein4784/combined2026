@@ -18,10 +18,16 @@ $(document).ready(function() {
     }
 });
 
-// Load policies data once
+// Load policies data once - already sorted by most recent from API
 async function loadPoliciesData() {
     try {
         policiesData = await api.getPolicies();
+        // Policies are already sorted by created_at DESC from API, but ensure they're sorted
+        policiesData.sort((a, b) => {
+            const dateA = new Date(a.created_at || 0);
+            const dateB = new Date(b.created_at || 0);
+            return dateB - dateA; // Most recent first
+        });
     } catch (error) {
         console.error('Error loading policies:', error);
         policiesData = [];
@@ -32,6 +38,10 @@ function initPaymentsTable() {
     paymentsTable = $('#payments-table').DataTable({
         responsive: true,
         order: [[5, 'desc']],
+        orderMulti: false,
+        columnDefs: [
+            { targets: [5], type: 'date' }
+        ],
         columns: [
             { data: 'receipt_number' },
             { data: 'policy_number' },
@@ -45,8 +55,16 @@ function initPaymentsTable() {
             { data: 'payment_method' },
             { 
                 data: 'payment_date',
+                type: 'date',
                 render: function(data) {
-                    return new Date(data).toLocaleString();
+                    if (!data) return '-';
+                    return new Date(data).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                 }
             },
             { data: 'received_by_name' },
@@ -311,5 +329,5 @@ window.savePayment = async function() {
 };
 
 window.viewReceipt = function(receiptNumber) {
-    window.open(`receipt.html?receipt=${receiptNumber}`, '_blank');
+    window.location.href = `receipt.html?receipt=${receiptNumber}`;
 };
