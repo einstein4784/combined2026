@@ -161,8 +161,8 @@ window.loadStatementRange = async function() {
         const statementHTML = `
             <div id="printableStatement" style="border: 2px solid #000; padding: 20px; margin: 0 auto; max-width: 100%;">
                 <div class="text-center mb-4">
-                    <img src="assets/images/IC-LOGO-NEW.png" alt="Combined Insurance Services Ltd" style="height: 60px;" class="mb-2" onerror="this.style.display='none'">
-                    <h3 class="mb-1" style="color: #1a365d;">Combined Insurance Services Ltd</h3>
+                    <img src="assets/images/IC-LOGO-NEW.png" alt="Combined Insurance Services (St.Lucia) Ltd." style="height: 60px;" class="mb-2" onerror="this.style.display='none'">
+                    <h3 class="mb-1" style="color: #1a365d;">Combined Insurance Services (St.Lucia) Ltd.</h3>
                     <h4 class="text-muted">${reportTitle}</h4>
                     <p class="mb-0"><strong>Period:</strong> ${dateDisplay}</p>
                     <p class="text-muted small">Generated: ${formatDateTime(new Date().toISOString())} by ${generatedBy}</p>
@@ -213,8 +213,8 @@ window.loadStatementRange = async function() {
                 </div>
                 
                 <div class="text-center mt-4 text-muted small">
-                    <p class="mb-0">Combined Insurance Services Ltd - Castries St. Lucia</p>
-                    <p class="mb-0">Tel: 17584560700 / 175871695</p>
+                    <p class="mb-0">Combined Insurance Services (St.Lucia) Ltd. - P.O. GM 636, Gablewoods Mall, Castries, St.Lucia</p>
+                    <p class="mb-0">Tel: 758 456-0700 | Email: info@combinedinsuranceslu.com | www.combinedinsuranceslu.com</p>
                     <p class="mb-0">Designed by Solace-Systems</p>
                 </div>
             </div>

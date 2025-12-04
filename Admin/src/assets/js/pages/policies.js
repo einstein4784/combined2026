@@ -395,7 +395,7 @@ window.viewPaymentHistory = async function(policyId) {
 function initPoliciesTable() {
     policiesTable = $('#policies-table').DataTable({
         responsive: true,
-        order: [[0, 'desc']],
+        order: [[9, 'desc']], // Sort by created_at (hidden column) descending - newest first
         orderMulti: false,
         columns: [
             { data: 'policy_number' },
@@ -459,6 +459,11 @@ function initPoliciesTable() {
                         </button>
                     `;
                 }
+            },
+            {
+                data: 'created_at',
+                visible: false,
+                type: 'date'
             }
         ]
     });

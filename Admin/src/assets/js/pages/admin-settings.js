@@ -632,7 +632,7 @@ window.exportAllData = async function() {
         // Create combined CSV backup
         let csv = '';
         csv += '================================================================================\n';
-        csv += '                    COMBINED INSURANCE SERVICES LTD\n';
+        csv += '                    COMBINED INSURANCE SERVICES (ST.LUCIA) LTD.\n';
         csv += '                         DATABASE BACKUP EXPORT\n';
         csv += '================================================================================\n\n';
         csv += `Export Date: ${now.toLocaleString()}\n`;

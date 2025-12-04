@@ -1,30 +1,45 @@
-// I&C Insurance Brokers Custom Theme
-// Color palette extracted from logo
+// Combined Insurance Services (St.Lucia) Ltd. - Modern Minimal Theme
+// Color palette extracted from logo - Clean & Professional Design
 
-// Primary Colors
+// Primary Colors (Navy Blue)
 $ic-navy: #1a365d;
 $ic-navy-light: #2c4a7c;
 $ic-navy-dark: #0f2340;
+$ic-navy-subtle: rgba(26, 54, 93, 0.05);
 
-// Accent Colors  
+// Accent Colors (Teal/Mint)
 $ic-teal: #4fa896;
 $ic-teal-light: #7bc4b6;
 $ic-teal-dark: #3d8a7a;
+$ic-teal-subtle: rgba(79, 168, 150, 0.08);
 $ic-mint: #9dd5c4;
 $ic-mint-light: #c5e8dd;
+$ic-mint-subtle: rgba(157, 213, 196, 0.1);
 
 // Gold/Sand Accents
 $ic-gold: #c9a962;
 $ic-gold-light: #dcc68a;
+$ic-gold-subtle: rgba(201, 169, 98, 0.1);
 $ic-sand: #e8dcc4;
 
-// Gradient definitions
-$ic-gradient-primary: linear-gradient(135deg, $ic-navy 0%, $ic-navy-light 100%);
-$ic-gradient-accent: linear-gradient(135deg, $ic-teal 0%, $ic-mint 100%);
-$ic-gradient-gold: linear-gradient(135deg, $ic-gold 0%, $ic-gold-light 100%);
-$ic-gradient-wave: linear-gradient(180deg, $ic-mint-light 0%, $ic-teal-light 50%, $ic-gold-light 100%);
+// Neutral Colors for Minimal Design
+$ic-white: #ffffff;
+$ic-gray-50: #fafbfc;
+$ic-gray-100: #f5f7fa;
+$ic-gray-200: #e8ecf1;
+$ic-gray-300: #d1d8e0;
+$ic-gray-400: #a0a8b3;
+$ic-gray-500: #6b7280;
+$ic-gray-600: #4b5563;
+$ic-gray-700: #374151;
+$ic-gray-800: #1f2937;
+$ic-gray-900: #111827;
 
-// Override Bootstrap primary colors
+// Subtle gradients (minimal use)
+$ic-gradient-primary: linear-gradient(135deg, $ic-navy 0%, $ic-navy-light 100%);
+$ic-gradient-subtle: linear-gradient(180deg, rgba($ic-navy, 0.02) 0%, rgba($ic-teal, 0.02) 100%);
+
+// Override Bootstrap primary colors - Minimal & Clean
 :root {
     --bs-primary: #{$ic-navy};
     --bs-primary-rgb: 26, 54, 93;
@@ -33,24 +48,62 @@ $ic-gradient-wave: linear-gradient(180deg, $ic-mint-light 0%, $ic-teal-light 50%
     --bs-info: #{$ic-mint};
     --bs-warning: #{$ic-gold};
     
-    // Custom CSS variables for I&C theme
+    // Custom CSS variables for Combined Insurance theme
     --ic-navy: #{$ic-navy};
     --ic-navy-light: #{$ic-navy-light};
+    --ic-navy-dark: #{$ic-navy-dark};
+    --ic-navy-subtle: #{$ic-navy-subtle};
     --ic-teal: #{$ic-teal};
     --ic-teal-light: #{$ic-teal-light};
+    --ic-teal-dark: #{$ic-teal-dark};
+    --ic-teal-subtle: #{$ic-teal-subtle};
     --ic-mint: #{$ic-mint};
+    --ic-mint-light: #{$ic-mint-light};
+    --ic-mint-subtle: #{$ic-mint-subtle};
     --ic-gold: #{$ic-gold};
+    --ic-gold-light: #{$ic-gold-light};
+    --ic-gold-subtle: #{$ic-gold-subtle};
     --ic-sand: #{$ic-sand};
+    
+    // Minimal design tokens
+    --ic-border-radius: 8px;
+    --ic-border-radius-lg: 12px;
+    --ic-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --ic-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --ic-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --ic-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --ic-spacing-unit: 8px;
 }
 
-// Sidebar styling
+// Global body styling for minimal look
+body {
+    background: $ic-gray-50;
+    color: $ic-gray-800;
+    font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+// Sidebar styling - Clean & Minimal
 .sidenav-menu {
-    background: $ic-gradient-primary !important;
+    background: $ic-navy !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
     
     .nav-link {
-        color: rgba(255, 255, 255, 0.8) !important;
+        color: rgba(255, 255, 255, 0.85) !important;
+        padding: 12px 20px !important;
+        margin: 2px 12px;
+        border-radius: var(--ic-border-radius);
+        transition: all 0.2s ease;
+        font-weight: 500;
         
-        &:hover, &.active {
+        &:hover {
+            color: #fff !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-left: none;
+        }
+        
+        &.active {
             color: #fff !important;
             background: rgba($ic-teal, 0.2) !important;
             border-left: 3px solid $ic-teal;
@@ -61,97 +114,180 @@ $ic-gradient-wave: linear-gradient(180deg, $ic-mint-light 0%, $ic-teal-light 50%
         color: $ic-gold !important;
         text-transform: uppercase;
         font-size: 11px;
-        letter-spacing: 1px;
+        letter-spacing: 1.2px;
+        font-weight: 600;
+        padding: 16px 20px 8px;
+        margin: 0 12px;
+    }
+    
+    .logo-box {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 8px;
     }
 }
 
-// Topbar styling
+// Topbar styling - Minimal & Clean
 .navbar-custom {
     background: #fff !important;
-    border-bottom: 2px solid $ic-mint-light;
-    box-shadow: 0 2px 10px rgba($ic-navy, 0.08);
+    border-bottom: 1px solid $ic-gray-200;
+    box-shadow: var(--ic-shadow-sm);
+    padding: 12px 24px;
+    height: 64px;
 }
 
-// Card styling
+// Card styling - Minimal & Clean
 .card {
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba($ic-navy, 0.08);
-    transition: all 0.3s ease;
+    border: 1px solid $ic-gray-200;
+    border-radius: var(--ic-border-radius-lg);
+    box-shadow: var(--ic-shadow);
+    background: $ic-white;
+    transition: all 0.2s ease;
+    overflow: hidden;
     
     &:hover {
-        box-shadow: 0 4px 20px rgba($ic-navy, 0.12);
+        box-shadow: var(--ic-shadow-md);
+        border-color: $ic-gray-300;
     }
     
     .card-header {
-        background: linear-gradient(135deg, rgba($ic-navy, 0.02) 0%, rgba($ic-teal, 0.02) 100%);
-        border-bottom: 1px solid rgba($ic-teal, 0.1);
+        background: $ic-gray-50;
+        border-bottom: 1px solid $ic-gray-200;
+        padding: 16px 20px;
+        font-weight: 600;
+        color: $ic-navy;
+    }
+    
+    .card-body {
+        padding: 20px;
     }
 }
 
-// Button styling
+// Button styling - Clean & Modern
+.btn {
+    border-radius: var(--ic-border-radius);
+    font-weight: 500;
+    padding: 10px 20px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
 .btn-primary {
-    background: $ic-gradient-primary !important;
-    border: none !important;
+    background: $ic-navy !important;
+    border-color: $ic-navy !important;
+    color: #fff !important;
     
     &:hover {
         background: $ic-navy-dark !important;
+        border-color: $ic-navy-dark !important;
+        box-shadow: var(--ic-shadow-md);
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba($ic-navy, 0.3);
+    }
+    
+    &:active {
+        transform: translateY(0);
     }
 }
 
 .btn-success {
-    background: $ic-gradient-accent !important;
-    border: none !important;
+    background: $ic-teal !important;
+    border-color: $ic-teal !important;
+    color: #fff !important;
     
     &:hover {
         background: $ic-teal-dark !important;
+        border-color: $ic-teal-dark !important;
+        box-shadow: var(--ic-shadow-md);
     }
 }
 
 .btn-warning {
-    background: $ic-gradient-gold !important;
-    border: none !important;
+    background: $ic-gold !important;
+    border-color: $ic-gold !important;
     color: $ic-navy !important;
+    
+    &:hover {
+        background: $ic-gold-light !important;
+        border-color: $ic-gold-light !important;
+    }
 }
 
 .btn-outline-primary {
     color: $ic-navy;
     border-color: $ic-navy;
+    background: transparent;
     
     &:hover {
         background: $ic-navy;
         border-color: $ic-navy;
+        color: #fff;
     }
 }
 
-// Table styling
+.btn-outline-success {
+    color: $ic-teal;
+    border-color: $ic-teal;
+    background: transparent;
+    
+    &:hover {
+        background: $ic-teal;
+        border-color: $ic-teal;
+        color: #fff;
+    }
+}
+
+// Table styling - Clean & Minimal
 .table {
+    border-collapse: separate;
+    border-spacing: 0;
+    
     thead th {
-        background: linear-gradient(135deg, $ic-navy 0%, $ic-navy-light 100%);
+        background: $ic-navy;
         color: #fff;
         font-weight: 600;
         text-transform: uppercase;
-        font-size: 12px;
+        font-size: 11px;
         letter-spacing: 0.5px;
         border: none;
+        padding: 12px 16px;
+        white-space: nowrap;
     }
     
-    tbody tr {
-        transition: all 0.2s ease;
+    tbody {
+        tr {
+            transition: background 0.15s ease;
+            border-bottom: 1px solid $ic-gray-200;
+            
+            &:hover {
+                background: $ic-gray-50;
+            }
+            
+            td {
+                padding: 14px 16px;
+                color: $ic-gray-700;
+                vertical-align: middle;
+            }
+        }
+    }
+    
+    tfoot {
+        background: $ic-gray-50;
+        font-weight: 600;
         
-        &:hover {
-            background: rgba($ic-teal, 0.05);
+        td {
+            padding: 12px 16px;
+            color: $ic-navy;
         }
     }
 }
 
-// Badge styling
+// Badge styling - Clean & Minimal
 .badge {
     font-weight: 500;
-    padding: 6px 12px;
-    border-radius: 20px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    letter-spacing: 0.3px;
 }
 
 .bg-primary {
@@ -167,62 +303,127 @@ $ic-gradient-wave: linear-gradient(180deg, $ic-mint-light 0%, $ic-teal-light 50%
     color: $ic-navy !important;
 }
 
-// Tab styling
+.bg-danger {
+    background: #ff6b6b !important;
+    color: #fff !important;
+}
+
+// Tab styling - Clean & Minimal
 .nav-tabs {
-    border-bottom: 2px solid $ic-mint-light;
+    border-bottom: 1px solid $ic-gray-200;
+    margin-bottom: 20px;
     
     .nav-link {
-        color: $ic-navy;
+        color: $ic-gray-600;
         border: none;
         padding: 12px 20px;
         font-weight: 500;
+        border-radius: var(--ic-border-radius) var(--ic-border-radius) 0 0;
+        transition: all 0.2s ease;
         
         &:hover {
-            color: $ic-teal;
-            background: rgba($ic-teal, 0.05);
+            color: $ic-navy;
+            background: $ic-gray-50;
+            border-color: transparent;
         }
         
         &.active {
             color: $ic-navy;
             background: transparent;
-            border-bottom: 3px solid $ic-teal;
+            border-bottom: 2px solid $ic-teal;
+            font-weight: 600;
         }
     }
 }
 
-// Form controls
+// Form controls - Clean & Modern
 .form-control, .form-select {
-    border: 1px solid rgba($ic-navy, 0.15);
-    border-radius: 8px;
+    border: 1px solid $ic-gray-300;
+    border-radius: var(--ic-border-radius);
     padding: 10px 14px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: $ic-white;
     
     &:focus {
         border-color: $ic-teal;
-        box-shadow: 0 0 0 3px rgba($ic-teal, 0.15);
+        box-shadow: 0 0 0 3px $ic-teal-subtle;
+        outline: none;
+    }
+    
+    &:disabled {
+        background: $ic-gray-100;
+        color: $ic-gray-500;
+        cursor: not-allowed;
     }
 }
 
-// Modal styling
+.form-label {
+    font-weight: 500;
+    color: $ic-gray-700;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+// Modal styling - Clean & Professional
+.modal-content {
+    border: none;
+    border-radius: var(--ic-border-radius-lg);
+    box-shadow: var(--ic-shadow-lg);
+}
+
 .modal-header {
-    background: $ic-gradient-primary;
+    background: $ic-navy;
     color: #fff;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--ic-border-radius-lg) var(--ic-border-radius-lg) 0 0;
+    padding: 20px 24px;
+    border-bottom: none;
+    
+    .modal-title {
+        font-weight: 600;
+        font-size: 18px;
+    }
     
     .btn-close {
         filter: brightness(0) invert(1);
+        opacity: 0.8;
+        
+        &:hover {
+            opacity: 1;
+        }
     }
 }
 
-// Page header styling
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid $ic-gray-200;
+    background: $ic-gray-50;
+}
+
+// Page header styling - Minimal
 .page-title-box {
-    background: linear-gradient(135deg, rgba($ic-navy, 0.03) 0%, rgba($ic-teal, 0.03) 100%);
-    border-radius: 12px;
-    padding: 20px;
+    background: $ic-white;
+    border: 1px solid $ic-gray-200;
+    border-radius: var(--ic-border-radius-lg);
+    padding: 20px 24px;
     margin-bottom: 24px;
+    box-shadow: var(--ic-shadow-sm);
     
     h4 {
         color: $ic-navy;
         font-weight: 600;
+        font-size: 20px;
+        margin: 0;
+    }
+    
+    .page-subtitle {
+        color: $ic-gray-600;
+        font-size: 13px;
+        margin-top: 4px;
     }
 }
 
@@ -267,50 +468,54 @@ $ic-gradient-wave: linear-gradient(180deg, $ic-mint-light 0%, $ic-teal-light 50%
     }
 }
 
-// Dashboard stat cards
+// Dashboard stat cards - Clean & Modern
 .stat-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 24px;
+    background: $ic-white;
+    border: 1px solid $ic-gray-200;
+    border-radius: var(--ic-border-radius-lg);
+    padding: 20px;
     position: relative;
-    overflow: hidden;
+    transition: all 0.2s ease;
+    box-shadow: var(--ic-shadow-sm);
     
-    &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 100px;
-        height: 100px;
-        background: $ic-gradient-accent;
-        opacity: 0.1;
-        border-radius: 50%;
-        transform: translate(30%, -30%);
+    &:hover {
+        box-shadow: var(--ic-shadow-md);
+        border-color: $ic-gray-300;
+        transform: translateY(-2px);
+    }
+    
+    &[onclick] {
+        cursor: pointer;
     }
     
     .stat-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
+        width: 48px;
+        height: 48px;
+        border-radius: var(--ic-border-radius);
         display: flex;
         align-items: center;
         justify-content: center;
+        margin-bottom: 12px;
         
-        &.primary { background: rgba($ic-navy, 0.1); color: $ic-navy; }
-        &.success { background: rgba($ic-teal, 0.1); color: $ic-teal; }
-        &.warning { background: rgba($ic-gold, 0.1); color: $ic-gold; }
-        &.info { background: rgba($ic-mint, 0.2); color: $ic-teal-dark; }
+        &.customers { background: $ic-navy-subtle; color: $ic-navy; }
+        &.policies { background: $ic-teal-subtle; color: $ic-teal; }
+        &.outstanding { background: rgba(255, 107, 107, 0.1); color: #ff6b6b; }
+        &.payments { background: $ic-mint-subtle; color: $ic-teal-dark; }
     }
     
-    .stat-value {
-        font-size: 28px;
+    h3 {
+        font-size: 24px;
         font-weight: 700;
         color: $ic-navy;
+        margin: 0;
+        line-height: 1.2;
     }
     
-    .stat-label {
-        color: #6c757d;
-        font-size: 14px;
+    .text-muted {
+        color: $ic-gray-600;
+        font-size: 13px;
+        font-weight: 500;
+        margin-top: 4px;
     }
 }
 
@@ -353,37 +558,43 @@ $ic-gradient-wave: linear-gradient(180deg, $ic-mint-light 0%, $ic-teal-light 50%
     }
     
     .report-meta {
-        background: rgba($ic-mint, 0.1);
-        padding: 15px 30px;
+        background: $ic-gray-50;
+        padding: 16px 32px;
         display: flex;
         justify-content: space-between;
         flex-wrap: wrap;
-        gap: 15px;
+        gap: 20px;
+        border-bottom: 1px solid $ic-gray-200;
         
         .meta-item {
             span {
-                color: #6c757d;
-                font-size: 12px;
+                color: $ic-gray-600;
+                font-size: 11px;
                 text-transform: uppercase;
+                font-weight: 600;
+                letter-spacing: 0.5px;
             }
             strong {
                 display: block;
                 color: $ic-navy;
+                font-size: 14px;
+                margin-top: 4px;
             }
         }
     }
     
     .report-summary {
-        background: linear-gradient(135deg, rgba($ic-teal, 0.05) 0%, rgba($ic-mint, 0.05) 100%);
-        padding: 25px 30px;
-        margin: 20px 30px;
-        border-radius: 12px;
+        background: $ic-teal-subtle;
+        padding: 24px 32px;
+        margin: 24px 32px;
+        border-radius: var(--ic-border-radius);
         border-left: 4px solid $ic-teal;
         
         h5 {
             color: $ic-navy;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
             font-weight: 600;
+            font-size: 16px;
         }
         
         .summary-grid {
@@ -395,50 +606,58 @@ $ic-gradient-wave: linear-gradient(180deg, $ic-mint-light 0%, $ic-teal-light 50%
                 text-align: center;
                 
                 .value {
-                    font-size: 24px;
+                    font-size: 22px;
                     font-weight: 700;
                     color: $ic-teal;
                 }
                 
                 .label {
-                    font-size: 12px;
-                    color: #6c757d;
+                    font-size: 11px;
+                    color: $ic-gray-600;
                     text-transform: uppercase;
+                    font-weight: 500;
+                    margin-top: 4px;
                 }
             }
         }
     }
     
     .report-content {
-        padding: 30px;
+        padding: 32px;
         
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             
             thead th {
                 background: $ic-navy;
                 color: #fff;
-                padding: 12px 15px;
+                padding: 12px 16px;
                 text-align: left;
-                font-size: 12px;
+                font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
+                font-weight: 600;
+                border: none;
             }
             
             tbody td {
-                padding: 12px 15px;
-                border-bottom: 1px solid #eee;
+                padding: 12px 16px;
+                border-bottom: 1px solid $ic-gray-200;
+                color: $ic-gray-700;
             }
             
             tbody tr:hover {
-                background: rgba($ic-teal, 0.03);
+                background: $ic-gray-50;
             }
             
             tfoot td {
-                background: rgba($ic-navy, 0.05);
+                background: $ic-gray-50;
                 font-weight: 600;
-                padding: 12px 15px;
+                padding: 12px 16px;
+                color: $ic-navy;
+                border-top: 2px solid $ic-gray-300;
             }
         }
     }
@@ -502,22 +721,22 @@ $ic-gradient-wave: linear-gradient(180deg, $ic-mint-light 0%, $ic-teal-light 50%
     }
 }
 
-// Scrollbar styling
+// Scrollbar styling - Minimal
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: $ic-gray-100;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: $ic-teal;
-    border-radius: 4px;
+    background: $ic-gray-400;
+    border-radius: 3px;
     
     &:hover {
-        background: $ic-teal-dark;
+        background: $ic-gray-500;
     }
 }
 
