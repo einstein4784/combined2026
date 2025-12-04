@@ -1,8 +1,11 @@
 $(document).ready(function() {
-    // Set today's date as default
+    // Set today's date as default for both fields
     const today = new Date().toISOString().split('T')[0];
-    $('#statementDate').val(today);
-    loadStatement();
+    $('#startDate').val(today);
+    $('#endDate').val(today);
+    
+    // Load today's statement by default
+    loadToday();
 });
 
 function formatCurrency(amount) {
@@ -30,20 +33,107 @@ function formatDate(dateString) {
     });
 }
 
-async function loadStatement() {
-    const date = $('#statementDate').val();
+function getDateRange(period) {
+    const today = new Date();
+    let startDate, endDate;
     
-    if (!date) {
-        Swal.fire('Error', 'Please select a date', 'error');
+    switch(period) {
+        case 'today':
+            startDate = today;
+            endDate = today;
+            break;
+        case 'week':
+            // Start of week (Sunday)
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - today.getDay());
+            endDate = today;
+            break;
+        case 'month':
+            // Start of month
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = today;
+            break;
+        default:
+            startDate = today;
+            endDate = today;
+    }
+    
+    return {
+        start: startDate.toISOString().split('T')[0],
+        end: endDate.toISOString().split('T')[0]
+    };
+}
+
+// Quick access functions
+window.loadToday = function() {
+    const range = getDateRange('today');
+    $('#startDate').val(range.start);
+    $('#endDate').val(range.end);
+    loadStatementRange();
+};
+
+window.loadThisWeek = function() {
+    const range = getDateRange('week');
+    $('#startDate').val(range.start);
+    $('#endDate').val(range.end);
+    loadStatementRange();
+};
+
+window.loadThisMonth = function() {
+    const range = getDateRange('month');
+    $('#startDate').val(range.start);
+    $('#endDate').val(range.end);
+    loadStatementRange();
+};
+
+// Load statement for date range
+window.loadStatementRange = async function() {
+    const startDate = $('#startDate').val();
+    const endDate = $('#endDate').val();
+    
+    if (!startDate || !endDate) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Please select both start and end dates', 'error');
+        } else {
+            alert('Please select both start and end dates');
+        }
         return;
     }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Start date cannot be after end date', 'error');
+        } else {
+            alert('Start date cannot be after end date');
+        }
+        return;
+    }
+    
+    // Show loading
+    $('#statementContent').html(`
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading cash statement...</p>
+        </div>
+    `);
 
     try {
-        const statement = await api.getDailyCashStatement(date);
+        // Use the admin reports endpoint for date range
+        const response = await api.request(`/admin/reports/cash-statement?startDate=${startDate}&endDate=${endDate}`);
+        
+        // Determine the date display
+        const isSingleDay = startDate === endDate;
+        const dateDisplay = isSingleDay 
+            ? formatDate(startDate)
+            : `${formatDate(startDate)} - ${formatDate(endDate)}`;
+        
+        const reportTitle = isSingleDay ? 'Daily Cash Statement' : 'Cash Statement';
         
         let tableRows = '';
-        if (statement.payments && statement.payments.length > 0) {
-            statement.payments.forEach((payment, index) => {
+        if (response.payments && response.payments.length > 0) {
+            response.payments.forEach((payment, index) => {
                 tableRows += `
                     <tr>
                         <td>${index + 1}</td>
@@ -51,58 +141,80 @@ async function loadStatement() {
                         <td>${payment.policy_number}</td>
                         <td>${payment.customer_name}</td>
                         <td class="text-end">${formatCurrency(payment.amount)}</td>
-                        <td>${payment.payment_method}</td>
-                        <td>${formatDateTime(payment.payment_date)}</td>
-                        <td>${payment.received_by_name || 'N/A'}</td>
+                        <td>${payment.payment_method || 'N/A'}</td>
+                        <td>${formatDateTime(payment.date)}</td>
+                        <td>${payment.received_by || 'N/A'}</td>
                     </tr>
                 `;
             });
         } else {
-            tableRows = '<tr><td colspan="8" class="text-center text-muted">No payments recorded for this date</td></tr>';
+            tableRows = '<tr><td colspan="8" class="text-center text-muted py-4">No payments recorded for this period</td></tr>';
         }
         
+        // Get current user for the generated by field
+        let generatedBy = 'System';
+        try {
+            const user = await api.getCurrentUser();
+            generatedBy = user.full_name || user.username;
+        } catch (e) {}
+        
         const statementHTML = `
-            <div class="text-center mb-4">
-                <h3>I&C Insurance Brokers</h3>
-                <h4>Daily Cash Statement</h4>
-                <p class="text-muted">Date: ${formatDate(statement.date)}</p>
-            </div>
-            
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Receipt Number</th>
-                            <th>Policy Number</th>
-                            <th>Customer</th>
-                            <th class="text-end">Amount</th>
-                            <th>Payment Method</th>
-                            <th>Payment Date</th>
-                            <th>Received By</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows}
-                    </tbody>
-                    <tfoot>
-                        <tr class="table-info">
-                            <th colspan="4" class="text-end">Total:</th>
-                            <th class="text-end">${formatCurrency(statement.total)}</th>
-                            <th colspan="3">Total Transactions: ${statement.count}</th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-            
-            <div class="mt-4">
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>Prepared By:</strong> _______________________</p>
+            <div id="printableStatement">
+                <div class="text-center mb-4">
+                    <img src="assets/images/logo.png" alt="I&C Insurance" style="height: 60px;" class="mb-2" onerror="this.style.display='none'">
+                    <h3 class="mb-1" style="color: #1a365d;">I&C Insurance Brokers</h3>
+                    <h4 class="text-muted">${reportTitle}</h4>
+                    <p class="mb-0"><strong>Period:</strong> ${dateDisplay}</p>
+                    <p class="text-muted small">Generated: ${formatDateTime(new Date().toISOString())} by ${generatedBy}</p>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Receipt Number</th>
+                                <th>Policy Number</th>
+                                <th>Customer</th>
+                                <th class="text-end">Amount</th>
+                                <th>Payment Method</th>
+                                <th>Payment Date</th>
+                                <th>Received By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-primary fw-bold">
+                                <th colspan="4" class="text-end">Total:</th>
+                                <th class="text-end">${formatCurrency(response.total)}</th>
+                                <th colspan="3">Total Transactions: ${response.payments ? response.payments.length : 0}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <div class="mt-4 pt-3 border-top">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong>Prepared By:</strong></p>
+                            <p class="border-bottom pb-3">${generatedBy}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong>Verified By:</strong></p>
+                            <p class="border-bottom pb-3">_______________________</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <p class="mb-1"><strong>Date:</strong></p>
+                            <p>${formatDate(new Date().toISOString())}</p>
+                        </div>
                     </div>
-                    <div class="col-md-6 text-end">
-                        <p><strong>Date:</strong> ${formatDate(new Date().toISOString())}</p>
-                    </div>
+                </div>
+                
+                <div class="text-center mt-4 text-muted small">
+                    <p class="mb-0">I&C Insurance Brokers - St. Lucia</p>
+                    <p class="mb-0">Designed by Solace-Systems</p>
                 </div>
             </div>
         `;
@@ -110,15 +222,77 @@ async function loadStatement() {
         $('#statementContent').html(statementHTML);
         lucide.createIcons();
     } catch (error) {
-        Swal.fire('Error', error.message, 'error');
+        console.error('Error loading statement:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', error.message || 'Failed to load statement', 'error');
+        }
         $('#statementContent').html(`
             <div class="alert alert-danger">
-                <h5>Error</h5>
-                <p>${error.message}</p>
+                <h5><i data-lucide="alert-circle" class="icon-sm me-2"></i>Error</h5>
+                <p class="mb-0">${error.message || 'Failed to load cash statement'}</p>
             </div>
         `);
+        lucide.createIcons();
     }
-}
+};
 
+// Legacy function for backward compatibility
+window.loadStatement = function() {
+    loadStatementRange();
+};
 
-
+// Export to PDF
+window.exportPDF = function() {
+    const element = document.getElementById('printableStatement');
+    
+    if (!element) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Info', 'Please load a statement first before exporting', 'info');
+        } else {
+            alert('Please load a statement first before exporting');
+        }
+        return;
+    }
+    
+    const startDate = $('#startDate').val();
+    const endDate = $('#endDate').val();
+    const filename = startDate === endDate 
+        ? `cash-statement-${startDate}.pdf`
+        : `cash-statement-${startDate}-to-${endDate}.pdf`;
+    
+    const opt = {
+        margin: 10,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+    
+    // Show loading
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Generating PDF...',
+            text: 'Please wait',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+    }
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+            Swal.fire({
+                title: 'Success!',
+                text: 'PDF exported successfully',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+    }).catch(err => {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Failed to generate PDF', 'error');
+        }
+        console.error('PDF export error:', err);
+    });
+};

@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Manual | I&C Insurance Brokers</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: #1a365d;
+            background: #fff;
+            font-size: 11pt;
+        }
+        
+        .manual-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        
+        /* Cover Page */
+        .cover-page {
+            text-align: center;
+            padding: 100px 40px;
+            page-break-after: always;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            color: white;
+            margin: -40px -40px 40px -40px;
+        }
+        
+        .cover-logo {
+            font-size: 72px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        
+        .cover-logo .i { color: #fff; }
+        .cover-logo .amp { color: #c9a962; }
+        .cover-logo .c { color: #9dd5c4; }
+        
+        .cover-title {
+            font-size: 36px;
+            font-weight: 300;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .cover-subtitle {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #c9a962;
+        }
+        
+        .cover-version {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 60px;
+        }
+        
+        /* Table of Contents */
+        .toc {
+            page-break-after: always;
+            padding: 40px 0;
+        }
+        
+        .toc h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #1a365d;
+            border-bottom: 3px solid #c9a962;
+            padding-bottom: 10px;
+        }
+        
+        .toc-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px dotted #ccc;
+            text-decoration: none;
+            color: #1a365d;
+        }
+        
+        .toc-item:hover {
+            color: #4fa896;
+        }
+        
+        .toc-section {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .toc-subsection {
+            padding-left: 20px;
+            font-size: 12px;
+        }
+        
+        /* Content Sections */
+        .section {
+            page-break-before: always;
+            padding: 30px 0;
+        }
+        
+        .section:first-of-type {
+            page-break-before: avoid;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #1a365d;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #c9a962;
+        }
+        
+        h2 {
+            font-size: 20px;
+            color: #2c5282;
+            margin: 30px 0 15px 0;
+        }
+        
+        h3 {
+            font-size: 16px;
+            color: #4fa896;
+            margin: 20px 0 10px 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .note {
+            background: #e6f7ff;
+            border-left: 4px solid #4fa896;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .warning {
+            background: #fff7e6;
+            border-left: 4px solid #c9a962;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .danger {
+            background: #fff1f0;
+            border-left: 4px solid #dc3545;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 11px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        
+        th {
+            background: #1a365d;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 10pt;
+        }
+        
+        .step-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: #1a365d;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .keyboard {
+            display: inline-block;
+            background: #333;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-family: monospace;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #eee;
+            margin-top: 40px;
+        }
+        
+        @media print {
+            .manual-container {
+                padding: 20px;
+            }
+            .cover-page {
+                margin: -20px -20px 20px -20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="manual-container">
+        <!-- Cover Page -->
+        <div class="cover-page">
+            <div class="cover-logo">
+                <span class="i">I</span><span class="amp">&</span><span class="c">C</span>
+            </div>
+            <div class="cover-title">INSURANCE BROKERS</div>
+            <div class="cover-subtitle">User Manual</div>
+            <p>Insurance Management System</p>
+            <p>St. Lucia</p>
+            <div class="cover-version">
+                Version 2.0 | December 2024<br>
+                Developed by Solace-Systems
+            </div>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h2>Table of Contents</h2>
+            <a href="#intro" class="toc-item toc-section"><span>1. Introduction</span><span>3</span></a>
+            <a href="#login" class="toc-item toc-section"><span>2. Getting Started</span><span>4</span></a>
+            <a href="#dashboard" class="toc-item toc-section"><span>3. Dashboard</span><span>5</span></a>
+            <a href="#customers" class="toc-item toc-section"><span>4. Customer Management</span><span>6</span></a>
+            <a href="#policies" class="toc-item toc-section"><span>5. Policy Management</span><span>8</span></a>
+            <a href="#payments" class="toc-item toc-section"><span>6. Payment Processing</span><span>10</span></a>
+            <a href="#reports" class="toc-item toc-section"><span>7. Reports</span><span>12</span></a>
+            <a href="#users" class="toc-item toc-section"><span>8. User Management</span><span>14</span></a>
+            <a href="#admin" class="toc-item toc-section"><span>9. Admin Settings</span><span>15</span></a>
+            <a href="#roles" class="toc-item toc-section"><span>10. User Roles & Permissions</span><span>17</span></a>
+            <a href="#support" class="toc-item toc-section"><span>11. Support & Contact</span><span>18</span></a>
+        </div>
+
+        <!-- Section 1: Introduction -->
+        <div class="section" id="intro">
+            <h1>1. Introduction</h1>
+            <p>Welcome to the I&C Insurance Brokers Management System. This comprehensive software solution is designed to streamline insurance operations, manage customer relationships, process payments, and generate detailed reports.</p>
+            
+            <h2>1.1 System Overview</h2>
+            <p>The system provides the following core functionalities:</p>
+            <ul>
+                <li><strong>Customer Management</strong> - Store and manage customer information</li>
+                <li><strong>Policy Management</strong> - Create and track insurance policies</li>
+                <li><strong>Payment Processing</strong> - Record payments and generate receipts</li>
+                <li><strong>Reporting</strong> - Generate various reports including cash statements</li>
+                <li><strong>User Management</strong> - Manage system users and access control</li>
+            </ul>
+            
+            <h2>1.2 System Requirements</h2>
+            <ul>
+                <li>Modern web browser (Chrome, Firefox, Safari, Edge)</li>
+                <li>Internet connection</li>
+                <li>Screen resolution: 1024x768 minimum (1920x1080 recommended)</li>
+            </ul>
+        </div>
+
+        <!-- Section 2: Getting Started -->
+        <div class="section" id="login">
+            <h1>2. Getting Started</h1>
+            
+            <h2>2.1 Logging In</h2>
+            <div class="step-box">
+                <p><span class="step-number">1</span>Open your web browser and navigate to the system URL</p>
+                <p><span class="step-number">2</span>Enter your username or email address</p>
+                <p><span class="step-number">3</span>Enter your password</p>
+                <p><span class="step-number">4</span>Click the <strong>Sign In</strong> button</p>
+            </div>
+            
+            <div class="note">
+                <strong>Note:</strong> If you forget your password, contact your system administrator to reset it.
+            </div>
+            
+            <h2>2.2 Navigation</h2>
+            <p>The system uses a sidebar navigation menu on the left side of the screen. The menu includes:</p>
+            <ul>
+                <li><strong>Dashboard</strong> - Overview and quick statistics</li>
+                <li><strong>Customers</strong> - Customer management</li>
+                <li><strong>Policies</strong> - Policy management</li>
+                <li><strong>Payments</strong> - Payment processing</li>
+                <li><strong>Daily Cash Statement</strong> - Daily financial summary</li>
+                <li><strong>User Management</strong> - User administration (Admin/Supervisor)</li>
+                <li><strong>Reports</strong> - Report generation (Admin/Supervisor)</li>
+                <li><strong>Admin Settings</strong> - System configuration (Admin only)</li>
+                <li><strong>Support</strong> - Help and contact information</li>
+            </ul>
+            
+            <h2>2.3 Logging Out</h2>
+            <p>To log out of the system:</p>
+            <ol>
+                <li>Click on your username in the top-right corner</li>
+                <li>Select <strong>Logout</strong> from the dropdown menu</li>
+            </ol>
+        </div>
+
+        <!-- Section 3: Dashboard -->
+        <div class="section" id="dashboard">
+            <h1>3. Dashboard</h1>
+            <p>The dashboard provides a quick overview of your insurance operations.</p>
+            
+            <h2>3.1 Statistics Cards</h2>
+            <p>The top section displays key metrics:</p>
+            <ul>
+                <li><strong>Total Customers</strong> - Number of registered customers</li>
+                <li><strong>Active Policies</strong> - Number of active insurance policies</li>
+                <li><strong>Outstanding Balance</strong> - Total amount owed by all customers</li>
+                <li><strong>Today's Collections</strong> - Total payments received today</li>
+            </ul>
+            
+            <h2>3.2 Recent Activity</h2>
+            <p>The dashboard shows recent activity including:</p>
+            <ul>
+                <li>Recently added customers</li>
+                <li>Recently created policies</li>
+                <li>Recent payments received</li>
+            </ul>
+            
+            <div class="note">
+                <strong>Tip:</strong> Click on any item in the recent activity lists to view more details.
+            </div>
+        </div>
+
+        <!-- Section 4: Customer Management -->
+        <div class="section" id="customers">
+            <h1>4. Customer Management</h1>
+            
+            <h2>4.1 Viewing Customers</h2>
+            <p>Navigate to <strong>Customers</strong> from the sidebar to view all customers in a searchable table.</p>
+            
+            <h2>4.2 Adding a New Customer</h2>
+            <div class="step-box">
+                <p><span class="step-number">1</span>Click the <strong>Add Customer</strong> button</p>
+                <p><span class="step-number">2</span>Fill in the required information:</p>
+                <ul>
+                    <li>First Name, Middle Name (optional), Last Name</li>
+                    <li>Address</li>
+                    <li>Contact Number</li>
+                    <li>Email Address</li>
+                    <li>Sex (Male/Female/Other)</li>
+                    <li>ID Number</li>
+                </ul>
+                <p><span class="step-number">3</span>Click <strong>Save Customer</strong></p>
+            </div>
+            
+            <h2>4.3 ID Scanning Feature</h2>
+            <p>The system includes an optional ID scanning feature that uses OCR (Optical Character Recognition) to automatically extract information from ID cards:</p>
+            <ol>
+                <li>Click the <strong>Scan ID</strong> button next to the ID Number field</li>
+                <li>Select an image file of the ID card</li>
+                <li>Wait for the system to process the image</li>
+                <li>Review and verify the auto-filled information</li>
+            </ol>
+            
+            <h2>4.4 Editing a Customer</h2>
+            <ol>
+                <li>Find the customer in the table</li>
+                <li>Click the <strong>Edit</strong> button (pencil icon)</li>
+                <li>Modify the necessary information</li>
+                <li>Click <strong>Save Customer</strong></li>
+            </ol>
+            
+            <h2>4.5 Deleting a Customer</h2>
+            <ol>
+                <li>Find the customer in the table</li>
+                <li>Click the <strong>Delete</strong> button (trash icon)</li>
+                <li>Confirm the deletion when prompted</li>
+            </ol>
+            
+            <div class="warning">
+                <strong>Warning:</strong> Deleting a customer will not delete associated policies or payments. Exercise caution when deleting records.
+            </div>
+        </div>
+
+        <!-- Section 5: Policy Management -->
+        <div class="section" id="policies">
+            <h1>5. Policy Management</h1>
+            
+            <h2>5.1 Understanding Policies</h2>
+            <p>A policy represents an insurance agreement with a customer. Each policy includes:</p>
+            <ul>
+                <li><strong>Policy Number</strong> - Unique identifier (auto-generated if not provided)</li>
+                <li><strong>Customer</strong> - The policyholder</li>
+                <li><strong>Coverage Type</strong> - Third Party or Fully Comprehensive</li>
+                <li><strong>Coverage Period</strong> - Start and end dates</li>
+                <li><strong>Premium</strong> - Total amount due</li>
+                <li><strong>Outstanding Balance</strong> - Amount still owed</li>
+            </ul>
+            
+            <h2>5.2 Creating a New Policy</h2>
+            <div class="step-box">
+                <p><span class="step-number">1</span>Click the <strong>Create Policy</strong> button</p>
+                <p><span class="step-number">2</span>Select the customer from the dropdown (searchable)</p>
+                <p><span class="step-number">3</span>Enter or auto-generate the policy number</p>
+                <p><span class="step-number">4</span>Select coverage type:</p>
+                <ul>
+                    <li><strong>Third Party</strong> - Basic liability coverage</li>
+                    <li><strong>Fully Comprehensive</strong> - Full coverage including own damage</li>
+                </ul>
+                <p><span class="step-number">5</span>Set coverage start and end dates</p>
+                <p><span class="step-number">6</span>Enter the total premium amount</p>
+                <p><span class="step-number">7</span>Click <strong>Save Policy</strong></p>
+            </div>
+            
+            <h2>5.3 Policy Status</h2>
+            <table>
+                <tr>
+                    <th>Status</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>Active</td>
+                    <td>Policy is currently in effect</td>
+                </tr>
+                <tr>
+                    <td>Expired</td>
+                    <td>Coverage period has ended</td>
+                </tr>
+                <tr>
+                    <td>Cancelled</td>
+                    <td>Policy has been cancelled</td>
+                </tr>
+            </table>
+            
+            <h2>5.4 Editing a Policy</h2>
+            <ol>
+                <li>Find the policy in the table</li>
+                <li>Click the <strong>Edit</strong> button</li>
+                <li>Modify the necessary information</li>
+                <li>Click <strong>Save Policy</strong></li>
+            </ol>
+        </div>
+
+        <!-- Section 6: Payment Processing -->
+        <div class="section" id="payments">
+            <h1>6. Payment Processing</h1>
+            
+            <h2>6.1 Recording a Payment</h2>
+            <div class="step-box">
+                <p><span class="step-number">1</span>Navigate to <strong>Payments</strong></p>
+                <p><span class="step-number">2</span>Click <strong>New Payment</strong></p>
+                <p><span class="step-number">3</span>Select the policy from the dropdown</p>
+                <p><span class="step-number">4</span>Review the outstanding balance displayed</p>
+                <p><span class="step-number">5</span>Enter the payment amount</p>
+                <p><span class="step-number">6</span>Select payment method(s):</p>
+                <ul>
+                    <li>Cash</li>
+                    <li>Credit Card</li>
+                    <li>Debit Card</li>
+                    <li>Bank Transfer</li>
+                    <li>Cheque</li>
+                </ul>
+                <p><span class="step-number">7</span>Click <strong>Record Payment</strong></p>
+            </div>
+            
+            <div class="note">
+                <strong>Note:</strong> Multiple payment methods can be selected for a single transaction.
+            </div>
+            
+            <h2>6.2 Viewing Receipts</h2>
+            <p>After recording a payment, a receipt is automatically generated. To view a receipt:</p>
+            <ol>
+                <li>Find the payment in the payments table</li>
+                <li>Click the <strong>View Receipt</strong> button</li>
+                <li>The receipt will open in a new page</li>
+                <li>Use the print button to print or save as PDF</li>
+            </ol>
+            
+            <h2>6.3 Outstanding Balance Rule</h2>
+            <div class="warning">
+                <strong>Business Rule:</strong> A payment cannot be received for a customer that has an outstanding balance on another policy unless the arrears are cleared or an override is granted by an authorized user.
+            </div>
+            
+            <h2>6.4 Payment History</h2>
+            <p>The payments table shows all payment records including:</p>
+            <ul>
+                <li>Receipt Number</li>
+                <li>Policy Number</li>
+                <li>Customer Name</li>
+                <li>Amount</li>
+                <li>Payment Method</li>
+                <li>Date and Time</li>
+            </ul>
+        </div>
+
+        <!-- Section 7: Reports -->
+        <div class="section" id="reports">
+            <h1>7. Reports</h1>
+            <p>The Reports section allows you to generate various reports for analysis and record-keeping.</p>
+            
+            <h2>7.1 Available Reports</h2>
+            <table>
+                <tr>
+                    <th>Report Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>Cash Statement</td>
+                    <td>Summary of all payments received for a date range</td>
+                </tr>
+                <tr>
+                    <td>User Activity</td>
+                    <td>Detailed log of user actions in the system</td>
+                </tr>
+                <tr>
+                    <td>Policy Report</td>
+                    <td>List of policies with coverage and payment details</td>
+                </tr>
+                <tr>
+                    <td>Payment Report</td>
+                    <td>Detailed payment transactions</td>
+                </tr>
+                <tr>
+                    <td>Customer Report</td>
+                    <td>Customer list with policy and balance information</td>
+                </tr>
+            </table>
+            
+            <h2>7.2 Generating Reports</h2>
+            <div class="step-box">
+                <p><span class="step-number">1</span>Navigate to <strong>Reports</strong></p>
+                <p><span class="step-number">2</span>Select the report type</p>
+                <p><span class="step-number">3</span>Choose a date range or use quick buttons:</p>
+                <ul>
+                    <li><strong>Today</strong> - Current day only</li>
+                    <li><strong>This Week</strong> - Current week</li>
+                    <li><strong>This Month</strong> - Current month</li>
+                    <li><strong>All Time</strong> - All available data</li>
+                </ul>
+                <p><span class="step-number">4</span>Click <strong>Generate Report</strong></p>
+            </div>
+            
+            <h2>7.3 Exporting Reports</h2>
+            <p>Once a report is generated, you can:</p>
+            <ul>
+                <li><strong>Print</strong> - Send directly to printer</li>
+                <li><strong>Export PDF</strong> - Save as PDF file</li>
+                <li><strong>Back</strong> - Return to reports page</li>
+            </ul>
+            
+            <h2>7.4 Daily Cash Statement</h2>
+            <p>The Daily Cash Statement is a quick access report available from the main menu. It shows:</p>
+            <ul>
+                <li>All payments received on the selected date</li>
+                <li>Breakdown by payment method</li>
+                <li>Total collections</li>
+            </ul>
+        </div>
+
+        <!-- Section 8: User Management -->
+        <div class="section" id="users">
+            <h1>8. User Management</h1>
+            <p>User Management is available to Administrators and Supervisors.</p>
+            
+            <h2>8.1 Creating a New User</h2>
+            <div class="step-box">
+                <p><span class="step-number">1</span>Navigate to <strong>User Management</strong></p>
+                <p><span class="step-number">2</span>Click <strong>Add User</strong></p>
+                <p><span class="step-number">3</span>Enter user details:</p>
+                <ul>
+                    <li>Username (unique)</li>
+                    <li>Full Name</li>
+                    <li>Email Address</li>
+                    <li>Password</li>
+                    <li>Role</li>
+                </ul>
+                <p><span class="step-number">4</span>Click <strong>Save User</strong></p>
+            </div>
+            
+            <h2>8.2 Editing a User</h2>
+            <ol>
+                <li>Find the user in the table</li>
+                <li>Click the <strong>Edit</strong> button</li>
+                <li>Modify the necessary information</li>
+                <li>Click <strong>Save User</strong></li>
+            </ol>
+            
+            <div class="note">
+                <strong>Note:</strong> Leave the password field empty when editing to keep the existing password.
+            </div>
+            
+            <h2>8.3 Deleting a User</h2>
+            <div class="danger">
+                <strong>Important:</strong> The default admin account cannot be deleted. The system must always have at least one administrator.
+            </div>
+        </div>
+
+        <!-- Section 9: Admin Settings -->
+        <div class="section" id="admin">
+            <h1>9. Admin Settings</h1>
+            <p>Admin Settings is accessible only to users with the Administrator role.</p>
+            
+            <h2>9.1 Role Permissions</h2>
+            <p>Administrators can customize which functions each role can access:</p>
+            <ol>
+                <li>Select a role tab (Underwriter, Cashier, Supervisor)</li>
+                <li>Check or uncheck the desired permissions</li>
+                <li>Click <strong>Save Permissions</strong></li>
+            </ol>
+            
+            <div class="note">
+                <strong>Note:</strong> Admin role always has full access and cannot be modified.
+            </div>
+            
+            <h2>9.2 Financial Periods</h2>
+            <p>Financial periods help organize transactions by accounting periods:</p>
+            <ul>
+                <li><strong>Create Period</strong> - Start a new financial period</li>
+                <li><strong>Close Period</strong> - Close the current period (prevents further changes)</li>
+            </ul>
+            
+            <h2>9.3 Data Management</h2>
+            <p>Administrators can export and import data:</p>
+            <ul>
+                <li><strong>Export Data</strong> - Download system data as CSV for backup</li>
+                <li><strong>Import Data</strong> - Upload CSV data to restore or migrate</li>
+            </ul>
+            
+            <h2>9.4 System Functions</h2>
+            <div class="danger">
+                <strong>Danger Zone:</strong> The following functions should be used with extreme caution:
+                <ul>
+                    <li><strong>Reset System</strong> - Permanently deletes ALL data</li>
+                    <li><strong>Override Arrears</strong> - Bypass the outstanding balance rule</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Section 10: User Roles -->
+        <div class="section" id="roles">
+            <h1>10. User Roles & Permissions</h1>
+            
+            <h2>10.1 Available Roles</h2>
+            <table>
+                <tr>
+                    <th>Role</th>
+                    <th>Description</th>
+                    <th>Access Level</th>
+                </tr>
+                <tr>
+                    <td>Admin</td>
+                    <td>System Administrator</td>
+                    <td>Full access to all functions</td>
+                </tr>
+                <tr>
+                    <td>Supervisor</td>
+                    <td>Operations Supervisor</td>
+                    <td>All operations, reports, user management</td>
+                </tr>
+                <tr>
+                    <td>Cashier</td>
+                    <td>Payment Processor</td>
+                    <td>Payments and cash statements only</td>
+                </tr>
+                <tr>
+                    <td>Underwriter</td>
+                    <td>Policy Manager</td>
+                    <td>Customers and policies only</td>
+                </tr>
+            </table>
+            
+            <h2>10.2 Permission Matrix</h2>
+            <table>
+                <tr>
+                    <th>Function</th>
+                    <th>Admin</th>
+                    <th>Supervisor</th>
+                    <th>Cashier</th>
+                    <th>Underwriter</th>
+                </tr>
+                <tr>
+                    <td>View Dashboard</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                </tr>
+                <tr>
+                    <td>Manage Customers</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                    <td>-</td>
+                    <td>✓</td>
+                </tr>
+                <tr>
+                    <td>Manage Policies</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                    <td>-</td>
+                    <td>✓</td>
+                </tr>
+                <tr>
+                    <td>Process Payments</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Generate Reports</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Manage Users</td>
+                    <td>✓</td>
+                    <td>✓</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Admin Settings</td>
+                    <td>✓</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Section 11: Support -->
+        <div class="section" id="support">
+            <h1>11. Support & Contact</h1>
+            
+            <h2>11.1 Getting Help</h2>
+            <p>If you need assistance with the system, please contact:</p>
+            
+            <div class="step-box">
+                <p><strong>Nicholas Dass</strong></p>
+                <p>Solace-Systems</p>
+                <p>Email: nicholas@solace-systems.com</p>
+                <p>Phone: 868-460-3788</p>
+            </div>
+            
+            <h2>11.2 Troubleshooting</h2>
+            <table>
+                <tr>
+                    <th>Issue</th>
+                    <th>Solution</th>
+                </tr>
+                <tr>
+                    <td>Cannot log in</td>
+                    <td>Check username/password. Contact admin if locked out.</td>
+                </tr>
+                <tr>
+                    <td>Page not loading</td>
+                    <td>Clear browser cache and refresh. Check internet connection.</td>
+                </tr>
+                <tr>
+                    <td>Data not saving</td>
+                    <td>Check all required fields are filled. Try again.</td>
+                </tr>
+                <tr>
+                    <td>Report not generating</td>
+                    <td>Verify date range has data. Check permissions.</td>
+                </tr>
+                <tr>
+                    <td>Receipt not printing</td>
+                    <td>Enable pop-ups. Check printer connection.</td>
+                </tr>
+            </table>
+            
+            <h2>11.3 Keyboard Shortcuts</h2>
+            <table>
+                <tr>
+                    <th>Shortcut</th>
+                    <th>Action</th>
+                </tr>
+                <tr>
+                    <td><span class="keyboard">Ctrl</span> + <span class="keyboard">P</span></td>
+                    <td>Print current page/report</td>
+                </tr>
+                <tr>
+                    <td><span class="keyboard">Ctrl</span> + <span class="keyboard">F</span></td>
+                    <td>Find/Search on page</td>
+                </tr>
+                <tr>
+                    <td><span class="keyboard">F5</span></td>
+                    <td>Refresh page</td>
+                </tr>
+                <tr>
+                    <td><span class="keyboard">Esc</span></td>
+                    <td>Close modal/popup</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="footer">
+            <p>I&C Insurance Brokers Management System - User Manual v2.0</p>
+            <p>© 2024 Solace-Systems. All rights reserved.</p>
+            <p>This document is confidential and intended for authorized users only.</p>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -4,9 +4,12 @@
     @@include("partials/title-meta.html", {"title": "Daily Cash Statement"})
 
     @@include('partials/head-css.html')
+    <link href="assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
     <style>
         @media print {
             .no-print { display: none !important; }
+            .page-content { padding: 0 !important; margin: 0 !important; }
+            .card { border: none !important; box-shadow: none !important; }
         }
     </style>
 </head>
@@ -26,17 +29,43 @@
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <label class="form-label">Select Date</label>
-                                            <input type="date" class="form-control" id="statementDate" value="">
+                                    <!-- Quick Access Buttons -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Quick Access</label>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <button type="button" class="btn btn-outline-primary" onclick="loadToday()">
+                                                <i data-lucide="calendar" class="icon-sm me-1"></i> Today
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info" onclick="loadThisWeek()">
+                                                <i data-lucide="calendar-days" class="icon-sm me-1"></i> This Week
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success" onclick="loadThisMonth()">
+                                                <i data-lucide="calendar-range" class="icon-sm me-1"></i> This Month
+                                            </button>
                                         </div>
-                                        <div class="col-md-4 d-flex align-items-end">
-                                            <button type="button" class="btn btn-primary me-2" onclick="loadStatement()">
+                                    </div>
+                                    
+                                    <hr class="my-3">
+                                    
+                                    <!-- Date Range Selection -->
+                                    <div class="row align-items-end">
+                                        <div class="col-md-3">
+                                            <label class="form-label">Start Date</label>
+                                            <input type="date" class="form-control" id="startDate" value="">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">End Date</label>
+                                            <input type="date" class="form-control" id="endDate" value="">
+                                        </div>
+                                        <div class="col-md-6 d-flex flex-wrap gap-2 mt-3 mt-md-0">
+                                            <button type="button" class="btn btn-primary" onclick="loadStatementRange()">
                                                 <i data-lucide="search" class="icon-sm me-1"></i> Load Statement
                                             </button>
                                             <button type="button" class="btn btn-success" onclick="window.print()">
                                                 <i data-lucide="printer" class="icon-sm me-1"></i> Print
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="exportPDF()">
+                                                <i data-lucide="file-down" class="icon-sm me-1"></i> Export PDF
                                             </button>
                                         </div>
                                     </div>
@@ -66,6 +95,8 @@
     </div>
 
     @@include('partials/footer-scripts.html')
+    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="assets/js/pages/daily-cash-statement.js"></script>
 </body>
 </html>
