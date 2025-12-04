@@ -340,6 +340,53 @@
                         </div>
                     </div>
 
+                    <!-- Outstanding Balance Report -->
+                    <div class="card report-card mb-3">
+                        <div class="card-header text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <div class="d-flex align-items-center">
+                                <div class="report-icon bg-white bg-opacity-20 me-3">
+                                    <i data-lucide="alert-triangle" style="width:24px;height:24px;"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 text-white">Outstanding Balance Report</h5>
+                                    <small class="opacity-75">Policies with outstanding balances by date range</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-end">
+                                <div class="col-lg-5 mb-3 mb-lg-0">
+                                    <label class="form-label fw-semibold text-muted small">QUICK GENERATE</label>
+                                    <div class="quick-btn-group d-flex gap-2">
+                                        <button class="btn btn-outline-danger flex-fill" onclick="generateOutstandingBalanceReport('all')">
+                                            <i data-lucide="infinity" class="me-1" style="width:16px;height:16px;"></i> All Balances
+                                        </button>
+                                        <button class="btn btn-outline-danger flex-fill" onclick="generateOutstandingBalanceReport('month')">
+                                            <i data-lucide="calendar-range" class="me-1" style="width:16px;height:16px;"></i> This Month
+                                        </button>
+                                        <button class="btn btn-outline-danger flex-fill" onclick="generateOutstandingBalanceReport('week')">
+                                            <i data-lucide="calendar-days" class="me-1" style="width:16px;height:16px;"></i> This Week
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-lg-7">
+                                    <label class="form-label fw-semibold text-muted small">CUSTOM DATE RANGE</label>
+                                    <div class="date-range-group">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">From</span>
+                                            <input type="date" class="form-control" id="outstandingStartDate">
+                                            <span class="input-group-text bg-white">To</span>
+                                            <input type="date" class="form-control" id="outstandingEndDate">
+                                            <button class="btn btn-danger px-4" onclick="generateOutstandingBalanceReport('custom')">
+                                                <i data-lucide="eye" class="me-1" style="width:16px;height:16px;"></i> Generate
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

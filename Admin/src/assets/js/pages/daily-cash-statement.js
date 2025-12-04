@@ -159,7 +159,7 @@ window.loadStatementRange = async function() {
         } catch (e) {}
         
         const statementHTML = `
-            <div id="printableStatement">
+            <div id="printableStatement" style="border: 2px solid #000; padding: 20px; margin: 0 auto; max-width: 100%;">
                 <div class="text-center mb-4">
                     <img src="assets/images/IC-LOGO-NEW.png" alt="Combined Insurance Services Ltd" style="height: 60px;" class="mb-2" onerror="this.style.display='none'">
                     <h3 class="mb-1" style="color: #1a365d;">Combined Insurance Services Ltd</h3>

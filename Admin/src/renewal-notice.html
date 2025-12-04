@@ -6,17 +6,37 @@
     @@include('partials/head-css.html')
     <style>
         @media print {
+            @page {
+                size: A4;
+                margin: 0.5in;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             .no-print { display: none !important; }
-            body { background: white !important; }
-            .notice-container { 
-                box-shadow: none !important;
-                border: none !important;
+            body { 
+                background: white !important;
                 margin: 0 !important;
-                padding: 15px !important;
+                padding: 0 !important;
+            }
+            .notice-container { 
+                max-width: 100% !important;
+                margin: 0 auto !important;
+                padding: 20px !important;
+                border: 2px solid #000 !important;
+                box-shadow: none !important;
+                page-break-inside: avoid !important;
             }
             img { 
                 max-width: 100% !important;
                 height: auto !important;
+                page-break-inside: avoid !important;
+            }
+            .notice-header, .amount-highlight, .important-notice, .notice-footer {
+                page-break-inside: avoid !important;
+            }
+            .info-section {
                 page-break-inside: avoid !important;
             }
         }
@@ -234,7 +254,7 @@
                                 <div class="notice-header">
                                     <div class="row align-items-center">
                                         <div class="col-6">
-                                            <img src="assets/images/IC-LOGO-NEW.png" alt="Combined Insurance Services Ltd" style="max-width: 150px; margin-bottom: 15px;">
+                                            <img src="assets/images/IC-LOGO-NEW.png" alt="Combined Insurance Services Ltd" style="max-width: 250px; height: auto; margin-bottom: 15px;">
                                             <div class="company-name">Combined Insurance Services Ltd</div>
                                             <div class="company-address">
                                                 Castries St. Lucia<br>
@@ -329,9 +349,11 @@
                                 
                                 <!-- Important Notice -->
                                 <div class="important-notice">
-                                    <strong>IMPORTANT:</strong> Your policy is scheduled to expire on <strong id="expiryDate">---</strong>. 
-                                    Please contact us to renew your policy before the expiration date to ensure continuous coverage. 
-                                    If you have any outstanding balance, please settle it at your earliest convenience.
+                                    <strong>IMPORTANT:</strong> The above is the breakdown of your last renewal. Your renewal premium may be less or more depending on the following:<br><br>
+                                    1. The length of time of which the policy covers.<br><br>
+                                    2. Increase in discounts, or decrease due to a claim.<br><br>
+                                    3. An increase in the insurer's premiums.<br><br>
+                                    4. In the case of comprehensive policies, the sum insured would be reduced due to depreciation.
                                 </div>
                                 
                                 <!-- Footer -->

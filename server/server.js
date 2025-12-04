@@ -1190,6 +1190,10 @@ app.get('/api/admin/reports/cash-statement', requireAuth, async (req, res) => {
     
     const { startDate, endDate } = req.query;
     
+    if (!startDate || !endDate) {
+        return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+    
     const query = `
         SELECT py.payment_date as date, py.receipt_number, p.policy_number,
                c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
@@ -1350,7 +1354,9 @@ app.get('/api/admin/reports/outstanding-balances', requireAuth, async (req, res)
         return res.status(403).json({ error: 'Permission denied' });
     }
     
-    const query = `
+    const { startDate, endDate } = req.query;
+    
+    let query = `
         SELECT p.policy_number, 
                c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
                c.id_number as customer_id_number,
@@ -1367,10 +1373,18 @@ app.get('/api/admin/reports/outstanding-balances', requireAuth, async (req, res)
         FROM policies p
         JOIN customers c ON p.customer_id = c.id
         WHERE p.outstanding_balance > 0
-        ORDER BY p.outstanding_balance DESC, p.created_at DESC
     `;
     
-    db.all(query, [], (err, policies) => {
+    const params = [];
+    if (startDate && endDate) {
+        // Filter by policy creation date or coverage dates
+        query += ' AND (DATE(p.created_at) BETWEEN ? AND ? OR DATE(p.coverage_start_date) BETWEEN ? AND ? OR DATE(p.coverage_end_date) BETWEEN ? AND ?)';
+        params.push(startDate, endDate, startDate, endDate, startDate, endDate);
+    }
+    
+    query += ' ORDER BY p.outstanding_balance DESC, p.created_at DESC';
+    
+    db.all(query, params, (err, policies) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }

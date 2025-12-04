@@ -172,7 +172,7 @@
                     <!-- Stats Cards -->
                     <div class="row mb-4">
                         <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
-                            <div class="card stat-card h-100">
+                            <div class="card stat-card h-100" style="cursor: pointer;" onclick="generateAllCustomersReport()" title="Click to view All Customers Report">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center">
                                         <div class="stat-icon customers me-3">
@@ -187,7 +187,7 @@
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
-                            <div class="card stat-card h-100">
+                            <div class="card stat-card h-100" style="cursor: pointer;" onclick="window.location.href='policies.html'" title="Click to view Policies">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center">
                                         <div class="stat-icon policies me-3">
@@ -217,7 +217,7 @@
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6">
-                            <div class="card stat-card h-100">
+                            <div class="card stat-card h-100" style="cursor: pointer;" onclick="generateTodaysCashStatement()" title="Click to view Today's Cash Statement">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center">
                                         <div class="stat-icon payments me-3">
@@ -298,6 +298,7 @@
     </div>
 
     @@include('partials/footer-scripts.html')
+    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
     <script src="assets/js/pages/dashboard.js"></script>
 </body>
 </html>

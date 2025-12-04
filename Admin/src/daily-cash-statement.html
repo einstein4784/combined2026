@@ -7,12 +7,50 @@
     <link href="assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
     <style>
         @media print {
+            @page {
+                size: A4;
+                margin: 0.5in;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             .no-print { display: none !important; }
-            .page-content { padding: 0 !important; margin: 0 !important; }
-            .card { border: none !important; box-shadow: none !important; }
+            body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .page-content { 
+                padding: 0 !important; 
+                margin: 0 !important; 
+            }
+            .card { 
+                border: 2px solid #000 !important; 
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 20px !important;
+                page-break-inside: avoid !important;
+            }
+            #printableStatement {
+                border: 2px solid #000 !important;
+                padding: 20px !important;
+                margin: 0 auto !important;
+                max-width: 100% !important;
+            }
             img { 
                 max-width: 100% !important;
                 height: auto !important;
+                page-break-inside: avoid !important;
+            }
+            table {
+                page-break-inside: auto !important;
+                border-collapse: collapse !important;
+            }
+            thead {
+                display: table-header-group !important;
+            }
+            tr {
                 page-break-inside: avoid !important;
             }
         }

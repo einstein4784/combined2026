@@ -40,8 +40,8 @@ function setDefaultDates() {
     const firstStr = formatDate(firstOfMonth);
     
     // Set all date inputs
-    $('#cashStartDate, #userStartDate, #policyStartDate, #paymentStartDate, #customerStartDate').val(firstStr);
-    $('#cashEndDate, #userEndDate, #policyEndDate, #paymentEndDate, #customerEndDate').val(todayStr);
+    $('#cashStartDate, #userStartDate, #policyStartDate, #paymentStartDate, #customerStartDate, #outstandingStartDate').val(firstStr);
+    $('#cashEndDate, #userEndDate, #policyEndDate, #paymentEndDate, #customerEndDate, #outstandingEndDate').val(todayStr);
 }
 
 function formatDate(date) {
@@ -105,9 +105,19 @@ window.generateCashStatement = async function(period) {
         dateRange = `${formatDisplayDate(new Date(startDate))} to ${formatDisplayDate(new Date(endDate))}`;
     } else {
         const range = getDateRange(period);
+        if (!range) {
+            Swal.fire('Error', 'Invalid date range selected', 'error');
+            return;
+        }
         startDate = range.start;
         endDate = range.end;
         dateRange = range.display;
+    }
+    
+    // Cash statement always requires dates
+    if (!startDate || !endDate) {
+        Swal.fire('Error', 'Please select a date range for cash statement', 'error');
+        return;
     }
     
     try {
@@ -171,6 +181,10 @@ window.generateUserReport = async function(period) {
         dateRange = `${formatDisplayDate(new Date(startDate))} to ${formatDisplayDate(new Date(endDate))}`;
     } else {
         const range = getDateRange(period);
+        if (!range) {
+            Swal.fire('Error', 'Invalid date range selected', 'error');
+            return;
+        }
         startDate = range.start;
         endDate = range.end;
         dateRange = range.display;
@@ -179,7 +193,13 @@ window.generateUserReport = async function(period) {
     try {
         showLoading('Generating User Activity Report...');
         
-        const report = await api.request(`/admin/reports/users?startDate=${startDate}&endDate=${endDate}`);
+        // Build URL with optional date parameters
+        let url = '/admin/reports/users';
+        if (startDate && endDate) {
+            url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+        
+        const report = await api.request(url);
         
         if (!report || report.length === 0) {
             Swal.fire('Info', 'No user activity data for this period', 'info');
@@ -239,6 +259,10 @@ window.generatePolicyReport = async function(period) {
         dateRange = `${formatDisplayDate(new Date(startDate))} to ${formatDisplayDate(new Date(endDate))}`;
     } else {
         const range = getDateRange(period);
+        if (!range) {
+            Swal.fire('Error', 'Invalid date range selected', 'error');
+            return;
+        }
         startDate = range.start;
         endDate = range.end;
         dateRange = range.display;
@@ -247,7 +271,13 @@ window.generatePolicyReport = async function(period) {
     try {
         showLoading('Generating Policy Report...');
         
-        const report = await api.request(`/admin/reports/policies?startDate=${startDate}&endDate=${endDate}`);
+        // Build URL with optional date parameters
+        let url = '/admin/reports/policies';
+        if (startDate && endDate) {
+            url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+        
+        const report = await api.request(url);
         
         if (!report || report.length === 0) {
             Swal.fire('Info', 'No policies found for this period', 'info');
@@ -303,6 +333,10 @@ window.generatePaymentReport = async function(period) {
         dateRange = `${formatDisplayDate(new Date(startDate))} to ${formatDisplayDate(new Date(endDate))}`;
     } else {
         const range = getDateRange(period);
+        if (!range) {
+            Swal.fire('Error', 'Invalid date range selected', 'error');
+            return;
+        }
         startDate = range.start;
         endDate = range.end;
         dateRange = range.display;
@@ -311,7 +345,13 @@ window.generatePaymentReport = async function(period) {
     try {
         showLoading('Generating Payment Report...');
         
-        const report = await api.request(`/admin/reports/payments?startDate=${startDate}&endDate=${endDate}`);
+        // Build URL with optional date parameters
+        let url = '/admin/reports/payments';
+        if (startDate && endDate) {
+            url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+        
+        const report = await api.request(url);
         
         if (!report || !report.payments || report.payments.length === 0) {
             Swal.fire('Info', 'No payments found for this period', 'info');
@@ -427,6 +467,103 @@ window.generateCustomerReport = async function(period) {
         Swal.fire('Error', error.message || 'Failed to generate report', 'error');
     }
 };
+
+// ========== OUTSTANDING BALANCE REPORT ==========
+// Main implementation
+async function generateOutstandingBalanceReportImpl(period) {
+    let startDate, endDate, dateRange;
+    
+    if (period === 'custom') {
+        startDate = $('#outstandingStartDate').val();
+        endDate = $('#outstandingEndDate').val();
+        if (!startDate || !endDate) {
+            Swal.fire('Error', 'Please select both start and end dates', 'error');
+            return;
+        }
+        dateRange = `${formatDisplayDate(new Date(startDate))} to ${formatDisplayDate(new Date(endDate))}`;
+    } else if (period === 'week') {
+        const range = getDateRange('week');
+        if (!range) {
+            Swal.fire('Error', 'Invalid date range selected', 'error');
+            return;
+        }
+        startDate = range.start;
+        endDate = range.end;
+        dateRange = range.display;
+    } else if (period === 'month') {
+        const range = getDateRange('month');
+        if (!range) {
+            Swal.fire('Error', 'Invalid date range selected', 'error');
+            return;
+        }
+        startDate = range.start;
+        endDate = range.end;
+        dateRange = range.display;
+    } else {
+        // 'all' or no parameter - get all outstanding balances
+        startDate = null;
+        endDate = null;
+        dateRange = 'All Policies with Outstanding Balances';
+    }
+    
+    try {
+        showLoading('Generating Outstanding Balance Report...');
+        
+        // Build query string
+        let url = '/admin/reports/outstanding-balances';
+        if (startDate && endDate) {
+            url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+        
+        const report = await api.request(url);
+        
+        if (!report || report.length === 0) {
+            Swal.fire('Info', 'No policies with outstanding balances found for this period', 'info');
+            return;
+        }
+        
+        // Calculate summary stats
+        const totalOutstanding = report.reduce((sum, p) => sum + (parseFloat(p.outstanding_balance) || 0), 0);
+        const totalPremium = report.reduce((sum, p) => sum + (parseFloat(p.total_premium_due) || 0), 0);
+        const totalPaid = report.reduce((sum, p) => sum + (parseFloat(p.amount_paid) || 0), 0);
+        const activePolicies = report.filter(p => p.status === 'Active').length;
+        
+        const reportData = {
+            title: 'Outstanding Balance Report',
+            dateRange: dateRange,
+            summary: [
+                { value: report.length, label: 'Policies with Balances' },
+                { value: activePolicies, label: 'Active Policies' },
+                { value: formatCurrency(totalPremium), label: 'Total Premium Due' },
+                { value: formatCurrency(totalPaid), label: 'Amount Paid' },
+                { value: formatCurrency(totalOutstanding), label: 'Total Outstanding' }
+            ],
+            headers: ['Policy #', 'Customer', 'Customer ID', 'Contact', 'Coverage Type', 'Premium Due', 'Amount Paid', 'Outstanding Balance', 'Status'],
+            rows: report.map(p => [
+                p.policy_number || '',
+                p.customer_name || '',
+                p.customer_id_number || '',
+                (p.contact_number || p.email || 'N/A'),
+                p.coverage_type || 'N/A',
+                formatCurrency(p.total_premium_due || 0),
+                formatCurrency(p.amount_paid || 0),
+                formatCurrency(p.outstanding_balance || 0),
+                p.status || 'Active'
+            ]),
+            totals: ['TOTALS', '', '', '', '', formatCurrency(totalPremium), formatCurrency(totalPaid), formatCurrency(totalOutstanding), '']
+        };
+        
+        sessionStorage.setItem('reportData', JSON.stringify(reportData));
+        Swal.close();
+        window.location.href = 'report-viewer.html';
+        
+    } catch (error) {
+        Swal.fire('Error', error.message || 'Failed to generate report', 'error');
+    }
+}
+
+// Expose the function for use from dashboard and reports page
+window.generateOutstandingBalanceReport = generateOutstandingBalanceReportImpl;
 
 function showLoading(message) {
     Swal.fire({

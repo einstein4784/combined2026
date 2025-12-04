@@ -198,8 +198,8 @@ async function loadRecentPayments() {
     }
 }
 
-// Generate outstanding balance report
-window.generateOutstandingBalanceReport = async function() {
+// Generate all customers report
+window.generateAllCustomersReport = async function() {
     try {
         if (typeof Swal === 'undefined') {
             console.error('SweetAlert2 is not loaded');
@@ -207,13 +207,177 @@ window.generateOutstandingBalanceReport = async function() {
         }
         
         Swal.fire({
-            title: 'Generating Outstanding Balance Report...',
+            title: 'Generating Customer Report...',
             text: 'Please wait...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
         });
         
+        // Get all customers
+        const customers = await api.request('/admin/reports/customers');
+        
+        if (!customers || customers.length === 0) {
+            Swal.fire('Info', 'No customers found', 'info');
+            return;
+        }
+        
+        const totalOutstanding = customers.reduce((sum, c) => sum + (parseFloat(c.total_outstanding) || 0), 0);
+        const withArrears = customers.filter(c => (parseFloat(c.total_outstanding) || 0) > 0).length;
+        
+        const reportData = {
+            title: 'Customer Report',
+            dateRange: 'All Customers',
+            summary: [
+                { value: customers.length, label: 'Total Customers' },
+                { value: withArrears, label: 'With Arrears' },
+                { value: formatCurrency(totalOutstanding), label: 'Total Outstanding' }
+            ],
+            headers: ['ID #', 'Name', 'Contact', 'Email', 'Policies', 'Outstanding'],
+            rows: customers.map(c => [
+                c.id_number || '-',
+                `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+                c.contact_number || '-',
+                c.email || '-',
+                c.policy_count || 0,
+                formatCurrency(c.total_outstanding || 0)
+            ]),
+            totals: ['', '', '', '', 'TOTAL', formatCurrency(totalOutstanding)]
+        };
+        
+        sessionStorage.setItem('reportData', JSON.stringify(reportData));
+        Swal.close();
+        window.location.href = 'report-viewer.html';
+        
+    } catch (error) {
+        console.error('Report error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', error.message || 'Failed to generate report', 'error');
+        } else {
+            alert('Error: ' + (error.message || 'Failed to generate report'));
+        }
+    }
+};
+
+// Generate today's cash statement
+window.generateTodaysCashStatement = async function() {
+    try {
+        console.log('generateTodaysCashStatement called');
+        
+        // Wait a bit for libraries to load if needed
+        if (typeof Swal === 'undefined') {
+            console.warn('SweetAlert2 not loaded, using native alert');
+            if (!confirm('Generate Today\'s Cash Statement?')) return;
+        }
+        
+        if (typeof api === 'undefined') {
+            console.error('API client is not loaded');
+            alert('API client not available. Please refresh the page.');
+            return;
+        }
+        
+        // Use SweetAlert if available, otherwise proceed without it
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Generating Today\'s Cash Statement...',
+                text: 'Please wait...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+        } else {
+            console.log('Generating Today\'s Cash Statement...');
+        }
+        
+        // Get today's date
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        console.log('Requesting cash statement for:', todayStr);
+        const report = await api.request(`/admin/reports/cash-statement?startDate=${todayStr}&endDate=${todayStr}`);
+        console.log('Cash statement received:', report);
+        
+        // Group by payment method
+        const byMethod = {};
+        (report.payments || []).forEach(p => {
+            const method = p.payment_method || 'Other';
+            if (!byMethod[method]) byMethod[method] = { count: 0, total: 0 };
+            byMethod[method].count++;
+            byMethod[method].total += parseFloat(p.amount) || 0;
+        });
+        
+        const summary = [
+            { value: formatCurrency(report.total || 0), label: 'Total Collected' },
+            { value: (report.payments || []).length, label: 'Receipts' }
+        ];
+        
+        Object.entries(byMethod).forEach(([method, data]) => {
+            summary.push({ value: formatCurrency(data.total), label: method });
+        });
+        
+        const reportData = {
+            title: 'Daily Cash Statement',
+            dateRange: `Today - ${today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+            summary: summary,
+            headers: ['Receipt #', 'Customer', 'Policy #', 'Method', 'Amount'],
+            rows: (report.payments || []).map(p => [
+                p.receipt_number || '-',
+                p.customer_name || '-',
+                p.policy_number || '-',
+                p.payment_method || '-',
+                formatCurrency(p.amount || 0)
+            ]),
+            totals: ['', '', '', 'TOTAL', formatCurrency(report.total || 0)]
+        };
+        
+        sessionStorage.setItem('reportData', JSON.stringify(reportData));
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+        }
+        window.location.href = 'report-viewer.html';
+        
+    } catch (error) {
+        console.error('Today\'s cash statement error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', error.message || 'Failed to generate report', 'error');
+        } else {
+            alert('Error: ' + (error.message || 'Failed to generate report'));
+        }
+    }
+};
+
+// Generate outstanding balance report (from dashboard - always shows all)
+// Use a unique name to avoid conflicts with reports.js
+window.generateOutstandingBalanceReportFromDashboard = async function() {
+    try {
+        console.log('generateOutstandingBalanceReportFromDashboard called');
+        
+        // Wait a bit for libraries to load if needed
+        if (typeof Swal === 'undefined') {
+            console.warn('SweetAlert2 not loaded, using native alert');
+            if (!confirm('Generate Outstanding Balance Report?')) return;
+        }
+        
+        if (typeof api === 'undefined') {
+            console.error('API client is not loaded');
+            alert('API client not available. Please refresh the page.');
+            return;
+        }
+        
+        // Use SweetAlert if available, otherwise proceed without it
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Generating Outstanding Balance Report...',
+                text: 'Please wait...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+        } else {
+            console.log('Generating Outstanding Balance Report...');
+        }
+        
+        // Call without date parameters to get all outstanding balances
+        console.log('Requesting outstanding balances');
         const report = await api.request('/admin/reports/outstanding-balances');
+        console.log('Outstanding balances received:', report);
         
         if (!report || report.length === 0) {
             Swal.fire('Info', 'No policies with outstanding balances found', 'info');
@@ -225,16 +389,6 @@ window.generateOutstandingBalanceReport = async function() {
         const totalPremium = report.reduce((sum, p) => sum + (parseFloat(p.total_premium_due) || 0), 0);
         const totalPaid = report.reduce((sum, p) => sum + (parseFloat(p.amount_paid) || 0), 0);
         const activePolicies = report.filter(p => p.status === 'Active').length;
-        
-        // Format date helper
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
-            try {
-                return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-            } catch (e) {
-                return dateStr;
-            }
-        }
         
         // Prepare report data for viewer
         const reportData = {
@@ -264,11 +418,13 @@ window.generateOutstandingBalanceReport = async function() {
         
         // Store in session and navigate to viewer
         sessionStorage.setItem('reportData', JSON.stringify(reportData));
-        Swal.close();
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+        }
         window.location.href = 'report-viewer.html';
         
     } catch (error) {
-        console.error('Report error:', error);
+        console.error('Outstanding balance report error:', error);
         if (typeof Swal !== 'undefined') {
             Swal.fire('Error', error.message || 'Failed to generate report', 'error');
         } else {
@@ -276,3 +432,9 @@ window.generateOutstandingBalanceReport = async function() {
         }
     }
 };
+
+// Expose as the standard name for dashboard use
+// This will be used on dashboard page (reports.js is not loaded there)
+if (typeof window.generateOutstandingBalanceReport === 'undefined') {
+    window.generateOutstandingBalanceReport = window.generateOutstandingBalanceReportFromDashboard;
+}
