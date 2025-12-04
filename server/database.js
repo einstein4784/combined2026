@@ -2,13 +2,32 @@ const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
-// SQLite database connection
+// SQLite database connection with optimizations for concurrency
 const dbPath = path.join(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbPath, (err) => {
+const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
     if (err) {
         console.error('Error connecting to database:', err);
     } else {
         console.log('Connected to SQLite database');
+        
+        // Enable WAL mode for better concurrency (allows multiple readers and one writer)
+        db.run('PRAGMA journal_mode = WAL;', (err) => {
+            if (err) {
+                console.error('Error enabling WAL mode:', err);
+            } else {
+                console.log('WAL mode enabled for better concurrency');
+            }
+        });
+        
+        // Set busy timeout to handle concurrent access (wait up to 5 seconds for locks)
+        db.configure('busyTimeout', 5000);
+        
+        // Optimize for performance
+        db.run('PRAGMA synchronous = NORMAL;'); // Balance between safety and speed
+        db.run('PRAGMA cache_size = -64000;'); // 64MB cache
+        db.run('PRAGMA foreign_keys = ON;'); // Enable foreign key constraints
+        db.run('PRAGMA temp_store = MEMORY;'); // Store temp tables in memory
+        
         initializeDatabase();
     }
 });
@@ -283,6 +302,81 @@ function initializeDatabase() {
                         if (!err) console.log('Default financial period created');
                     });
             }
+        });
+        
+        // Create indexes for performance optimization
+        console.log('Creating database indexes...');
+        
+        // Customer indexes
+        db.run('CREATE INDEX IF NOT EXISTS idx_customers_id_number ON customers(id_number);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_customers_created_at ON customers(created_at);');
+        
+        // Policy indexes
+        db.run('CREATE INDEX IF NOT EXISTS idx_policies_customer_id ON policies(customer_id);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_policies_policy_number ON policies(policy_number);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_policies_status ON policies(status);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_policies_coverage_end_date ON policies(coverage_end_date);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_policies_created_at ON policies(created_at);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_policies_created_by ON policies(created_by);');
+        
+        // Payment indexes
+        db.run('CREATE INDEX IF NOT EXISTS idx_payments_policy_id ON payments(policy_id);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_payments_receipt_number ON payments(receipt_number);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_payments_payment_date ON payments(payment_date);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_payments_received_by ON payments(received_by);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_payments_created_at ON payments(created_at);');
+        
+        // Receipt indexes
+        db.run('CREATE INDEX IF NOT EXISTS idx_receipts_receipt_number ON receipts(receipt_number);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_receipts_policy_id ON receipts(policy_id);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_receipts_customer_id ON receipts(customer_id);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_receipts_payment_id ON receipts(payment_id);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_receipts_generated_at ON receipts(generated_at);');
+        
+        // Audit log indexes
+        db.run('CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_audit_log_entity_type ON audit_log(entity_type);');
+        
+        // Financial periods indexes
+        db.run('CREATE INDEX IF NOT EXISTS idx_financial_periods_status ON financial_periods(status);');
+        db.run('CREATE INDEX IF NOT EXISTS idx_financial_periods_start_date ON financial_periods(start_date);');
+        
+        console.log('Database indexes created successfully');
+    });
+}
+
+// Transaction helper function for atomic operations
+function runTransaction(callback) {
+    return new Promise((resolve, reject) => {
+        db.serialize(() => {
+            db.run('BEGIN IMMEDIATE TRANSACTION', (beginErr) => {
+                if (beginErr) {
+                    return reject(beginErr);
+                }
+                
+                callback(db, (err, result) => {
+                    if (err) {
+                        db.run('ROLLBACK', (rollbackErr) => {
+                            if (rollbackErr) {
+                                console.error('Rollback error:', rollbackErr);
+                            }
+                            reject(err);
+                        });
+                    } else {
+                        db.run('COMMIT', (commitErr) => {
+                            if (commitErr) {
+                                console.error('Commit error:', commitErr);
+                                reject(commitErr);
+                            } else {
+                                resolve(result);
+                            }
+                        });
+                    }
+                });
+            });
         });
     });
 }

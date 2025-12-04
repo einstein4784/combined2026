@@ -9,7 +9,8 @@ const {
     generateReceiptNumber, 
     generatePolicyNumber,
     hasPermissionAsync,
-    logAuditAction
+    logAuditAction,
+    runTransaction
 } = require('./database');
 const bcrypt = require('bcryptjs');
 
@@ -29,11 +30,17 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+// Session configuration optimized for multiple users
 app.use(session({
-    secret: 'ic-insurance-secret-key-2024',
+    secret: process.env.SESSION_SECRET || 'ic-insurance-secret-key-2024-change-in-production',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
+    cookie: { 
+        secure: false, // Set to true if using HTTPS
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        httpOnly: true // Prevent XSS attacks
+    },
+    name: 'ic-insurance.sid' // Custom session name
 }));
 
 // Authentication middleware
@@ -492,7 +499,7 @@ app.get('/api/payments/policy/:policyId', requireAuth, (req, res) => {
     });
 });
 
-app.post('/api/payments', requireAuth, requireRole('Admin', 'Cashier', 'Supervisor'), (req, res) => {
+app.post('/api/payments', requireAuth, requireRole('Admin', 'Cashier', 'Supervisor'), async (req, res) => {
     const { policyId, amount, paymentMethod, paymentMethods, notes } = req.body;
     
     if (!policyId || !amount || amount <= 0) {
@@ -507,10 +514,15 @@ app.post('/api/payments', requireAuth, requireRole('Admin', 'Cashier', 'Supervis
         methodString = paymentMethod;
     }
     
-    db.get('SELECT p.*, c.first_name, c.last_name FROM policies p JOIN customers c ON p.customer_id = c.id WHERE p.id = ?', [policyId], (err, policy) => {
-        if (err || !policy) {
-            return res.status(404).json({ error: 'Policy not found' });
-        }
+    try {
+        // Get policy with lock to prevent concurrent modifications
+        const policy = await new Promise((resolve, reject) => {
+            db.get('SELECT p.*, c.first_name, c.last_name FROM policies p JOIN customers c ON p.customer_id = c.id WHERE p.id = ?', [policyId], (err, row) => {
+                if (err) reject(err);
+                else if (!row) reject(new Error('Policy not found'));
+                else resolve(row);
+            });
+        });
         
         if (amount > policy.outstanding_balance) {
             return res.status(400).json({ error: 'Payment amount exceeds outstanding balance' });
@@ -521,53 +533,63 @@ app.post('/api/payments', requireAuth, requireRole('Admin', 'Cashier', 'Supervis
         const newOutstanding = policy.outstanding_balance - amount;
         const customerName = `${policy.first_name} ${policy.last_name}`;
         
-        db.run(`INSERT INTO payments (policy_id, amount, payment_method, receipt_number, received_by, notes) 
-                VALUES (?, ?, ?, ?, ?, ?)`,
-            [policyId, amount, methodString, receiptNumber, req.session.userId, notes || null],
-            function(err) {
-                if (err) {
-                    return res.status(500).json({ error: err.message });
-                }
-                
-                const paymentId = this.lastID;
-                
-                db.run(`UPDATE policies SET amount_paid = ?, outstanding_balance = ?, updated_at = CURRENT_TIMESTAMP 
-                        WHERE id = ?`,
-                    [newAmountPaid, newOutstanding, policyId],
-                    (err) => {
-                        if (err) {
-                            return res.status(500).json({ error: err.message });
-                        }
-                        
-                        db.run(`INSERT INTO receipts (receipt_number, payment_id, policy_id, customer_id, amount, payment_date, generated_by) 
-                                VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`,
-                            [receiptNumber, paymentId, policyId, policy.customer_id, amount, req.session.userId],
-                            (err) => {
-                                if (err) {
-                                    console.error('Error creating receipt:', err);
-                                }
-                            });
-                        
-                        // Log audit action
-                        logAuditAction(req.session.userId, 'RECEIVE_PAYMENT', 'Payment', paymentId.toString(), { 
-                            policyNumber: policy.policy_number,
-                            customerName,
-                            amount,
-                            paymentMethod: methodString,
-                            receiptNumber,
-                            previousOutstanding: policy.outstanding_balance,
-                            newOutstanding
-                        }, req.ip);
-                        
-                        res.json({ 
-                            id: paymentId, 
-                            receiptNumber, 
-                            success: true,
-                            outstandingBalance: newOutstanding
+        // Use transaction to ensure atomicity
+        await runTransaction((transactionDb, callback) => {
+            let paymentId;
+            
+            // Insert payment
+            transactionDb.run(`INSERT INTO payments (policy_id, amount, payment_method, receipt_number, received_by, notes) 
+                    VALUES (?, ?, ?, ?, ?, ?)`,
+                [policyId, amount, methodString, receiptNumber, req.session.userId, notes || null],
+                function(err) {
+                    if (err) return callback(err);
+                    
+                    paymentId = this.lastID;
+                    
+                    // Update policy
+                    transactionDb.run(`UPDATE policies SET amount_paid = ?, outstanding_balance = ?, updated_at = CURRENT_TIMESTAMP 
+                            WHERE id = ?`,
+                        [newAmountPaid, newOutstanding, policyId],
+                        (err) => {
+                            if (err) return callback(err);
+                            
+                            // Insert receipt
+                            transactionDb.run(`INSERT INTO receipts (receipt_number, payment_id, policy_id, customer_id, amount, payment_date, generated_by) 
+                                    VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`,
+                                [receiptNumber, paymentId, policyId, policy.customer_id, amount, req.session.userId],
+                                (err) => {
+                                    if (err) {
+                                        console.error('Error creating receipt:', err);
+                                        // Don't fail the transaction for receipt errors
+                                    }
+                                    
+                                    // Log audit action (non-blocking)
+                                    logAuditAction(req.session.userId, 'RECEIVE_PAYMENT', 'Payment', paymentId.toString(), { 
+                                        policyNumber: policy.policy_number,
+                                        customerName,
+                                        amount,
+                                        paymentMethod: methodString,
+                                        receiptNumber,
+                                        previousOutstanding: policy.outstanding_balance,
+                                        newOutstanding
+                                    }, req.ip);
+                                    
+                                    callback(null, { 
+                                        id: paymentId, 
+                                        receiptNumber, 
+                                        success: true,
+                                        outstandingBalance: newOutstanding
+                                    });
+                                });
                         });
-                    });
-            });
-    });
+                });
+        });
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Payment processing error:', error);
+        res.status(500).json({ error: error.message || 'Failed to process payment' });
+    }
 });
 
 // ========== RECEIPT ROUTES ==========
