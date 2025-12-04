@@ -10,6 +10,11 @@
             .no-print { display: none !important; }
             .page-content { padding: 0 !important; margin: 0 !important; }
             .card { border: none !important; box-shadow: none !important; }
+            img { 
+                max-width: 100% !important;
+                height: auto !important;
+                page-break-inside: avoid !important;
+            }
         }
     </style>
 </head>
@@ -23,7 +28,7 @@
 
             <div class="px-3">
                 <div class="container-fluid">
-                    @@include("./partials/page-title.html", {"subtitle":"I&C Insurance","title":"Daily Cash Statement","icon":"receipt"})
+                    @@include("./partials/page-title.html", {"subtitle":"Combined Insurance Services","title":"Daily Cash Statement","icon":"receipt"})
 
                     <div class="row no-print">
                         <div class="col-12">

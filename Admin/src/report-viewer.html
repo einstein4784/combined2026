@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Report Viewer | I&C Insurance Brokers</title>
+    <title>Report Viewer | Combined Insurance Services Ltd</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="assets/images/favicon.ico">
     <link href="assets/libs/sweetalert2/sweetalert2.min.css" rel="stylesheet" type="text/css" />
@@ -28,6 +28,11 @@
             .no-print { display: none !important; }
             .report-page { padding: 0; }
             .report-container { box-shadow: none; border-radius: 0; }
+            img { 
+                max-width: 100% !important;
+                height: auto !important;
+                page-break-inside: avoid !important;
+            }
         }
         
         .report-page {
@@ -408,11 +413,9 @@
         <div class="report-container" id="reportContainer">
             <!-- Report Header -->
             <div class="report-header">
-                <div class="company-logo-text">
-                    <span class="logo-i">I</span><span class="logo-amp">&</span><span class="logo-c">C</span>
-                </div>
-                <div class="company-name">INSURANCE BROKERS</div>
-                <div class="company-location">ST. LUCIA</div>
+                <img src="assets/images/IC-LOGO-NEW.png" alt="Combined Insurance Services Ltd" style="max-width: 150px; margin-bottom: 15px;">
+                <div class="company-name">COMBINED INSURANCE SERVICES LTD</div>
+                <div class="company-location">CASTRIES ST. LUCIA</div>
                 <div class="report-title" id="reportTitle">Report</div>
             </div>
             
@@ -475,7 +478,7 @@
                 
                 <div class="generated-info">
                     Report generated on <span id="generatedDate">--</span> at <span id="generatedTime">--</span>
-                    by <span id="generatedUser">--</span> | I&C Insurance Brokers, St. Lucia
+                    by <span id="generatedUser">--</span> | Combined Insurance Services Ltd, Castries St. Lucia
                 </div>
             </div>
         </div>
@@ -529,7 +532,7 @@
             const title = data.title || 'Report';
             document.getElementById('toolbarTitle').textContent = title;
             document.getElementById('reportTitle').textContent = title;
-            document.title = title + ' | I&C Insurance Brokers';
+            document.title = title + ' | Combined Insurance Services Ltd';
             
             // Set meta info
             document.getElementById('metaReportDate').textContent = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });

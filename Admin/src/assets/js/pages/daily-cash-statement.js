@@ -161,8 +161,8 @@ window.loadStatementRange = async function() {
         const statementHTML = `
             <div id="printableStatement">
                 <div class="text-center mb-4">
-                    <img src="assets/images/logo.png" alt="I&C Insurance" style="height: 60px;" class="mb-2" onerror="this.style.display='none'">
-                    <h3 class="mb-1" style="color: #1a365d;">I&C Insurance Brokers</h3>
+                    <img src="assets/images/IC-LOGO-NEW.png" alt="Combined Insurance Services Ltd" style="height: 60px;" class="mb-2" onerror="this.style.display='none'">
+                    <h3 class="mb-1" style="color: #1a365d;">Combined Insurance Services Ltd</h3>
                     <h4 class="text-muted">${reportTitle}</h4>
                     <p class="mb-0"><strong>Period:</strong> ${dateDisplay}</p>
                     <p class="text-muted small">Generated: ${formatDateTime(new Date().toISOString())} by ${generatedBy}</p>
@@ -213,7 +213,8 @@ window.loadStatementRange = async function() {
                 </div>
                 
                 <div class="text-center mt-4 text-muted small">
-                    <p class="mb-0">I&C Insurance Brokers - St. Lucia</p>
+                    <p class="mb-0">Combined Insurance Services Ltd - Castries St. Lucia</p>
+                    <p class="mb-0">Tel: 17584560700 / 175871695</p>
                     <p class="mb-0">Designed by Solace-Systems</p>
                 </div>
             </div>

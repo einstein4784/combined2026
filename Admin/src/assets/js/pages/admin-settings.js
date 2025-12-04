@@ -632,7 +632,7 @@ window.exportAllData = async function() {
         // Create combined CSV backup
         let csv = '';
         csv += '================================================================================\n';
-        csv += '                        I&C INSURANCE BROKERS\n';
+        csv += '                    COMBINED INSURANCE SERVICES LTD\n';
         csv += '                         DATABASE BACKUP EXPORT\n';
         csv += '================================================================================\n\n';
         csv += `Export Date: ${now.toLocaleString()}\n`;
@@ -709,7 +709,7 @@ window.importData = async function() {
         });
         
         const text = await file.text();
-        const lines = text.split('\n').filter(line => line.trim() && !line.startsWith('=') && !line.includes('I&C INSURANCE'));
+        const lines = text.split('\n').filter(line => line.trim() && !line.startsWith('=') && !line.includes('COMBINED INSURANCE'));
         
         // Find the header line
         let headerIndex = lines.findIndex(line => {
