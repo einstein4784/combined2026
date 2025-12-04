@@ -634,6 +634,170 @@ app.get('/api/reports/daily-cash-statement', requireAuth, requireRole('Admin', '
     });
 });
 
+// ========== RENEWAL NOTICES ROUTES ==========
+// Get policies expiring in a specific month (accessible to all users)
+app.get('/api/renewals/month/:year/:month', requireAuth, (req, res) => {
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    
+    if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+        return res.status(400).json({ error: 'Invalid year or month' });
+    }
+    
+    // Get first and last day of the month
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    // month is 1-12, JavaScript months are 0-indexed, so month gives us the next month, day 0 gives last day of previous month
+    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+    
+    const query = `
+        SELECT p.*,
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               c.first_name, c.middle_name, c.last_name, c.address, c.email, c.contact_number, c.id_number,
+               (SELECT py.amount FROM payments py 
+                WHERE py.policy_id = p.id 
+                ORDER BY py.payment_date DESC LIMIT 1) as last_payment_amount,
+               (SELECT py.payment_date FROM payments py 
+                WHERE py.policy_id = p.id 
+                ORDER BY py.payment_date DESC LIMIT 1) as last_payment_date
+        FROM policies p
+        JOIN customers c ON p.customer_id = c.id
+        WHERE p.status = 'Active'
+        AND DATE(p.coverage_end_date) >= ?
+        AND DATE(p.coverage_end_date) <= ?
+        ORDER BY p.coverage_end_date ASC
+    `;
+    
+    db.all(query, [startDate, endDate], (err, policies) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({
+            year,
+            month,
+            startDate,
+            endDate,
+            policies,
+            count: policies.length
+        });
+    });
+});
+
+// Get individual renewal notice data
+app.get('/api/renewals/policy/:policyId', requireAuth, (req, res) => {
+    const query = `
+        SELECT p.*,
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               c.first_name, c.middle_name, c.last_name, c.address, c.email, c.contact_number, c.id_number,
+               (SELECT py.amount FROM payments py 
+                WHERE py.policy_id = p.id 
+                ORDER BY py.payment_date DESC LIMIT 1) as last_payment_amount,
+               (SELECT py.payment_date FROM payments py 
+                WHERE py.policy_id = p.id 
+                ORDER BY py.payment_date DESC LIMIT 1) as last_payment_date
+        FROM policies p
+        JOIN customers c ON p.customer_id = c.id
+        WHERE p.id = ? AND p.status = 'Active'
+    `;
+    
+    db.get(query, [req.params.policyId], (err, policy) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (!policy) {
+            return res.status(404).json({ error: 'Policy not found or not active' });
+        }
+        res.json(policy);
+    });
+});
+
+// Get all active policies for renewal notices (view all)
+app.get('/api/renewals/all', requireAuth, (req, res) => {
+    const query = `
+        SELECT p.*,
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               c.first_name, c.middle_name, c.last_name, c.address, c.email, c.contact_number, c.id_number,
+               (SELECT py.amount FROM payments py 
+                WHERE py.policy_id = p.id 
+                ORDER BY py.payment_date DESC LIMIT 1) as last_payment_amount,
+               (SELECT py.payment_date FROM payments py 
+                WHERE py.policy_id = p.id 
+                ORDER BY py.payment_date DESC LIMIT 1) as last_payment_date
+        FROM policies p
+        JOIN customers c ON p.customer_id = c.id
+        WHERE p.status = 'Active'
+        ORDER BY p.coverage_end_date ASC
+    `;
+    
+    db.all(query, [], (err, policies) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({
+            policies,
+            count: policies.length
+        });
+    });
+});
+
+// Generate renewal listing report by month
+app.get('/api/renewals/report/:year/:month', requireAuth, (req, res) => {
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    
+    if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+        return res.status(400).json({ error: 'Invalid year or month' });
+    }
+    
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    // month is 1-12, JavaScript months are 0-indexed, so month gives us the next month, day 0 gives last day of previous month
+    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+    
+    const query = `
+        SELECT p.policy_number,
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               c.address, c.contact_number, c.email,
+               p.coverage_type,
+               p.coverage_start_date,
+               p.coverage_end_date,
+               p.total_premium_due,
+               p.amount_paid,
+               p.outstanding_balance,
+               (SELECT py.amount FROM payments py 
+                WHERE py.policy_id = p.id 
+                ORDER BY py.payment_date DESC LIMIT 1) as last_payment_amount,
+               (SELECT py.payment_date FROM payments py 
+                WHERE py.policy_id = p.id 
+                ORDER BY py.payment_date DESC LIMIT 1) as last_payment_date
+        FROM policies p
+        JOIN customers c ON p.customer_id = c.id
+        WHERE p.status = 'Active'
+        AND DATE(p.coverage_end_date) >= ?
+        AND DATE(p.coverage_end_date) <= ?
+        ORDER BY p.coverage_end_date ASC, c.last_name ASC
+    `;
+    
+    db.all(query, [startDate, endDate], (err, policies) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        
+        const totalOutstanding = policies.reduce((sum, p) => sum + (p.outstanding_balance || 0), 0);
+        const totalPremium = policies.reduce((sum, p) => sum + (p.total_premium_due || 0), 0);
+        
+        res.json({
+            year,
+            month,
+            startDate,
+            endDate,
+            policies,
+            count: policies.length,
+            totalOutstanding,
+            totalPremium,
+            summary: `Renewal Notice Listing for ${new Date(year, month - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })}`
+        });
+    });
+});
+
 // ========== DASHBOARD STATS ==========
 app.get('/api/dashboard/stats', requireAuth, (req, res) => {
     const stats = {};

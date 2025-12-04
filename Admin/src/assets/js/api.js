@@ -153,6 +153,23 @@ class APIClient {
         return this.request('/dashboard/stats');
     }
 
+    // Renewal Notices
+    async getRenewalsByMonth(year, month) {
+        return this.request(`/renewals/month/${year}/${month}`);
+    }
+
+    async getAllRenewals() {
+        return this.request('/renewals/all');
+    }
+
+    async getRenewalNotice(policyId) {
+        return this.request(`/renewals/policy/${policyId}`);
+    }
+
+    async getRenewalReport(year, month) {
+        return this.request(`/renewals/report/${year}/${month}`);
+    }
+
     // Users
     async getUsers() {
         return this.request('/users');
