@@ -180,4 +180,6 @@ class APIClient {
 }
 
 const api = new APIClient();
+// Make API client globally available
+window.api = api;
 

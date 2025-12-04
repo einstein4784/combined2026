@@ -266,7 +266,9 @@
                                     <div class="receipt-header">
                                         <div class="row align-items-center">
                                             <div class="col-6">
-                                                <img src="assets/images/logo.png" alt="I&C Insurance Brokers" style="height: 70px; margin-bottom: 10px;">
+                                                <div class="company-logo">
+                                                    <span class="i">I</span><span class="amp">&</span><span class="c">C</span>
+                                                </div>
                                                 <div class="company-name">Insurance Brokers</div>
                                                 <div class="company-address">
                                                     St. Lucia, West Indies<br>
@@ -374,11 +376,6 @@
                                     <!-- Footer -->
                                     <div class="receipt-footer">
                                         <p><strong>Thank you for your payment!</strong></p>
-                                        <p>This receipt is computer-generated and is valid without signature for amounts under $500.</p>
-                                        <p>For inquiries, please contact us at info@ic-insurance.com</p>
-                                        <p class="mt-2" style="font-size: 11px; color: #999;">
-                                            Powered by <a href="https://solace-systems.com" target="_blank" style="color: #4fa896;">Solace-Systems</a>
-                                        </p>
                                     </div>
                                     
                                     <div class="timestamp">
@@ -398,73 +395,180 @@
     @@include('partials/footer-scripts.html')
     <script>
         $(document).ready(function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const receiptNumber = urlParams.get('receipt');
-            
-            if (receiptNumber) {
-                loadReceipt(receiptNumber);
-            } else {
-                $('#receiptContent').html('<div class="text-center text-danger p-5"><h4>No receipt specified</h4></div>');
-            }
+            // Wait a bit for all scripts to load
+            setTimeout(function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const receiptNumber = urlParams.get('receipt');
+                
+                if (receiptNumber) {
+                    console.log('Loading receipt:', receiptNumber);
+                    loadReceipt(receiptNumber);
+                } else {
+                    $('#receiptContent').html('<div class="text-center text-danger p-5"><h4>No receipt specified</h4><p>Please provide a receipt number in the URL</p></div>');
+                }
+            }, 100);
         });
         
         async function loadReceipt(receiptNumber) {
+            // Show loading overlay instead of replacing content
+            // First, hide the receipt content temporarily
+            $('.receipt-content').css('opacity', '0.3');
+            const loadingOverlay = $('<div id="receiptLoadingOverlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;"><div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div><p class="mt-3">Loading receipt...</p></div>');
+            $('body').append(loadingOverlay);
+            
+            const API_BASE_URL = 'http://localhost:3001';
+            const receiptUrl = `${API_BASE_URL}/api/receipts/${encodeURIComponent(receiptNumber)}`;
+            
+            console.log('Fetching receipt from:', receiptUrl);
+            
             try {
-                const response = await fetch(`${API_BASE_URL}/api/receipts/${receiptNumber}`, {
-                    credentials: 'include'
+                const response = await fetch(receiptUrl, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
                 });
                 
+                console.log('Response status:', response.status, response.statusText);
+                
                 if (!response.ok) {
-                    throw new Error('Receipt not found');
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        if (errorText) errorMessage = errorText;
+                    }
+                    throw new Error(errorMessage);
                 }
                 
                 const data = await response.json();
+                console.log('Receipt data received:', data);
+                
+                if (!data || !data.receipt_number) {
+                    throw new Error('Invalid receipt data received from server');
+                }
+                
+                // Remove loading overlay and restore opacity
+                $('#receiptLoadingOverlay').remove();
+                $('.receipt-content').css('opacity', '1');
+                
+                // Display receipt data
                 displayReceipt(data);
             } catch (error) {
                 console.error('Error loading receipt:', error);
-                Swal.fire('Error', 'Could not load receipt: ' + error.message, 'error');
+                
+                // Remove loading overlay and restore opacity
+                $('#receiptLoadingOverlay').remove();
+                $('.receipt-content').css('opacity', '1');
+                
+                const errorMessage = error.message || 'Could not load receipt. Please check your connection and try again.';
+                
+                // Replace receipt content with error message
+                $('#receiptContent .receipt-content').html(`
+                    <div class="text-center text-danger p-5">
+                        <h4><i data-lucide="alert-circle" class="icon-sm me-2"></i>Error Loading Receipt</h4>
+                        <p class="mt-3">${errorMessage}</p>
+                        <p class="mt-2"><small>Receipt Number: <strong>${receiptNumber}</strong></small></p>
+                        <div class="mt-4">
+                            <button class="btn btn-primary me-2" onclick="location.reload()">
+                                <i data-lucide="refresh-cw" class="icon-sm me-1"></i> Retry
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="window.history.back()">
+                                <i data-lucide="arrow-left" class="icon-sm me-1"></i> Go Back
+                            </button>
+                        </div>
+                    </div>
+                `);
+                
+                // Initialize icons
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Error',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
             }
         }
         
         function displayReceipt(data) {
-            // Receipt info
-            $('#receiptNumber').text(data.receipt_number);
-            $('#paymentDate').text(formatDate(data.payment_date));
-            
-            // Customer info
-            $('#customerName').text(data.customer_name || '---');
-            $('#customerIdNumber').text(data.customer_id_number || '---');
-            $('#customerContact').text(data.customer_contact || '---');
-            $('#customerEmail').text(data.customer_email || '---');
-            
-            // Policy info
-            $('#policyNumber').text(data.policy_number);
-            
-            // Coverage type with badge
-            const coverageType = data.coverage_type || 'Third Party';
-            const badgeClass = coverageType === 'Fully Comprehensive' ? 'fully-comp' : 'third-party';
-            $('#coverageType').html(`<span class="coverage-badge ${badgeClass}">${coverageType}</span>`);
-            
-            // Coverage period
-            const startDate = data.coverage_start_date ? formatDate(data.coverage_start_date) : '---';
-            const endDate = data.coverage_end_date ? formatDate(data.coverage_end_date) : '---';
-            $('#coveragePeriod').text(`${startDate} to ${endDate}`);
-            
-            $('#policyStatus').html(`<span class="badge bg-success">${data.policy_status || 'Active'}</span>`);
-            
-            // Payment info
-            $('#totalPremium').text(formatCurrency(data.total_premium_due));
-            $('#previousPayments').text(formatCurrency((data.amount_paid_before || 0)));
-            $('#paymentMethod').text(data.payment_method || 'Cash');
-            $('#amountPaid').text(formatCurrency(data.amount));
-            $('#outstandingBalance').text(formatCurrency(data.outstanding_balance));
-            
-            // Timestamps
-            $('#generatedTimestamp').text(formatDateTime(data.generated_at || new Date()));
-            $('#generatedBy').text(data.generated_by_name || 'System');
-            
-            // Initialize icons
-            lucide.createIcons();
+            try {
+                console.log('Displaying receipt data:', data);
+                
+                // Receipt info
+                if ($('#receiptNumber').length) $('#receiptNumber').text(data.receipt_number || '---');
+                if ($('#paymentDate').length) $('#paymentDate').text(formatDate(data.payment_date || data.payment_date));
+                
+                // Customer info
+                if ($('#customerName').length) $('#customerName').text(data.customer_name || '---');
+                if ($('#customerIdNumber').length) $('#customerIdNumber').text(data.customer_id_number || '---');
+                if ($('#customerContact').length) $('#customerContact').text(data.customer_contact || '---');
+                if ($('#customerEmail').length) $('#customerEmail').text(data.customer_email || '---');
+                
+                // Policy info
+                if ($('#policyNumber').length) $('#policyNumber').text(data.policy_number || '---');
+                
+                // Coverage type with badge
+                if ($('#coverageType').length) {
+                    const coverageType = data.coverage_type || 'Third Party';
+                    const badgeClass = coverageType === 'Fully Comprehensive' ? 'fully-comp' : 'third-party';
+                    $('#coverageType').html(`<span class="coverage-badge ${badgeClass}">${coverageType}</span>`);
+                }
+                
+                // Coverage period
+                if ($('#coveragePeriod').length) {
+                    const startDate = data.coverage_start_date ? formatDate(data.coverage_start_date) : '---';
+                    const endDate = data.coverage_end_date ? formatDate(data.coverage_end_date) : '---';
+                    $('#coveragePeriod').text(`${startDate} to ${endDate}`);
+                }
+                
+                if ($('#policyStatus').length) {
+                    $('#policyStatus').html(`<span class="badge bg-success">${data.policy_status || 'Active'}</span>`);
+                }
+                
+                // Payment info
+                if ($('#totalPremium').length) $('#totalPremium').text(formatCurrency(data.total_premium_due || 0));
+                if ($('#previousPayments').length) $('#previousPayments').text(formatCurrency((data.amount_paid_before || 0)));
+                if ($('#paymentMethod').length) $('#paymentMethod').text(data.payment_method || 'Cash');
+                if ($('#amountPaid').length) $('#amountPaid').text(formatCurrency(data.amount || 0));
+                if ($('#outstandingBalance').length) $('#outstandingBalance').text(formatCurrency(data.outstanding_balance || 0));
+                
+                // Timestamps
+                if ($('#generatedTimestamp').length) {
+                    $('#generatedTimestamp').text(formatDateTime(data.generated_at || data.payment_date || new Date()));
+                }
+                if ($('#generatedBy').length) {
+                    $('#generatedBy').text(data.generated_by_name || 'System');
+                }
+                
+                // Make sure receipt content is visible
+                $('#receiptContent').show();
+                
+                // Initialize icons
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                
+                console.log('Receipt displayed successfully');
+            } catch (error) {
+                console.error('Error in displayReceipt:', error);
+                $('#receiptContent').html(`
+                    <div class="text-center text-danger p-5">
+                        <h4>Error Displaying Receipt</h4>
+                        <p>${error.message || 'An error occurred while displaying the receipt'}</p>
+                        <pre style="text-align: left; margin-top: 20px; font-size: 12px;">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `);
+            }
         }
         
         function formatDate(dateStr) {

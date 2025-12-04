@@ -40,6 +40,19 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
         }
         
+        .stat-card[onclick] {
+            cursor: pointer;
+        }
+        
+        .stat-card[onclick]:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .stat-card[onclick]:active {
+            transform: translateY(-2px);
+        }
+        
         .stat-icon {
             width: 56px;
             height: 56px;
@@ -189,7 +202,7 @@
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
-                            <div class="card stat-card h-100">
+                            <div class="card stat-card h-100" style="cursor: pointer;" onclick="generateOutstandingBalanceReport()" title="Click to view Outstanding Balance Report">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center">
                                         <div class="stat-icon outstanding me-3">

@@ -1157,6 +1157,41 @@ app.get('/api/admin/reports/customers', requireAuth, async (req, res) => {
     });
 });
 
+// Generate outstanding balance report - policies with balances
+app.get('/api/admin/reports/outstanding-balances', requireAuth, async (req, res) => {
+    const allowed = await hasPermissionAsync(req.session.userId, 'generate_cash_statements');
+    if (!allowed) {
+        return res.status(403).json({ error: 'Permission denied' });
+    }
+    
+    const query = `
+        SELECT p.policy_number, 
+               c.first_name || ' ' || COALESCE(c.middle_name || ' ', '') || c.last_name as customer_name,
+               c.id_number as customer_id_number,
+               c.contact_number,
+               c.email,
+               p.coverage_type, 
+               p.coverage_start_date, 
+               p.coverage_end_date,
+               p.total_premium_due, 
+               p.amount_paid, 
+               p.outstanding_balance, 
+               p.status, 
+               p.created_at
+        FROM policies p
+        JOIN customers c ON p.customer_id = c.id
+        WHERE p.outstanding_balance > 0
+        ORDER BY p.outstanding_balance DESC, p.created_at DESC
+    `;
+    
+    db.all(query, [], (err, policies) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(policies);
+    });
+});
+
 // Get user permissions for current user
 app.get('/api/user/permissions', requireAuth, (req, res) => {
     db.get('SELECT role FROM users WHERE id = ?', [req.session.userId], (err, user) => {

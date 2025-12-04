@@ -300,22 +300,8 @@ window.savePayment = async function() {
         await loadPayments();
         await loadPoliciesData();
         
-        // Show success message
-        setTimeout(() => {
-            Swal.fire({
-                title: 'Payment Recorded!',
-                text: `Receipt Number: ${result.receiptNumber}`,
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonText: 'View Receipt',
-                cancelButtonText: 'Close',
-                timer: 5000
-            }).then((swalResult) => {
-                if (swalResult.isConfirmed) {
-                    viewReceipt(result.receiptNumber);
-                }
-            });
-        }, 300);
+        // Redirect directly to receipt page
+        window.location.href = `receipt.html?receipt=${result.receiptNumber}`;
     } catch (error) {
         console.error('Save payment error:', error);
         Swal.fire('Error', error.message || 'Failed to record payment', 'error');
@@ -325,5 +311,5 @@ window.savePayment = async function() {
 };
 
 window.viewReceipt = function(receiptNumber) {
-    window.open(`receipt.html?receiptNumber=${receiptNumber}`, '_blank');
+    window.open(`receipt.html?receipt=${receiptNumber}`, '_blank');
 };

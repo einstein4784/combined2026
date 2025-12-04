@@ -197,3 +197,82 @@ async function loadRecentPayments() {
         $('#recentPaymentsList').html('<div class="text-center py-4 text-danger">Error loading data</div>');
     }
 }
+
+// Generate outstanding balance report
+window.generateOutstandingBalanceReport = async function() {
+    try {
+        if (typeof Swal === 'undefined') {
+            console.error('SweetAlert2 is not loaded');
+            return;
+        }
+        
+        Swal.fire({
+            title: 'Generating Outstanding Balance Report...',
+            text: 'Please wait...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        const report = await api.request('/admin/reports/outstanding-balances');
+        
+        if (!report || report.length === 0) {
+            Swal.fire('Info', 'No policies with outstanding balances found', 'info');
+            return;
+        }
+        
+        // Calculate summary stats
+        const totalOutstanding = report.reduce((sum, p) => sum + (parseFloat(p.outstanding_balance) || 0), 0);
+        const totalPremium = report.reduce((sum, p) => sum + (parseFloat(p.total_premium_due) || 0), 0);
+        const totalPaid = report.reduce((sum, p) => sum + (parseFloat(p.amount_paid) || 0), 0);
+        const activePolicies = report.filter(p => p.status === 'Active').length;
+        
+        // Format date helper
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            try {
+                return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            } catch (e) {
+                return dateStr;
+            }
+        }
+        
+        // Prepare report data for viewer
+        const reportData = {
+            title: 'Outstanding Balance Report',
+            dateRange: 'All Policies with Outstanding Balances',
+            summary: [
+                { value: report.length, label: 'Policies with Balances' },
+                { value: activePolicies, label: 'Active Policies' },
+                { value: formatCurrency(totalPremium), label: 'Total Premium Due' },
+                { value: formatCurrency(totalPaid), label: 'Amount Paid' },
+                { value: formatCurrency(totalOutstanding), label: 'Total Outstanding' }
+            ],
+            headers: ['Policy #', 'Customer', 'Customer ID', 'Contact', 'Coverage Type', 'Premium Due', 'Amount Paid', 'Outstanding Balance', 'Status'],
+            rows: report.map(p => [
+                p.policy_number || '',
+                p.customer_name || '',
+                p.customer_id_number || '',
+                (p.contact_number || p.email || 'N/A'),
+                p.coverage_type || 'N/A',
+                formatCurrency(p.total_premium_due || 0),
+                formatCurrency(p.amount_paid || 0),
+                formatCurrency(p.outstanding_balance || 0),
+                p.status || 'Active'
+            ]),
+            totals: ['TOTALS', '', '', '', '', formatCurrency(totalPremium), formatCurrency(totalPaid), formatCurrency(totalOutstanding), '']
+        };
+        
+        // Store in session and navigate to viewer
+        sessionStorage.setItem('reportData', JSON.stringify(reportData));
+        Swal.close();
+        window.location.href = 'report-viewer.html';
+        
+    } catch (error) {
+        console.error('Report error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', error.message || 'Failed to generate report', 'error');
+        } else {
+            alert('Error: ' + (error.message || 'Failed to generate report'));
+        }
+    }
+};

@@ -1,7 +1,7 @@
 {
-  "name": "ic-insurance-backend",
-  "version": "1.0.0",
-  "description": "I&C Insurance Brokers Backend API",
+  "name": "ic-insurance-server",
+  "version": "2.0.0",
+  "description": "I&C Insurance Brokers Server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,16 +9,15 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "sqlite3": "^5.1.6",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
     "cors": "^2.8.5",
     "body-parser": "^1.20.2",
-    "express-session": "^1.17.3"
+    "express-session": "^1.17.3",
+    "bcryptjs": "^2.4.3",
+    "sqlite3": "^5.1.6"
   },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
-  }
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "author": "I&C Insurance Brokers",
+  "license": "ISC"
 }
-
-
