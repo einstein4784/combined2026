@@ -1,5 +1,23 @@
 // API Client for I&C Insurance Brokers
-const API_BASE_URL = 'http://localhost:3001/api';
+// Auto-detect API URL based on current hostname
+const getApiBaseUrl = () => {
+    // If running on production server (not localhost)
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        // Use the same hostname and port 3001, or use port 80/443 if behind reverse proxy
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        // If port is 80 or 443, assume API is on same domain
+        if (window.location.port === '' || window.location.port === '80' || window.location.port === '443') {
+            return `${protocol}//${hostname}/api`;
+        }
+        // Otherwise use port 3001
+        return `${protocol}//${hostname}:3001/api`;
+    }
+    // Default to localhost for development
+    return 'http://localhost:3001/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 class APIClient {
     async request(endpoint, options = {}) {
