@@ -105,3 +105,5 @@ Browser should open automatically to `http://localhost:3000`
 All data is stored in MongoDB database: `ic_insurance`
 
 
+
+

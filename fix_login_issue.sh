@@ -117,3 +117,5 @@ echo "2. Ensure server is running: pm2 start server/server.js"
 echo "3. Check database has admin user"
 echo "4. Verify CORS settings allow requests from your domain"
 
+
+

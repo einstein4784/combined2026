@@ -170,3 +170,5 @@ I've updated the source code to auto-detect the server IP. After rebuilding and 
 3. Check browser console (F12) for any errors
 4. Verify the API URL in Network tab shows: `http://138.197.37.254:3001/api/login`
 
+
+
