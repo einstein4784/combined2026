@@ -41,3 +41,14 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+.env*.local
+
+# Large media files
+*.mp4
+*.rar
+*.zip
+*.mov
+*.avi
+auth_secret.txt
+mongo_value.txt
+*.report.html
