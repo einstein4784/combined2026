@@ -181,44 +181,65 @@ export function CoverageTypeManager() {
         <p className="text-xs uppercase tracking-[0.12em] text-[var(--ic-gray-600)]">Coverage Types</p>
         <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Manage coverage options</h2>
         <p className="text-sm text-[var(--ic-gray-600)]">
-          Add, edit, or remove coverage types available when creating policies. Coverage types from data imports are automatically added here.
+          Add, edit, or remove coverage types available when creating policies. Only coverage types listed here can be used for policies.
         </p>
       </div>
 
       <form className="flex flex-col gap-3 md:flex-row" onSubmit={add}>
-        <input
-          className="flex-1"
-          placeholder="e.g., Fire and Theft"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <button type="submit" className="btn btn-primary md:w-40" disabled={saving}>
-          {saving ? "Adding…" : "Add"}
-        </button>
+        <div className="flex-1">
+          <label htmlFor="coverage-type-name" className="block text-sm font-medium text-[var(--ic-navy)] mb-2">
+            Coverage Type Name
+          </label>
+          <input
+            id="coverage-type-name"
+            type="text"
+            className="form-input w-full px-4 py-2 border border-[var(--ic-gray-300)] rounded-lg focus:ring-2 focus:ring-[var(--ic-navy)] focus:border-transparent"
+            placeholder="e.g., Fire and Theft, Third Party Fire & Theft"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
+        <div className="flex items-end">
+          <button 
+            type="submit" 
+            className="btn-primary px-6 py-2 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed" 
+            disabled={saving || !name.trim()}
+          >
+            {saving ? "Adding…" : "Add Coverage Type"}
+          </button>
+        </div>
       </form>
 
       {/* Bulk selection controls */}
       {items.length > 0 && (
-        <div className="flex items-center justify-between gap-3 p-3 bg-[var(--ic-gray-100)] rounded-lg border border-[var(--ic-gray-200)]">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-[var(--ic-navy)]">
+              Bulk Actions:
+            </span>
             <button
               type="button"
               onClick={selectAll}
-              className="text-sm font-medium text-[var(--ic-navy)] hover:underline"
+              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
             >
               Select All
             </button>
+            <span className="text-[var(--ic-gray-400)]">•</span>
             <button
               type="button"
               onClick={deselectAll}
-              className="text-sm font-medium text-[var(--ic-gray-600)] hover:underline"
+              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
             >
-              Deselect All
+              Clear Selection
             </button>
             {selectedIds.size > 0 && (
-              <span className="text-sm text-[var(--ic-gray-600)]">
-                {selectedIds.size} selected
-              </span>
+              <>
+                <span className="text-[var(--ic-gray-400)]">•</span>
+                <span className="text-sm font-semibold text-[var(--ic-navy)]">
+                  {selectedIds.size} item{selectedIds.size !== 1 ? 's' : ''} selected
+                </span>
+              </>
             )}
           </div>
           {selectedIds.size > 0 && (
@@ -226,7 +247,7 @@ export function CoverageTypeManager() {
               type="button"
               onClick={bulkDelete}
               disabled={deleting}
-              className="btn btn-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {deleting ? "Deleting…" : `Delete Selected (${selectedIds.size})`}
             </button>
@@ -234,29 +255,34 @@ export function CoverageTypeManager() {
         </div>
       )}
 
-      <div className="rounded-lg border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)]">
+      <div className="rounded-lg border border-[var(--ic-gray-200)] bg-white overflow-hidden">
         {loading ? (
-          <p className="p-3 text-sm text-[var(--ic-gray-600)]">Loading…</p>
+          <div className="p-6 text-center">
+            <p className="text-sm text-[var(--ic-gray-600)]">Loading coverage types…</p>
+          </div>
         ) : items.length === 0 ? (
-          <p className="p-3 text-sm text-[var(--ic-gray-600)]">No coverage types yet.</p>
+          <div className="p-6 text-center">
+            <p className="text-sm text-[var(--ic-gray-600)]">No coverage types yet. Add one using the form above.</p>
+          </div>
         ) : (
           <ul className="divide-y divide-[var(--ic-gray-200)]">
             {items.map((item) => (
-              <li key={item._id} className="flex items-center gap-3 px-3 py-2">
+              <li key={item._id} className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--ic-gray-50)] transition-colors">
                 {/* Checkbox for bulk selection */}
                 <input
                   type="checkbox"
                   checked={selectedIds.has(item._id)}
                   onChange={() => toggleSelection(item._id)}
-                  className="w-4 h-4 cursor-pointer"
+                  className="w-4 h-4 cursor-pointer rounded border-[var(--ic-gray-300)] text-[var(--ic-navy)] focus:ring-[var(--ic-navy)]"
                   disabled={editingId === item._id}
+                  title="Select for bulk deletion"
                 />
                 
                 <div className="flex items-center justify-between gap-3 flex-1">
                   {editingId === item._id ? (
                     <>
                       <input
-                        className="flex-1 text-sm"
+                        className="flex-1 px-3 py-1.5 text-sm border border-[var(--ic-gray-300)] rounded focus:ring-2 focus:ring-[var(--ic-navy)] focus:border-transparent"
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
                         autoFocus
@@ -267,14 +293,14 @@ export function CoverageTypeManager() {
                       />
                       <div className="flex gap-2">
                         <button
-                          className="btn btn-ghost text-sm text-green-600"
+                          className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => saveEdit(item._id)}
-                          disabled={saving}
+                          disabled={saving || !editingName.trim()}
                         >
                           {saving ? "Saving…" : "Save"}
                         </button>
                         <button
-                          className="btn btn-ghost text-sm text-[var(--ic-gray-600)]"
+                          className="px-3 py-1.5 text-sm font-medium text-[var(--ic-gray-700)] bg-[var(--ic-gray-200)] hover:bg-[var(--ic-gray-300)] rounded disabled:opacity-50"
                           onClick={cancelEdit}
                           disabled={saving}
                         >
@@ -287,13 +313,13 @@ export function CoverageTypeManager() {
                       <span className="flex-1 text-sm font-semibold text-[var(--ic-navy)]">{item.name}</span>
                       <div className="flex gap-2">
                         <button
-                          className="btn btn-ghost text-sm text-blue-600"
+                          className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
                           onClick={() => startEdit(item)}
                         >
                           Edit
                         </button>
                         <button
-                          className="btn btn-ghost text-sm text-red-600"
+                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded transition-colors"
                           onClick={() => remove(item._id)}
                         >
                           Delete
