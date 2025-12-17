@@ -6,6 +6,7 @@ import { Customer } from "@/models/Customer";
 import { Policy } from "@/models/Policy";
 import { Payment } from "@/models/Payment";
 import { Receipt } from "@/models/Receipt";
+import { CoverageType } from "@/models/CoverageType";
 import mongoose from "mongoose";
 
 export const dynamic = "force-dynamic";
@@ -337,7 +338,33 @@ export async function POST(req: NextRequest) {
             }
           }
           if (!record.status || record.status === null) record.status = "Active";
-          if (!record.coverageType || record.coverageType === null) record.coverageType = "Third Party";
+          
+          // Auto-create coverage type if it doesn't exist
+          if (!record.coverageType || record.coverageType === null) {
+            record.coverageType = "Third Party";
+          } else {
+            const trimmedCoverage = String(record.coverageType).trim();
+            if (trimmedCoverage) {
+              try {
+                // Check if coverage type exists
+                const existingCoverageType = await CoverageType.findOne({ 
+                  name: trimmedCoverage 
+                }).lean();
+                
+                if (!existingCoverageType) {
+                  // Create new coverage type from CSV data
+                  await CoverageType.create({ name: trimmedCoverage });
+                }
+                
+                record.coverageType = trimmedCoverage;
+              } catch (coverageErr: any) {
+                // If coverage type creation fails, log but continue with default
+                record.coverageType = trimmedCoverage; // Use the value from CSV anyway
+              }
+            } else {
+              record.coverageType = "Third Party";
+            }
+          }
           
           // Handle optional string fields - trim and set to null if empty
           if (record.registrationNumber && typeof record.registrationNumber === "string") {
