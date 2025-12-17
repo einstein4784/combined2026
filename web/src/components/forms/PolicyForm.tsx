@@ -16,8 +16,10 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Start with initialCustomers as fallback, but always fetch fresh data
   const [customers, setCustomers] = useState<CustomerOption[]>(initialCustomers || []);
   const [refreshingCustomers, setRefreshingCustomers] = useState(false);
+  const [customersLoaded, setCustomersLoaded] = useState(false);
   const [coverageOptions, setCoverageOptions] = useState<string[]>([
     "Third Party",
     "Fully Comprehensive",
@@ -44,7 +46,10 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
     try {
       // Add cache-busting timestamp and no-cache headers to ensure fresh data
       // Use credentials: 'include' to ensure cookies are sent
-      const res = await fetch(`/api/customers?t=${Date.now()}&_=${Math.random()}`, {
+      const url = `/api/customers?t=${Date.now()}&_=${Math.random()}`;
+      console.log('[PolicyForm] Fetching customers from:', url);
+      
+      const res = await fetch(url, {
         cache: 'no-store',
         credentials: 'include',
         headers: {
@@ -53,16 +58,25 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
           'Expires': '0',
         },
       });
+      
+      console.log('[PolicyForm] Response status:', res.status, res.statusText);
+      console.log('[PolicyForm] Response headers:', Object.fromEntries(res.headers.entries()));
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('[PolicyForm] Received customers:', data?.length || 0, 'items');
         const customerList = Array.isArray(data) ? data : [];
         const customerOptions = customerList.map((c: any) => ({
           id: c._id?.toString() || c._id || '',
           name: `${c.firstName || ""} ${c.middleName || ""} ${c.lastName || ""}`.trim(),
         })).filter((c: any) => c.id && c.name); // Filter out invalid entries
+        
+        console.log('[PolicyForm] Processed customer options:', customerOptions.length);
         setCustomers(customerOptions);
+        setCustomersLoaded(true);
       } else {
-        console.error("Failed to fetch customers:", res.status, res.statusText);
+        const errorText = await res.text().catch(() => '');
+        console.error("Failed to fetch customers:", res.status, res.statusText, errorText);
       }
     } catch (err) {
       // If fetch fails, keep using existing customers
@@ -75,17 +89,20 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
   };
 
   useEffect(() => {
+    // Always fetch on mount, don't rely on initialCustomers
     fetchCustomers();
     
     // Refresh customers when page becomes visible (user switches tabs/windows)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        console.log('[PolicyForm] Page visible, refreshing customers');
         fetchCustomers();
       }
     };
     
     // Refresh customers when window regains focus
     const handleFocus = () => {
+      console.log('[PolicyForm] Window focused, refreshing customers');
       fetchCustomers();
     };
     

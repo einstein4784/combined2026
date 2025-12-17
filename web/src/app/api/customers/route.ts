@@ -7,23 +7,34 @@ import { logAuditAction } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export const fetchCache = 'force-no-store';
+export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await guardPermission("view_dashboard");
     if ("response" in auth) return auth.response;
 
     await connectDb();
     const customers = await Customer.find().sort({ createdAt: -1 });
-    return json(customers, {
+    
+    // Log for debugging
+    console.log(`[API /customers] Returning ${customers.length} customers`);
+    
+    // Create response with no-cache headers
+    const response = json(customers, {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
         'Pragma': 'no-cache',
         'Expires': '0',
+        'X-Content-Type-Options': 'nosniff',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
       },
     });
+    
+    return response;
   } catch (error) {
+    console.error('[API /customers] Error:', error);
     return handleRouteError(error);
   }
 }
