@@ -34,4 +34,19 @@ Thumbs.db
 .env
 .env.local
 
+# Large files and archives (should not be committed)
+*.rar
+*.zip
+*.tar.gz
+*.7z
+iandc-deploy.*
+admin-dist-updated.*
+
+# Debug/test reports
+*.report.html
+localhost*.html
+
+# Secret files (should never be committed)
+**/auth_secret.txt
+**/mongo_value.txt
 
