@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { showGlobalError, showSuccessToast } from "@/lib/ui-helpers";
+import { showGlobalError } from "@/components/GlobalErrorPopup";
+import { showSuccessToast } from "@/components/GlobalSuccessToast";
 
 type CoverageTypeItem = {
   _id: string;
