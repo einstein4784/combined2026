@@ -24,6 +24,25 @@
 .DS_Store
 *.pem
 
+# Large files and archives
+*.rar
+*.zip
+*.tar.gz
+*.7z
+
+# Debug/test reports
+*.report.html
+localhost*.html
+
+# Secret files (should never be committed)
+auth_secret.txt
+mongo_value.txt
+
+# Duplicate images in root (keep only in public/)
+IC LOGO NEW.png
+Logo nobg.png
+Untitled-5.png
+
 # debug
 npm-debug.log*
 yarn-debug.log*

@@ -1,1 +1,0 @@
-mongodb+srv://Vercel-Admin-combined:EBcnh1jKwGiuDGtR@combined.fovp4y8.mongodb.net/?retryWrites=true&w=majority
