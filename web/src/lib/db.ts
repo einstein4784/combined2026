@@ -1,7 +1,35 @@
 import mongoose from "mongoose";
 
-const primaryUri = process.env.MONGODB_URI;
-const fallbackUri = process.env.MONGODB_URI_LOCAL || "mongodb://127.0.0.1:27017/drezoc";
+// Helper function to ensure database name is set in URI
+function ensureDatabaseName(uri: string | undefined, defaultDbName: string): string | undefined {
+  if (!uri) return undefined;
+  
+  // If URI already has a database name, return as-is
+  if (uri.includes("/") && !uri.includes("?")) {
+    // Has db name but no query params
+    return uri;
+  }
+  if (uri.includes("/") && uri.includes("?")) {
+    // Has db name and query params - check if it's just "/?"
+    const [base, query] = uri.split("?");
+    if (base.endsWith("/") || base.split("/").length === 1) {
+      // No database name, add it
+      return `${base}${defaultDbName}?${query}`;
+    }
+    return uri; // Already has db name
+  }
+  
+  // No database name, add it before query params
+  if (uri.includes("?")) {
+    return uri.replace("?", `/${defaultDbName}?`);
+  }
+  return `${uri}/${defaultDbName}`;
+}
+
+const DB_NAME = "CISLDB";
+const rawPrimaryUri = process.env.MONGODB_URI;
+const primaryUri = ensureDatabaseName(rawPrimaryUri, DB_NAME);
+const fallbackUri = process.env.MONGODB_URI_LOCAL || `mongodb://127.0.0.1:27017/${DB_NAME}`;
 
 declare global {
   var mongooseConn:

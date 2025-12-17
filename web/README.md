@@ -7,11 +7,13 @@
 ## Environment
 Create a `.env.local` (not committed) with:
 ```
-MONGODB_URI=<connection string>
+MONGODB_URI=<connection string with /CISLDB database name>
 AUTH_SECRET=<long random string>
 DEFAULT_ADMIN_EMAIL=admin@icinsurance.com
 DEFAULT_ADMIN_PASSWORD=admin123
 ```
+
+**Note**: The connection string should include the database name: `mongodb+srv://...@host.net/CISLDB?retryWrites=true&w=majority`
 
 ## Scripts
 - `npm run dev` – local dev at http://localhost:3000

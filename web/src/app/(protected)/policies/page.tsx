@@ -230,7 +230,7 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
             </form>
           </div>
           <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full">
+            <table className="min-w-full" suppressHydrationWarning>
               <thead>
                 <tr>
                   <th>

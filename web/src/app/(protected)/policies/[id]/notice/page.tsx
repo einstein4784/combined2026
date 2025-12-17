@@ -133,7 +133,7 @@ export default async function PolicyNoticePage({ params, searchParams }: Params)
           </div>
           <div className="text-right space-y-0.5">
             <p>Email: {sessionUser?.email || session?.email || "—"}</p>
-            <p>Date: {new Date().toLocaleDateString()}</p>
+            <p suppressHydrationWarning>Date: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
           </div>
         </div>
 
