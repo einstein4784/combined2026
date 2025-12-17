@@ -64,11 +64,33 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const policyRows = policies.map((p: any) => {
-    const customers = [
-      p.customerId,
-      ...(Array.isArray(p.customerIds) ? p.customerIds : []),
-    ].filter(Boolean);
-    const customerName = customers
+    // Collect all customer IDs to deduplicate
+    const customerIdSet = new Set<string>();
+    const customerList: any[] = [];
+    
+    // Add primary customer
+    if (p.customerId) {
+      const primaryId = p.customerId._id?.toString() || p.customerId.toString();
+      if (!customerIdSet.has(primaryId)) {
+        customerIdSet.add(primaryId);
+        customerList.push(p.customerId);
+      }
+    }
+    
+    // Add additional customers (avoiding duplicates)
+    if (Array.isArray(p.customerIds)) {
+      for (const customer of p.customerIds) {
+        if (customer) {
+          const customerId = customer._id?.toString() || customer.toString();
+          if (!customerIdSet.has(customerId)) {
+            customerIdSet.add(customerId);
+            customerList.push(customer);
+          }
+        }
+      }
+    }
+    
+    const customerName = customerList
       .map(
         (c: any) =>
           `${c?.firstName ?? ""} ${c?.middleName ?? ""} ${c?.lastName ?? ""}`.trim(),

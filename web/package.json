@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:db": "tsx scripts/check-database.ts",
+    "db:check": "tsx scripts/check-database.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
