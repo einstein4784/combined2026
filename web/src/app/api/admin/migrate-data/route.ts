@@ -407,7 +407,7 @@ export async function POST(req: NextRequest) {
             }
           }
         } else if (collectionType === "payments") {
-          // Resolve policyId - required field, skip if blank
+          // Policy ID is now optional - only lookup if provided
           const rowData = row.slice(0, Math.min(10, row.length)).join(" | "); // First 10 columns for context
           if (record.policyId && record.policyId !== null && record.policyId !== "") {
             const policyId = await findPolicyByIdentifier(record.policyId);
@@ -417,16 +417,18 @@ export async function POST(req: NextRequest) {
             }
             record.policyId = policyId;
           } else {
-            // Report blank policyId as error instead of silently skipping
-            errors.push(`Row ${rowIdx + 2}: Policy ID is blank/required. Record preview: ${rowData.substring(0, 100)}...`);
-            continue;
+            // Allow blank policy ID - set to null
+            record.policyId = null;
           }
 
-          // Load policy to update balances
-          const policy = await Policy.findById(record.policyId);
-          if (!policy) {
-            errors.push(`Row ${rowIdx + 2}: Policy with ID "${record.policyId}" not found in database. Record preview: ${rowData.substring(0, 100)}...`);
-            continue;
+          // Only load and update policy if policyId exists
+          let policy = null;
+          if (record.policyId) {
+            policy = await Policy.findById(record.policyId);
+            if (!policy) {
+              errors.push(`Row ${rowIdx + 2}: Policy with ID "${record.policyId}" not found in database. Record preview: ${rowData.substring(0, 100)}...`);
+              continue;
+            }
           }
 
           // Parse amounts - allow blank values, set to 0 if blank
@@ -473,10 +475,10 @@ export async function POST(req: NextRequest) {
           }
           record.receiptNumber = receiptNumber;
 
-          // Only update policy balances if there's an actual payment amount
+          // Only update policy balances if policy exists and there's an actual payment amount
           // If amount is 0, still create the payment record but don't update policy balances
           // Allow payments to exceed outstanding balance - no validation needed
-          if (amount > 0 || refundAmount > 0) {
+          if (policy && (amount > 0 || refundAmount > 0)) {
             const totalPremiumDue = Number(policy.totalPremiumDue ?? 0);
             const amountPaidSoFar = Number((policy as any).amountPaid ?? 0);
             const appliedToOutstanding = amount + refundAmount;

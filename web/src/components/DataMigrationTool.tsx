@@ -49,7 +49,7 @@ const FIELD_DEFINITIONS: Record<CollectionType, FieldDefinition[]> = {
     { name: "notes", label: "Notes", required: false, type: "string" },
   ],
   payments: [
-    { name: "policyId", label: "Policy ID (or policyNumber to lookup)", required: true, type: "string" },
+    { name: "policyId", label: "Policy ID (or policyNumber to lookup) - Optional", required: false, type: "string" },
     { name: "amount", label: "Amount", required: false, type: "number" },
     { name: "refundAmount", label: "Refund Amount", required: false, type: "number" },
     { name: "paymentDate", label: "Payment Date", required: false, type: "date" },

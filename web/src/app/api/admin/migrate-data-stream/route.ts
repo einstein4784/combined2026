@@ -421,6 +421,8 @@ function createProgressStream(
                 );
               } else if (collectionType === "payments") {
                 const rowData = row.slice(0, Math.min(10, row.length)).join(" | ");
+                
+                // Policy ID is now optional - only lookup if provided
                 if (record.policyId && record.policyId !== null && record.policyId !== "") {
                   const policyId = await findPolicyByIdentifier(record.policyId);
                   if (!policyId) {
@@ -429,38 +431,38 @@ function createProgressStream(
                     controller.enqueue(
                       new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
                     );
+                    // Send progress update even on error
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                      ),
+                    );
                     continue;
                   }
                   record.policyId = policyId;
                 } else {
-                  const error = `Row ${rowIdx + 2}: Policy ID is blank/required. Record preview: ${rowData.substring(0, 100)}...`;
-                  errors.push(error);
-                  controller.enqueue(
-                    new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
-                  );
-                  // Send progress update even on error
-                  controller.enqueue(
-                    new TextEncoder().encode(
-                      `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
-                    ),
-                  );
-                  continue;
+                  // Allow blank policy ID - set to null
+                  record.policyId = null;
                 }
 
-                const policy = await Policy.findById(record.policyId);
-                if (!policy) {
-                  const error = `Row ${rowIdx + 2}: Policy with ID "${record.policyId}" not found in database.`;
-                  errors.push(error);
-                  controller.enqueue(
-                    new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
-                  );
-                  // Send progress update even on error
-                  controller.enqueue(
-                    new TextEncoder().encode(
-                      `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
-                    ),
-                  );
-                  continue;
+                // Only fetch and update policy if policyId exists
+                let policy = null;
+                if (record.policyId) {
+                  policy = await Policy.findById(record.policyId);
+                  if (!policy) {
+                    const error = `Row ${rowIdx + 2}: Policy with ID "${record.policyId}" not found in database.`;
+                    errors.push(error);
+                    controller.enqueue(
+                      new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
+                    );
+                    // Send progress update even on error
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                      ),
+                    );
+                    continue;
+                  }
                 }
 
                 let amount = 0;
@@ -493,7 +495,8 @@ function createProgressStream(
                 }
                 record.receiptNumber = receiptNumber;
 
-                if (amount > 0 || refundAmount > 0) {
+                // Only update policy balances if policy exists
+                if (policy && (amount > 0 || refundAmount > 0)) {
                   const totalPremiumDue = Number(policy.totalPremiumDue ?? 0);
                   const amountPaidSoFar = Number((policy as any).amountPaid ?? 0);
                   const appliedToOutstanding = amount + refundAmount;
