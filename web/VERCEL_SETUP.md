@@ -49,14 +49,44 @@ If your project is already linked to Vercel:
 
 Set these in Vercel **Settings** → **Environment Variables**:
 
-```
-MONGODB_URI=mongodb+srv://Vercel-Admin-CISL2026NEW:cYRhWcHcNispLKYp@cisl2026new.izson30.mongodb.net/CISLDB?retryWrites=true&w=majority
-AUTH_SECRET=<your-auth-secret>
-DEFAULT_ADMIN_EMAIL=admin@icinsurance.com
-DEFAULT_ADMIN_PASSWORD=<your-admin-password>
+### 1. Generate AUTH_SECRET
+
+First, generate a secure AUTH_SECRET:
+
+```bash
+npm run generate-auth-secret
 ```
 
-**Important**: Make sure `MONGODB_URI` includes `/CISLDB` before the `?` in the connection string.
+This will output a random secret. Copy it.
+
+### 2. Set Environment Variables in Vercel
+
+Go to **Settings** → **Environment Variables** and add:
+
+**MONGODB_URI:**
+```
+mongodb+srv://Vercel-Admin-CISL2026NEW:cYRhWcHcNispLKYp@cisl2026new.izson30.mongodb.net/CISLDB?retryWrites=true&w=majority
+```
+
+**AUTH_SECRET:**
+```
+<paste the generated secret from step 1>
+```
+
+**DEFAULT_ADMIN_EMAIL:**
+```
+admin@icinsurance.com
+```
+
+**DEFAULT_ADMIN_PASSWORD:**
+```
+<your-secure-admin-password>
+```
+
+**Important**: 
+- Make sure `MONGODB_URI` includes `/CISLDB` before the `?` in the connection string
+- `AUTH_SECRET` is **REQUIRED** - without it, login will fail with a configuration error
+- Set these for **all environments** (Production, Preview, Development)
 
 ## After Setting Environment Variables
 

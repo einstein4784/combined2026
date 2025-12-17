@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "migrate-db": "tsx scripts/migrate-database.ts"
+    "migrate-db": "tsx scripts/migrate-database.ts",
+    "generate-auth-secret": "tsx scripts/generate-auth-secret.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
