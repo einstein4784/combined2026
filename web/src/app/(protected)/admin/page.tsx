@@ -8,6 +8,7 @@ import { ResetCoverageTypesButton } from "@/components/ResetCoverageTypesButton"
 import { StatementRecipientManager } from "@/components/StatementRecipientManager";
 import { DeleteAllDataButton } from "@/components/DeleteAllDataButton";
 import { DataMigrationTool } from "@/components/DataMigrationTool";
+import { PaymentUploadTool } from "@/components/PaymentUploadTool";
 import { DeleteDuplicateCustomersButton } from "@/components/DeleteDuplicateCustomersButton";
 import { AssignVFPrefixButton } from "@/components/AssignVFPrefixButton";
 import { AssignSFPrefixButton } from "@/components/AssignSFPrefixButton";
@@ -71,6 +72,7 @@ export default async function AdminPage() {
       <RolePermissionManager />
       <BackupManager />
       <DataMigrationTool />
+      <PaymentUploadTool />
       <ResetCoverageTypesButton />
       <CoverageTypeManager />
       <StatementRecipientManager />
