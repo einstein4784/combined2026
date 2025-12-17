@@ -3,10 +3,6 @@ import mongoose from "mongoose";
 const primaryUri = process.env.MONGODB_URI;
 const fallbackUri = process.env.MONGODB_URI_LOCAL || "mongodb://127.0.0.1:27017/drezoc";
 
-if (!primaryUri) {
-  throw new Error("MONGODB_URI is not set. Please add it to your environment.");
-}
-
 declare global {
   var mongooseConn:
     | { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null }
@@ -37,6 +33,10 @@ async function tryConnect(uri: string) {
 }
 
 export async function connectDb() {
+  if (!primaryUri) {
+    throw new Error("MONGODB_URI is not set. Please add it to your environment.");
+  }
+
   if (cached?.conn) return cached.conn;
 
   if (!cached?.promise) {
