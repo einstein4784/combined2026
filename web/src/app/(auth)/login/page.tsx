@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { WeatherPanel } from "@/components/WeatherPanel";
 import { GlobalErrorPopup } from "@/components/GlobalErrorPopup";
 import { BackButton } from "@/components/BackButton";
+import { ClearInvalidSession } from "@/components/ClearInvalidSession";
 
 export default async function LoginPage() {
   const session = await getSession();
@@ -13,6 +14,7 @@ export default async function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#e8f1fb] to-white">
+      <ClearInvalidSession />
       <GlobalErrorPopup />
       <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 md:px-8 py-10">
         <div className="absolute left-6 top-6 md:left-10 md:top-10">

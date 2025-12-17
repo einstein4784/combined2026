@@ -121,6 +121,9 @@ export async function connectDb() {
         }
         const connection = await tryConnect(primaryConfig.uri, primaryConfig.dbName);
         // Verify connection
+        if (!connection.connection.db) {
+          throw new Error("Database connection failed: db is undefined");
+        }
         await connection.connection.db.admin().ping();
         return connection;
       } catch (err: any) {

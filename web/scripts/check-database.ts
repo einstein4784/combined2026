@@ -19,6 +19,9 @@ async function checkDatabase() {
     console.log("\n1️⃣ Testing Database Connection...");
     const connection = await connectDb();
     const db = connection.connection.db;
+    if (!db) {
+      throw new Error("Database connection failed: db is undefined");
+    }
     const dbName = db.databaseName;
     console.log(`✅ Connected to database: "${dbName}"`);
     console.log(`   Connection state: ${connection.connection.readyState === 1 ? "Connected" : "Disconnected"}`);
@@ -124,7 +127,7 @@ async function checkDatabase() {
 
     // 8. Connection Pool Info
     console.log("\n8️⃣ Connection Pool Information...");
-    const poolSize = connection.connection.db.client?.topology?.s?.poolSize || "N/A";
+    const poolSize = (connection.connection.db.client as any)?.topology?.s?.poolSize || "N/A";
     console.log(`   Pool size: ${poolSize}`);
     console.log(`   Ready state: ${connection.connection.readyState}`);
 

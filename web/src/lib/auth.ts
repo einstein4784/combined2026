@@ -13,10 +13,58 @@ export type SessionUser = {
 export async function getSession(): Promise<SessionUser | null> {
   let session = null;
   try {
-    session = await auth();
-  } catch (err) {
+    // Temporarily suppress console.error to prevent NextAuth from logging JWTSessionError
+    const originalError = console.error;
+    
+    console.error = (...args: any[]) => {
+      // Check if this is a JWTSessionError log from NextAuth
+      const firstArg = args[0];
+      const errorStr = args.map(arg => 
+        typeof arg === "string" ? arg : 
+        typeof arg === "object" && arg !== null ? JSON.stringify(arg) : 
+        String(arg)
+      ).join(" ");
+      
+      // Suppress only JWTSessionError logs from NextAuth
+      if (
+        (typeof firstArg === "string" && firstArg.includes("[auth][error]")) ||
+        errorStr.includes("JWTSessionError") ||
+        errorStr.includes("authjs.dev#jwtsessionerror") ||
+        errorStr.includes("Read more at https://errors.authjs.dev#jwtsessionerror")
+      ) {
+        return; // Don't log this error - it's expected when cookies are invalid
+      }
+      // Log all other errors normally
+      originalError.apply(console, args);
+    };
+    
+    try {
+      session = await auth();
+    } finally {
+      // Always restore original console.error
+      console.error = originalError;
+    }
+  } catch (err: any) {
     // Auth.js throws JWTSessionError when token/secret is invalid; treat as signed-out
-    console.error("[auth] session error", err);
+    // This is expected when cookies are invalid (e.g., after AUTH_SECRET change), so we silently handle it
+    const errorName = err?.name || err?.constructor?.name || "";
+    const errorMessage = err?.message || "";
+    const errorCode = err?.code || "";
+    
+    // Check for JWT session errors (invalid/expired tokens)
+    if (
+      errorName === "JWTSessionError" ||
+      errorCode === "ERR_JWT_SESSION_ERROR" ||
+      errorMessage.includes("JWTSessionError") ||
+      errorMessage.includes("authjs.dev#jwtsessionerror")
+    ) {
+      // Silently return null for invalid tokens (expected behavior)
+      return null;
+    }
+    // Only log unexpected errors
+    if (process.env.NODE_ENV === "development") {
+      console.error("[auth] unexpected session error", err);
+    }
     return null;
   }
   if (!session?.user?.id) return null;
