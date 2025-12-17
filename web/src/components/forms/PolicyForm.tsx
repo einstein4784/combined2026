@@ -16,10 +16,7 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Start with initialCustomers as fallback, but always fetch fresh data
-  const [customers, setCustomers] = useState<CustomerOption[]>(initialCustomers || []);
-  const [refreshingCustomers, setRefreshingCustomers] = useState(false);
-  const [customersLoaded, setCustomersLoaded] = useState(false);
+  const [customerOptions, setCustomerOptions] = useState<CustomerOption[]>(initialCustomers || []);
   const [coverageOptions, setCoverageOptions] = useState<string[]>([
     "Third Party",
     "Fully Comprehensive",
@@ -38,87 +35,29 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
     status: "Active",
   });
 
-  // Fetch customers dynamically to get the latest list
-  const fetchCustomers = async (showLoading = false) => {
-    if (showLoading) {
-      setRefreshingCustomers(true);
-    }
-    try {
-      // Add cache-busting timestamp and no-cache headers to ensure fresh data
-      // Use credentials: 'include' to ensure cookies are sent
-      const url = `/api/customers?t=${Date.now()}&_=${Math.random()}`;
-      console.log('[PolicyForm] Fetching customers from:', url);
-      
-      const res = await fetch(url, {
-        cache: 'no-store',
-        credentials: 'include',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      });
-      
-      console.log('[PolicyForm] Response status:', res.status, res.statusText);
-      console.log('[PolicyForm] Response headers:', Object.fromEntries(res.headers.entries()));
-      
-      if (res.ok) {
-        const data = await res.json();
-        console.log('[PolicyForm] Received customers:', data?.length || 0, 'items');
-        const customerList = Array.isArray(data) ? data : [];
-        const customerOptions = customerList.map((c: any) => ({
-          id: c._id?.toString() || c._id || '',
-          name: `${c.firstName || ""} ${c.middleName || ""} ${c.lastName || ""}`.trim(),
-        })).filter((c: any) => c.id && c.name); // Filter out invalid entries
-        
-        console.log('[PolicyForm] Processed customer options:', customerOptions.length);
-        setCustomers(customerOptions);
-        setCustomersLoaded(true);
-      } else {
-        const errorText = await res.text().catch(() => '');
-        console.error("Failed to fetch customers:", res.status, res.statusText, errorText);
-      }
-    } catch (err) {
-      // If fetch fails, keep using existing customers
-      console.error("Failed to fetch customers:", err);
-    } finally {
-      if (showLoading) {
-        setRefreshingCustomers(false);
-      }
-    }
-  };
+  const options = useMemo(() => customerOptions || [], [customerOptions]);
 
   useEffect(() => {
-    // Always fetch on mount, don't rely on initialCustomers
-    fetchCustomers();
-    
-    // Refresh customers when page becomes visible (user switches tabs/windows)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('[PolicyForm] Page visible, refreshing customers');
-        fetchCustomers();
+    const loadData = async () => {
+      // Load customers from API to get the latest list
+      try {
+        const customersRes = await fetch("/api/customers");
+        if (customersRes.ok) {
+          const customersData = await customersRes.json();
+          const formatted = customersData.map((c: any) => ({
+            id: c._id.toString(),
+            name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+          }));
+          setCustomerOptions(formatted);
+        }
+      } catch {
+        // Fallback to initial customers if API fails
+        if (initialCustomers && initialCustomers.length > 0) {
+          setCustomerOptions(initialCustomers);
+        }
       }
-    };
-    
-    // Refresh customers when window regains focus
-    const handleFocus = () => {
-      console.log('[PolicyForm] Window focused, refreshing customers');
-      fetchCustomers();
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
 
-  const options = useMemo(() => customers || [], [customers]);
-
-  useEffect(() => {
-    const loadCoverageTypes = async () => {
+      // Load coverage types
       try {
         const res = await fetch("/api/coverage-types");
         if (!res.ok) return;
@@ -135,8 +74,8 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
         // swallow errors; fallback defaults remain
       }
     };
-    loadCoverageTypes();
-  }, []);
+    loadData();
+  }, [initialCustomers]);
 
   const update = (key: string, value: string) => {
     setForm((prev) => {
@@ -238,25 +177,14 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
         <label className="flex items-center gap-2">
             Customers <InfoTooltip content="Link up to 3 customers to this policy." />
         </label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className={`flex items-center gap-1 rounded-md bg-[var(--ic-gray-200)] px-2 py-1 text-xs font-semibold text-[var(--ic-gray-700)] shadow-sm transition hover:bg-[var(--ic-gray-300)] ${refreshingCustomers ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={() => fetchCustomers(true)}
-              disabled={refreshingCustomers}
-              title="Refresh customer list"
-            >
-              {refreshingCustomers ? '⟳' : '↻'}
-            </button>
-            <button
-              type="button"
-              className="flex items-center gap-1 rounded-md bg-[var(--ic-teal)] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--ic-navy)]"
-              onClick={addCustomerSlot}
-              disabled={form.customerIds.length >= 3}
-            >
-              <span className="text-lg leading-none">+</span> Add
-            </button>
-          </div>
+          <button
+            type="button"
+            className="flex items-center gap-1 rounded-md bg-[var(--ic-teal)] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--ic-navy)]"
+            onClick={addCustomerSlot}
+            disabled={form.customerIds.length >= 3}
+          >
+            <span className="text-lg leading-none">+</span> Add
+          </button>
         </div>
         <div className="mt-2 space-y-2">
           {form.customerIds.map((id, idx) => (
@@ -265,7 +193,22 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
                 selectClassName="flex-1"
                 value={id}
                 onChange={(value) => updateCustomer(idx, value)}
-                onFocus={() => fetchCustomers()}
+                onFocus={async () => {
+                  // Refresh customer list when user focuses on the select
+                  try {
+                    const res = await fetch("/api/customers");
+                    if (res.ok) {
+                      const customersData = await res.json();
+                      const formatted = customersData.map((c: any) => ({
+                        id: c._id.toString(),
+                        name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+                      }));
+                      setCustomerOptions(formatted);
+                    }
+                  } catch {
+                    // Ignore errors, keep existing list
+                  }
+                }}
           options={options.map((customer) => ({
             value: customer.id,
             label: customer.name,
