@@ -467,10 +467,34 @@ export async function POST(req: NextRequest) {
             receiptNumber = String(record.receiptNumber);
           }
           
-          // Check for duplicates and append suffix if needed (allow duplicates)
+          // Check for duplicate payments (same policy, amount, and date)
+          // This prevents re-uploading payments from a failed upload
+          if (record.policyId && (amount > 0 || refundAmount > 0)) {
+            const paymentDateParsed = record.paymentDate || new Date();
+            // Check if this exact payment already exists (same policy, amount, refund, and date within same day)
+            const startOfDay = new Date(paymentDateParsed);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(paymentDateParsed);
+            endOfDay.setHours(23, 59, 59, 999);
+            
+            const duplicatePayment = await Payment.findOne({
+              policyId: record.policyId,
+              amount: amount,
+              refundAmount: refundAmount,
+              paymentDate: { $gte: startOfDay, $lte: endOfDay },
+            }).lean();
+            
+            if (duplicatePayment) {
+              // Duplicate payment found - skip this row
+              errors.push(`Row ${rowIdx + 2}: Duplicate payment detected (Policy: "${record.policyId}", Amount: $${amount.toFixed(2)}, Date: ${paymentDateParsed.toLocaleDateString()}). Skipping to prevent duplicate. Record preview: ${rowData.substring(0, 100)}...`);
+              continue;
+            }
+          }
+          
+          // Check for duplicate receipt numbers and append suffix if needed
           const existingPayment = await Payment.findOne({ receiptNumber }).lean();
           if (existingPayment) {
-            // Duplicate found - append suffix to make it unique
+            // Duplicate receipt number found - append suffix to make it unique
             receiptNumber = `${receiptNumber}-${Date.now()}-${rowIdx}`;
           }
           record.receiptNumber = receiptNumber;

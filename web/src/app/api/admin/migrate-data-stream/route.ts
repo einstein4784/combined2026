@@ -488,7 +488,41 @@ function createProgressStream(
                   receiptNumber = String(record.receiptNumber);
                 }
 
-                // Check for duplicates and append suffix if needed
+                // Check for duplicate payments (same policy, amount, and date)
+                // This prevents re-uploading payments from a failed upload
+                if (record.policyId && (amount > 0 || refundAmount > 0)) {
+                  const paymentDateParsed = record.paymentDate || new Date();
+                  // Check if this exact payment already exists (same policy, amount, refund, and date within same day)
+                  const startOfDay = new Date(paymentDateParsed);
+                  startOfDay.setHours(0, 0, 0, 0);
+                  const endOfDay = new Date(paymentDateParsed);
+                  endOfDay.setHours(23, 59, 59, 999);
+                  
+                  const duplicatePayment = await Payment.findOne({
+                    policyId: record.policyId,
+                    amount: amount,
+                    refundAmount: refundAmount,
+                    paymentDate: { $gte: startOfDay, $lte: endOfDay },
+                  }).lean();
+                  
+                  if (duplicatePayment) {
+                    // Duplicate payment found - skip this row and report it
+                    const error = `Row ${rowIdx + 2}: Duplicate payment detected (Policy: "${record.policyId}", Amount: $${amount.toFixed(2)}, Date: ${paymentDateParsed.toLocaleDateString()}). Skipping to prevent duplicate.`;
+                    errors.push(error);
+                    controller.enqueue(
+                      new TextEncoder().encode(`data: ${JSON.stringify({ type: "warning", error, row: rowIdx + 2 })}\n\n`),
+                    );
+                    // Send progress update
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                      ),
+                    );
+                    continue;
+                  }
+                }
+
+                // Check for duplicate receipt numbers and append suffix if needed
                 const existingPayment = await Payment.findOne({ receiptNumber }).lean();
                 if (existingPayment) {
                   receiptNumber = `${receiptNumber}-${Date.now()}-${rowIdx}`;
