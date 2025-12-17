@@ -54,6 +54,44 @@ export async function POST(req: Request) {
   }
 }
 
+export async function PUT(req: Request) {
+  try {
+    const auth = await guardPermission("manage_permissions");
+    if ("response" in auth) return auth.response;
+
+    const { id, name } = await req.json().catch(() => ({}));
+    if (!id || typeof id !== "string") {
+      return json({ error: "id is required" }, { status: 400 });
+    }
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return json({ error: "name is required" }, { status: 400 });
+    }
+
+    await connectDb();
+    const trimmed = name.trim();
+    
+    // Check if another coverage type already has this name
+    const existing = await CoverageType.findOne({ name: trimmed, _id: { $ne: id } });
+    if (existing) {
+      return json({ error: "Coverage type with this name already exists" }, { status: 409 });
+    }
+    
+    const updated = await CoverageType.findByIdAndUpdate(
+      id,
+      { name: trimmed },
+      { new: true }
+    );
+    
+    if (!updated) {
+      return json({ error: "Coverage type not found" }, { status: 404 });
+    }
+    
+    return json({ item: { _id: updated._id.toString(), name: updated.name } });
+  } catch (error) {
+    return handleRouteError(error);
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const auth = await guardPermission("manage_permissions");
