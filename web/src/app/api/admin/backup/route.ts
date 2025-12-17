@@ -185,6 +185,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (imported === 0) {
+      return json(
+        {
+          error: "Import completed with zero rows. Check that your CSV has valid 'collection' and 'data' columns and required fields.",
+          errors: errors.length ? errors : undefined,
+        },
+        { status: 400 },
+      );
+    }
+
     return json({ success: true, imported, errors: errors.length ? errors : undefined });
   } catch (error) {
     return handleRouteError(error);

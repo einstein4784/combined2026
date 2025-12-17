@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { SearchableSelect } from "./SearchableSelect";
+import { InfoTooltip } from "../InfoTooltip";
 
 export function UserForm() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export function UserForm() {
     password: "",
     role: "Admin",
     fullName: "",
+    users_location: "Castries",
   });
 
   const update = (key: string, value: string) =>
@@ -31,7 +32,14 @@ export function UserForm() {
 
     if (res.ok) {
       router.refresh();
-      setForm({ username: "", email: "", password: "", role: "Admin", fullName: "" });
+      setForm({
+        username: "",
+        email: "",
+        password: "",
+        role: "Admin",
+        fullName: "",
+        users_location: "Castries",
+      });
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error || "Failed to create user");
@@ -43,7 +51,9 @@ export function UserForm() {
     <form onSubmit={onSubmit} className="card space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label>Username</label>
+          <label className="flex items-center gap-2">
+            Username <InfoTooltip content="Unique login name for the user." />
+          </label>
           <input
             className="mt-1"
             value={form.username}
@@ -52,7 +62,9 @@ export function UserForm() {
           />
         </div>
         <div>
-          <label>Full Name</label>
+          <label className="flex items-center gap-2">
+            Full Name <InfoTooltip content="Person's full display name." />
+          </label>
           <input
             className="mt-1"
             value={form.fullName}
@@ -63,7 +75,9 @@ export function UserForm() {
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label>Email</label>
+          <label className="flex items-center gap-2">
+            Email <InfoTooltip content="Work email for notifications and login recovery." />
+          </label>
           <input
             type="email"
             className="mt-1"
@@ -73,22 +87,44 @@ export function UserForm() {
           />
         </div>
         <div>
-          <label>Role</label>
-          <SearchableSelect
-            selectClassName="mt-1"
+          <label className="flex items-center gap-2">
+            Role <InfoTooltip content="Determines system permissions for this user." />
+          </label>
+          <select
+            className="mt-1 w-full rounded-md border border-[var(--ic-gray-200)] bg-white px-3 py-2 text-sm text-[var(--ic-gray-800)] shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
             value={form.role}
-            onChange={(value) => update("role", value)}
-            options={[
-              { value: "Admin", label: "Admin" },
-              { value: "Supervisor", label: "Supervisor" },
-              { value: "Cashier", label: "Cashier" },
-              { value: "Underwriter", label: "Underwriter" },
-            ]}
-          />
+            onChange={(e) => update("role", e.target.value)}
+          >
+            <option value="Admin">Admin</option>
+            <option value="Supervisor">Supervisor</option>
+            <option value="Cashier">Cashier</option>
+            <option value="Underwriter">Underwriter</option>
+          </select>
         </div>
       </div>
       <div>
-        <label>Password</label>
+        <label className="flex items-center gap-2">
+          Location <InfoTooltip content="Select the primary office/location for this user." />
+        </label>
+        <div className="mt-2 flex flex-wrap gap-4 text-sm text-[var(--ic-gray-800)]">
+          {["Castries", "Soufriere", "Vieux Fort"].map((loc) => (
+            <label key={loc} className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="users_location"
+                value={loc}
+                checked={form.users_location === loc}
+                onChange={(e) => update("users_location", e.target.value)}
+              />
+              <span>{loc}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="flex items-center gap-2">
+          Password <InfoTooltip content="Temporary or initial password; user can change later." />
+        </label>
         <input
           type="password"
           className="mt-1"

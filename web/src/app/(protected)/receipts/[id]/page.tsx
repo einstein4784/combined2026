@@ -1,5 +1,8 @@
 import { connectDb } from "@/lib/db";
 import { Receipt } from "@/models/Receipt";
+import "@/models/Payment";
+import "@/models/Policy";
+import "@/models/Customer";
 import { notFound } from "next/navigation";
 import { ReceiptViewer } from "@/components/ReceiptViewer";
 
@@ -14,12 +17,12 @@ export default async function ReceiptDetailPage({ params }: Params) {
     .populate({
       path: "paymentId",
       select: "amount paymentMethod paymentDate notes receiptNumber policyId receivedBy",
-      populate: { path: "receivedBy", select: "fullName email" },
+      populate: { path: "receivedBy", select: "fullName email users_location" },
     })
     .populate({
       path: "policyId",
       select:
-        "policyNumber coverageType coverageStartDate coverageEndDate outstandingBalance customerId",
+        "policyNumber policyIdNumber coverageType coverageStartDate coverageEndDate outstandingBalance customerId",
       populate: {
         path: "customerId",
         select: "firstName lastName email contactNumber address",
@@ -51,6 +54,8 @@ export default async function ReceiptDetailPage({ params }: Params) {
     paymentMethod: receipt.paymentMethod || payment?.paymentMethod,
     notes: receipt.notes || payment?.notes,
     policyNumber: receipt.policyNumberSnapshot || policy?.policyNumber,
+    policyIdNumber: policy?.policyIdNumber,
+    registrationNumber: (receipt as any).registrationNumber || policy?.registrationNumber || "TBA",
     coverageType: policy?.coverageType,
     coverageStartDate: policy?.coverageStartDate
       ? new Date(policy.coverageStartDate).toISOString()
@@ -66,6 +71,11 @@ export default async function ReceiptDetailPage({ params }: Params) {
     customerEmail: receipt.customerEmailSnapshot || customer?.email,
     customerContact: receipt.customerContactSnapshot || customer?.contactNumber,
     generatedByName: generatedBy?.fullName || payment?.receivedBy?.fullName || (receipt as any).generatedByName,
+    location:
+      (receipt as any).location ||
+      generatedBy?.users_location ||
+      payment?.receivedBy?.users_location ||
+      null,
   };
 
   return (

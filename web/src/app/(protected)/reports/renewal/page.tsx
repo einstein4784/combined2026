@@ -117,7 +117,6 @@ export default async function RenewalSearchPage({
                     href={`/policies/notice?policyId=${p._id.toString()}&policyNumber=${encodeURIComponent(
                       p.policyNumber || "",
                     )}`}
-                    target="_blank"
                     className="text-[var(--ic-navy)] underline"
                   >
                     Open notice

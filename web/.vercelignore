@@ -1,0 +1,5 @@
+# Ignore large/local media not needed for deploy
+public/*.mp4
+*.mp4
+public/Combined Tutorial Vid.mp4
+

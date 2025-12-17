@@ -1,10 +1,12 @@
 import { connectDb } from "@/lib/db";
 import { User } from "@/models/User";
 import { UserForm } from "@/components/forms/UserForm";
-import Link from "next/link";
 import { ResetPasswordButton } from "@/components/ResetPasswordButton";
+import { DeleteUserButton } from "@/components/DeleteUserButton";
+import { EditUserButton } from "@/components/EditUserButton";
 import { guardPermission } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
+import { Avatar } from "@/components/Avatar";
 
 export default async function UsersPage({
 }: {
@@ -16,7 +18,7 @@ export default async function UsersPage({
   }
 
   await connectDb();
-  const users = await User.find({}, "username email role fullName createdAt").sort({
+  const users = await User.find({}, "username email role fullName users_location createdAt").sort({
     createdAt: -1,
   });
 
@@ -40,6 +42,7 @@ export default async function UsersPage({
                 <th>User</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Location</th>
                 <th>Created</th>
                 <th className="text-right">Actions</th>
               </tr>
@@ -47,12 +50,32 @@ export default async function UsersPage({
             <tbody>
               {users.map((u) => (
                 <tr key={u._id.toString()}>
-                  <td>{u.username}</td>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <Avatar name={u.fullName || u.username} src={undefined} />
+                      <div className="leading-tight">
+                        <p className="font-semibold text-[var(--ic-navy)]">{u.fullName || u.username}</p>
+                        <p className="text-xs text-[var(--ic-gray-600)]">@{u.username}</p>
+                      </div>
+                    </div>
+                  </td>
                   <td>{u.email}</td>
                   <td>{u.role}</td>
+                  <td>{(u as any).users_location || "—"}</td>
                   <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="text-right">
-                    <ResetPasswordButton userId={u._id.toString()} username={u.username} />
+                    <div className="flex justify-end gap-3">
+                      <EditUserButton
+                        userId={u._id.toString()}
+                        username={u.username}
+                        email={u.email}
+                        fullName={u.fullName}
+                        role={u.role}
+                        users_location={(u as any).users_location}
+                      />
+                      <ResetPasswordButton userId={u._id.toString()} username={u.username} />
+                      <DeleteUserButton userId={u._id.toString()} username={u.username} />
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { connectDb } from "@/lib/db";
 import { Payment } from "@/models/Payment";
 import { Customer } from "@/models/Customer";
@@ -5,26 +6,23 @@ import { Policy } from "@/models/Policy";
 
 export default async function DashboardPage() {
   await connectDb();
-  const [customerCount, policyCount, paymentCount, payments] = await Promise.all([
+  const [customerCount, policyCount, paymentCount, customers] = await Promise.all([
     Customer.countDocuments(),
     Policy.countDocuments(),
     Payment.countDocuments(),
-    Payment.find()
-      .sort({ paymentDate: -1 })
-      .limit(5)
-      .populate("policyId", "policyNumber")
-      .lean(),
+    Customer.find().sort({ createdAt: -1 }).limit(5).lean(),
   ]);
 
-  type PaymentRow = {
+  type CustomerRow = {
     _id: string;
-    amount: number;
-    paymentMethod: string;
-    paymentDate: Date;
-    policyId?: { policyNumber?: string };
+    firstName: string;
+    lastName: string;
+    email: string;
+    contactNumber: string;
+    createdAt: Date;
   };
 
-  const rows = payments as unknown as PaymentRow[];
+  const rows = customers as unknown as CustomerRow[];
 
   return (
     <div className="space-y-6">
@@ -58,31 +56,35 @@ export default async function DashboardPage() {
       </div>
       <div className="card">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Recent Payments</h2>
+          <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Recent Customers</h2>
           <span className="badge success">Latest</span>
         </div>
         <table className="mt-4">
           <thead>
             <tr>
-              <th>Policy</th>
-              <th>Amount</th>
-              <th>Method</th>
-              <th>Date</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Contact</th>
+              <th>Added</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((p) => (
               <tr key={p._id}>
-                <td>{p.policyId?.policyNumber || "—"}</td>
-                <td>${p.amount.toFixed(2)}</td>
-                <td>{p.paymentMethod}</td>
-                <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
+                <td>
+                  <Link href={`/customers/${p._id}`} className="text-[var(--ic-navy)] underline">
+                    {`${p.firstName} ${p.lastName}`}
+                  </Link>
+                </td>
+                <td>{p.email || "—"}</td>
+                <td>{p.contactNumber || "—"}</td>
+                <td>{new Date(p.createdAt).toLocaleDateString()}</td>
               </tr>
             ))}
             {!rows.length && (
               <tr>
                 <td colSpan={4} className="py-4 text-center text-sm text-slate-500">
-                  No payments yet.
+                  No customers yet.
                 </td>
               </tr>
             )}

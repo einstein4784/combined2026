@@ -14,7 +14,7 @@ type CredentialsInput = {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 4 * 60 * 60, updateAge: 30 * 60 },
   secret: process.env.AUTH_SECRET,
   pages: {
     signIn: "/login",
@@ -46,6 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role: user.role,
           username: user.username,
           fullName: user.fullName,
+          users_location: (user as any).users_location || "Castries",
         };
       },
     }),
@@ -56,6 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = (user as { role?: UserRole }).role;
         token.username = (user as { username?: string }).username;
         token.fullName = (user as { fullName?: string }).fullName;
+        token.users_location = (user as { users_location?: string }).users_location;
       }
       return token;
     },
@@ -66,6 +68,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.username = token.username as string;
         session.user.fullName =
           (token.fullName as string) || session.user.name || "";
+        (session.user as any).users_location = (token as any).users_location || "Castries";
       }
       return session;
     },

@@ -4,6 +4,7 @@ import { guardPermission } from "@/lib/api-auth";
 import { json, handleRouteError } from "@/lib/utils";
 import { Payment } from "@/models/Payment";
 import { Policy } from "@/models/Policy";
+import "@/models/Customer";
 
 function parseDate(value: string | null): Date | null {
   if (!value) return null;
@@ -23,6 +24,7 @@ export async function GET(req: NextRequest) {
 
     const from = fromParam ?? new Date(0);
     const to = toParam ?? new Date();
+    const prefix = (searchParams.get("prefix") || "").toUpperCase();
 
     await connectDb();
 
@@ -30,12 +32,61 @@ export async function GET(req: NextRequest) {
       const payments = await Payment.find({
         paymentDate: { $gte: from, $lte: to },
       })
+        .populate({
+          path: "policyId",
+          select: "policyNumber policyIdNumber coverageStartDate coverageEndDate customerId",
+          populate: { path: "customerId", select: "firstName lastName" },
+        })
         .sort({ paymentDate: -1 })
         .lean();
 
-      const total = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const filteredByPrefix = payments.filter((p: any) => {
+        if (!prefix || prefix === "ALL") return true;
+        const policyNumber = (p.policyId as any)?.policyNumber || "";
+        return policyNumber.startsWith(prefix);
+      });
 
-      return json({ type, from, to, total, payments });
+      const paymentsWithTotals = filteredByPrefix.map((p: any) => {
+        const refundAmount = typeof p.refundAmount === "number" ? p.refundAmount : 0;
+        const netAmount = typeof p.amount === "number" ? p.amount : 0;
+        const grossAmount = netAmount + refundAmount;
+        const policy = p.policyId as any;
+        const customer = policy?.customerId as any;
+        return {
+          ...p,
+          totalPaid: netAmount, // net of refunds
+          refundAmount,
+          netAmount,
+          grossAmount,
+          policyNumber: policy?.policyNumber,
+          policyIdNumber: policy?.policyIdNumber,
+          customerName: `${customer?.firstName ?? ""} ${customer?.lastName ?? ""}`.trim(),
+          coverageStartDate: policy?.coverageStartDate,
+          coverageEndDate: policy?.coverageEndDate,
+        };
+      });
+
+      const totals = paymentsWithTotals.reduce(
+        (acc, p) => {
+          const method = (p.paymentMethod || "Cash").toLowerCase();
+          if (method === "card") acc.card += p.totalPaid || 0;
+          else if (method === "transfer") acc.transfer += p.totalPaid || 0; // tracked but not added to cash
+          else acc.cash += p.totalPaid || 0;
+          return acc;
+        },
+        { cash: 0, card: 0, transfer: 0 },
+      );
+
+      return json({
+        type,
+        from,
+        to,
+        total: totals.cash,
+        totalCash: totals.cash,
+        totalCard: totals.card,
+        totalTransfer: totals.transfer,
+        payments: paymentsWithTotals,
+      });
     }
 
     if (type === "outstanding") {

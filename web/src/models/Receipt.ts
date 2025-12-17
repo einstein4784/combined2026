@@ -7,9 +7,12 @@ export type ReceiptDocument = {
   policyId: Types.ObjectId | string;
   customerId: Types.ObjectId | string;
   amount: number;
+  location?: string;
+  registrationNumber?: string;
   paymentMethod?: string;
   notes?: string;
   policyNumberSnapshot?: string;
+  policyIdNumberSnapshot?: string;
   customerNameSnapshot?: string;
   customerEmailSnapshot?: string;
   customerContactSnapshot?: string;
@@ -18,6 +21,7 @@ export type ReceiptDocument = {
   paymentDate: Date;
   generatedAt: Date;
   generatedBy?: Types.ObjectId | string;
+  status?: "active" | "void";
 };
 
 const ReceiptSchema = new Schema<ReceiptDocument>(
@@ -27,9 +31,12 @@ const ReceiptSchema = new Schema<ReceiptDocument>(
     policyId: { type: Schema.Types.ObjectId, ref: "Policy", required: true, index: true },
     customerId: { type: Schema.Types.ObjectId, ref: "Customer", required: true, index: true },
     amount: { type: Number, required: true },
+    location: { type: String },
+    registrationNumber: { type: String },
     paymentMethod: { type: String },
     notes: { type: String },
     policyNumberSnapshot: { type: String },
+    policyIdNumberSnapshot: { type: String },
     customerNameSnapshot: { type: String },
     customerEmailSnapshot: { type: String },
     customerContactSnapshot: { type: String },
@@ -38,6 +45,7 @@ const ReceiptSchema = new Schema<ReceiptDocument>(
     paymentDate: { type: Date, required: true },
     generatedAt: { type: Date, default: Date.now },
     generatedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    status: { type: String, enum: ["active", "void"], default: "active", index: true },
   },
   { timestamps: false },
 );

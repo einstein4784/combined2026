@@ -4,6 +4,7 @@ export type PaymentDocument = {
   _id: string;
   policyId: Types.ObjectId | string;
   amount: number;
+  refundAmount?: number;
   paymentDate: Date;
   paymentMethod: string;
   receiptNumber: string;
@@ -19,6 +20,7 @@ const PaymentSchema = new Schema<PaymentDocument>(
   {
     policyId: { type: Schema.Types.ObjectId, ref: "Policy", required: true, index: true },
     amount: { type: Number, required: true },
+    refundAmount: { type: Number, default: 0 },
     paymentDate: { type: Date, default: Date.now, index: true },
     paymentMethod: { type: String, default: "Cash" },
     receiptNumber: { type: String, required: true, unique: true, index: true },

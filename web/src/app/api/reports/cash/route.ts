@@ -24,9 +24,33 @@ export async function GET(request: Request) {
     }
 
     const payments = await Payment.find(filters);
-    const total = payments.reduce((sum, p) => sum + p.amount, 0);
+    const paymentsWithTotals = payments.map((p) => {
+      const totalPaid = p.amount ?? 0; // amount is stored net of refunds
+      return {
+        ...p.toObject(),
+        totalPaid,
+      };
+    });
 
-    return json({ total, count: payments.length, payments });
+    const totals = paymentsWithTotals.reduce(
+      (acc, p) => {
+        const method = (p.paymentMethod || "Cash").toLowerCase();
+        if (method === "card") acc.card += p.totalPaid || 0;
+        else if (method === "transfer") acc.transfer += p.totalPaid || 0;
+        else acc.cash += p.totalPaid || 0;
+        return acc;
+      },
+      { cash: 0, card: 0, transfer: 0 },
+    );
+
+    return json({
+      total: totals.cash,
+      totalCash: totals.cash,
+      totalCard: totals.card,
+      totalTransfer: totals.transfer,
+      count: paymentsWithTotals.length,
+      payments: paymentsWithTotals,
+    });
   } catch (error) {
     return handleRouteError(error);
   }

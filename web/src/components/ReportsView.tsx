@@ -1,18 +1,45 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState as useClientState } from "react";
 
-type ReportType = "cash" | "outstanding" | "renewals";
+type ReportType = "cash" | "outstanding" | "renewals" | "users";
 type RangePreset = "day" | "week" | "month" | "custom";
 
+type Prefix = "ALL" | "CA" | "VF" | "SF";
+
 export function ReportsView() {
+  const router = useRouter();
   const [reportType, setReportType] = useState<ReportType>("cash");
+  const [policyPrefix, setPolicyPrefix] = useState<Prefix>("ALL");
   const [range, setRange] = useState<RangePreset>("day");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [query, setQuery] = useState("");
+  const [userQuery, setUserQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userOptions, setUserOptions] = useClientState<{ value: string; label: string }[]>([]);
+  const [userLoadError, setUserLoadError] = useClientState<string | null>(null);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (reportType !== "users") return;
+      try {
+        setUserLoadError(null);
+        const res = await fetch("/api/users?scope=dropdown");
+        if (!res.ok) throw new Error("Failed to load users");
+        const data = await res.json();
+        const options =
+          data?.users?.map((u: any) => ({ value: u.username, label: u.username })) || [];
+        setUserOptions(options);
+      } catch (e: any) {
+        setUserLoadError(e?.message || "Failed to load users");
+      }
+    };
+    loadUsers();
+  }, [reportType]);
 
   const effectiveDates = useMemo(() => {
     if (range === "custom") {
@@ -22,7 +49,10 @@ export function ReportsView() {
     const toDate = now.toISOString().slice(0, 10);
     const fromDate = (() => {
       const d = new Date(now);
-      if (range === "day") d.setDate(d.getDate() - 1);
+      if (range === "day") {
+        // single calendar day (today)
+        return toDate;
+      }
       if (range === "week") d.setDate(d.getDate() - 7);
       if (range === "month") d.setMonth(d.getMonth() - 1);
       return d.toISOString().slice(0, 10);
@@ -38,18 +68,31 @@ export function ReportsView() {
       setLoading(false);
       return;
     }
+    if (reportType === "users" && !userQuery.trim()) {
+      setError("Please select a username.");
+      setLoading(false);
+      return;
+    }
     const isRenewalNotice = reportType === "renewals";
+    const isUserReport = reportType === "users";
     const url = new URL(
-      isRenewalNotice ? "/reports/renewal" : "/reports/view",
+      isRenewalNotice ? "/reports/renewal" : isUserReport ? "/reports/user" : "/reports/view",
       window.location.origin,
     );
-    if (!isRenewalNotice) {
+    if (!isRenewalNotice && !isUserReport) {
       url.searchParams.set("type", reportType);
     }
-    if (effectiveDates.from) url.searchParams.set("from", effectiveDates.from);
-    if (effectiveDates.to) url.searchParams.set("to", effectiveDates.to);
-    if (query.trim()) url.searchParams.set("q", query.trim());
-    window.open(url.toString(), "_blank", "noopener,noreferrer");
+    if (reportType === "cash" && policyPrefix) {
+      url.searchParams.set("prefix", policyPrefix);
+    }
+    if (!isUserReport) {
+      if (effectiveDates.from) url.searchParams.set("from", effectiveDates.from);
+      if (effectiveDates.to) url.searchParams.set("to", effectiveDates.to);
+      if (query.trim()) url.searchParams.set("q", query.trim());
+    } else {
+      url.searchParams.set("username", userQuery.trim());
+    }
+    router.push(url.toString());
     setLoading(false);
   };
 
@@ -60,7 +103,7 @@ export function ReportsView() {
       <div className="card space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
-            {(["cash", "outstanding", "renewals"] as ReportType[]).map((type) => (
+            {(["cash", "outstanding", "renewals", "users"] as ReportType[]).map((type) => (
               <button
                 key={type}
                 className={`rounded-full border px-3 py-1 text-sm font-medium transition hover:border-[var(--ic-navy)] hover:text-[var(--ic-navy)] ${
@@ -75,6 +118,7 @@ export function ReportsView() {
                 {type === "cash" && "Cash report"}
                 {type === "outstanding" && "Outstanding balance"}
                 {type === "renewals" && "Renewal listing"}
+                {type === "users" && "User report"}
               </button>
             ))}
           </div>
@@ -129,8 +173,41 @@ export function ReportsView() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="mt-1"
+              disabled={reportType === "users"}
             />
           </div>
+          {reportType === "users" && (
+            <div>
+              <label>Username</label>
+              <select
+                className="mt-1 w-full"
+                value={userQuery}
+                onChange={(e) => setUserQuery(e.target.value)}
+              >
+                <option value="">Select user</option>
+                {userOptions.map((u: any) => (
+                  <option key={u.value} value={u.value}>
+                    {u.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {reportType === "cash" && (
+            <div>
+              <label>Policy Prefix</label>
+              <select
+                className="mt-1 w-full"
+                value={policyPrefix}
+                onChange={(e) => setPolicyPrefix(e.target.value as Prefix)}
+              >
+                <option value="ALL">All offices</option>
+                <option value="CA">CA</option>
+                <option value="VF">VF</option>
+                <option value="SF">SF</option>
+              </select>
+            </div>
+          )}
           <div className="flex gap-2 md:col-span-2">
             <button
               onClick={load}

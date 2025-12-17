@@ -386,6 +386,20 @@ label {
     box-shadow: none !important;
     border: 1px solid #e2e8f0;
   }
+
+  @page {
+    size: 8.5in 11in;
+    margin: 0.5in;
+  }
+
+  .receipt-paper {
+    width: 8.5in !important;
+    min-height: auto !important;
+    padding: 0.5in 0.75in 0.75in !important;
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    page-break-inside: avoid;
+  }
 }
 
 /* Receipts */

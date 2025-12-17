@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { RolePermissionManager } from "@/components/RolePermissionManager";
 import { guardPermission } from "@/lib/api-auth";
 import { BackupManager } from "@/components/BackupManager";
+import { CoverageTypeManager } from "@/components/CoverageTypeManager";
+import { StatementRecipientManager } from "@/components/StatementRecipientManager";
 
 export default async function AdminPage() {
   const auth = await guardPermission("manage_permissions");
@@ -31,6 +33,11 @@ export default async function AdminPage() {
       href: "/payments",
       description: "Record payments and generate receipts.",
     },
+    {
+      title: "Time & attendance",
+      href: "/admin/attendance",
+      description: "View login and logout times for all users (admin only).",
+    },
   ];
 
   return (
@@ -57,6 +64,8 @@ export default async function AdminPage() {
 
       <RolePermissionManager />
       <BackupManager />
+      <CoverageTypeManager />
+      <StatementRecipientManager />
     </div>
   );
 }

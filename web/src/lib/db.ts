@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 
-const uri = process.env.MONGODB_URI;
-if (!uri) {
+const primaryUri = process.env.MONGODB_URI;
+const fallbackUri = process.env.MONGODB_URI_LOCAL || "mongodb://127.0.0.1:27017/drezoc";
+
+if (!primaryUri) {
   throw new Error("MONGODB_URI is not set. Please add it to your environment.");
 }
-const mongoUri: string = uri;
 
 declare global {
   var mongooseConn:
@@ -24,11 +25,32 @@ if (!cached) {
   cached = globalWithMongoose.mongooseConn = { conn: null, promise: null };
 }
 
+// Prefer a small, responsive pool to reduce connection churn while keeping latency low
+async function tryConnect(uri: string) {
+  return mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 5_000,
+    socketTimeoutMS: 20_000,
+    waitQueueTimeoutMS: 5_000,
+    maxPoolSize: 10,
+    minPoolSize: 1,
+  });
+}
+
 export async function connectDb() {
   if (cached?.conn) return cached.conn;
 
   if (!cached?.promise) {
-    cached!.promise = mongoose.connect(mongoUri).then((m) => m);
+    cached!.promise = (async () => {
+      try {
+        return await tryConnect(primaryUri!);
+      } catch (err) {
+        // Fallback to local if primary host is unreachable
+        if (primaryUri !== fallbackUri) {
+          return await tryConnect(fallbackUri);
+        }
+        throw err;
+      }
+    })();
   }
 
   cached!.conn = await cached!.promise;

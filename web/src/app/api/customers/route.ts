@@ -31,11 +31,14 @@ export async function POST(request: Request) {
       return json({ error: "Invalid payload" }, { status: 400 });
     }
 
+    const email = parsed.data.email?.trim() || "na@none.com";
+
     await connectDb();
     let created;
     try {
       created = await Customer.create({
         ...parsed.data,
+        email,
         middleName: parsed.data.middleName || null,
         sex: parsed.data.sex || null,
       });

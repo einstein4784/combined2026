@@ -8,6 +8,7 @@ export type UserDocument = {
   password: string;
   role: UserRole;
   fullName: string;
+  users_location: "Castries" | "Soufriere" | "Vieux Fort";
   createdAt: Date;
   updatedAt: Date;
 };
@@ -24,6 +25,12 @@ const UserSchema = new Schema<UserDocument>(
       index: true,
     },
     fullName: { type: String, required: true },
+    users_location: {
+      type: String,
+      enum: ["Castries", "Soufriere", "Vieux Fort"],
+      default: "Castries",
+      required: true,
+    },
   },
   { timestamps: true },
 );

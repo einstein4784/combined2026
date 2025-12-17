@@ -1,10 +1,45 @@
 import { connectDb } from "@/lib/db";
 import { Customer } from "@/models/Customer";
 import { CustomerForm } from "@/components/forms/CustomerForm";
+import { DeleteCustomerButton } from "@/components/DeleteCustomerButton";
+import { EditCustomerButton } from "@/components/EditCustomerButton";
+import { Pagination } from "@/components/Pagination";
+import Link from "next/link";
 
-export default async function CustomersPage() {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+const normalize = (val?: string | string[]) => (Array.isArray(val) ? val[0] ?? "" : val ?? "");
+const ITEMS_PER_PAGE = 20;
+
+export default async function CustomersPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const canEditCustomer = true; // all authenticated users can edit customers
+
+  const params = await searchParams;
+  const q = normalize(params.q).trim();
+  const page = Math.max(1, parseInt(normalize(params.page)) || 1);
+
   await connectDb();
-  const customers = await Customer.find().sort({ createdAt: -1 });
+  const filter =
+    q.length === 0
+      ? {}
+      : {
+          $or: [
+            { firstName: { $regex: q, $options: "i" } },
+            { middleName: { $regex: q, $options: "i" } },
+            { lastName: { $regex: q, $options: "i" } },
+            { email: { $regex: q, $options: "i" } },
+            { contactNumber: { $regex: q, $options: "i" } },
+            { idNumber: { $regex: q, $options: "i" } },
+            { address: { $regex: q, $options: "i" } },
+          ],
+        };
+
+  const [totalCount, customers] = await Promise.all([
+    Customer.countDocuments(filter),
+    Customer.find(filter).sort({ createdAt: -1 }).skip((page - 1) * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE).lean(),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
     <div className="space-y-6">
@@ -16,39 +51,94 @@ export default async function CustomersPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 card">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Directory</h2>
-            <span className="badge success">{customers.length} total</span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Directory</h2>
+              <span className="badge success">{totalCount} total</span>
+            </div>
+            <form className="flex w-full max-w-md items-center gap-2" method="GET" action="/customers">
+              <input
+                type="text"
+                name="q"
+                placeholder="Search name, email, ID, contact, address…"
+                defaultValue={q}
+                className="w-full rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
+              />
+              <button type="submit" className="btn">
+                Search
+              </button>
+            </form>
           </div>
-          <table className="mt-3">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Contact</th>
-                <th>Email</th>
-                <th>ID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map((c) => (
-                <tr key={c._id.toString()}>
-                  <td>
-                    {c.firstName} {c.middleName} {c.lastName}
-                  </td>
-                  <td>{c.contactNumber}</td>
-                  <td>{c.email}</td>
-                  <td>{c.idNumber}</td>
-                </tr>
-              ))}
-              {!customers.length && (
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
                 <tr>
-                  <td colSpan={4} className="py-4 text-center text-sm text-slate-500">
-                    No customers yet.
-                  </td>
+                  <th>Name</th>
+                  <th>Contact</th>
+                  <th>Email</th>
+                  <th>ID</th>
+                  <th className="text-right">Actions</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {customers.map((c) => {
+                  const safeCustomer = {
+                    _id: c._id.toString(),
+                    firstName: c.firstName || "",
+                    middleName: c.middleName || "",
+                    lastName: c.lastName || "",
+                    address: c.address || "",
+                    contactNumber: c.contactNumber || "",
+                    email: c.email || "",
+                    sex: (c as any).sex || "Male",
+                    idNumber: c.idNumber || "",
+                  };
+                  return (
+                    <tr
+                      key={c._id.toString()}
+                      className="hover:bg-[var(--ic-gray-100)] transition cursor-pointer"
+                    >
+                      <td>
+                        <Link
+                          href={`/customers/${c._id.toString()}`}
+                          className="text-[var(--ic-navy)] underline"
+                        >
+                          {c.firstName} {c.middleName} {c.lastName}
+                        </Link>
+                      </td>
+                      <td>{c.contactNumber}</td>
+                      <td>{c.email}</td>
+                      <td>{c.idNumber}</td>
+                      <td className="text-right">
+                        <div className="flex justify-end gap-2">
+                          {canEditCustomer && <EditCustomerButton customer={safeCustomer} />}
+                          {canEditCustomer && (
+                            <DeleteCustomerButton
+                              customerId={c._id.toString()}
+                              name={[c.firstName, c.lastName].filter(Boolean).join(" ")}
+                            />
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!customers.length && (
+                  <tr>
+                    <td colSpan={5} className="py-4 text-center text-sm text-slate-500">
+                      No customers yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            baseUrl="/customers"
+            searchParams={params}
+          />
         </div>
 
         <div className="card">

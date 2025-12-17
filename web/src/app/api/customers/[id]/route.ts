@@ -1,5 +1,5 @@
 import { connectDb } from "@/lib/db";
-import { guardPermission } from "@/lib/api-auth";
+import { requireSession } from "@/lib/auth";
 import { json, handleRouteError } from "@/lib/utils";
 import { customerSchema } from "@/lib/validators";
 import { Customer } from "@/models/Customer";
@@ -19,8 +19,8 @@ export const dynamic = "force-dynamic";
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const params = await resolveParams(context);
-    const auth = await guardPermission("view_dashboard");
-    if ("response" in auth) return auth.response;
+    const session = await requireSession();
+    if (!session) return json({ error: "Unauthorized" }, { status: 401 });
 
     await connectDb();
     const customer = await Customer.findById(params.id);
@@ -34,8 +34,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const params = await resolveParams(context);
-    const auth = await guardPermission("create_edit_customer");
-    if ("response" in auth) return auth.response;
+    const session = await requireSession();
+    if (!session) return json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
     const parsed = customerSchema.safeParse(body);
@@ -43,15 +43,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return json({ error: "Invalid payload" }, { status: 400 });
     }
 
+    const email = parsed.data.email?.trim() || "na@none.com";
+
     await connectDb();
     await Customer.findByIdAndUpdate(params.id, {
       ...parsed.data,
+      email,
       middleName: parsed.data.middleName || null,
       sex: parsed.data.sex || null,
     });
 
     await logAuditAction({
-      userId: auth.session.id,
+      userId: session.id,
       action: "UPDATE_CUSTOMER",
       entityType: "Customer",
       entityId: params.id,
@@ -67,20 +70,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const params = await resolveParams(context);
-    const auth = await guardPermission("create_edit_customer");
-    if ("response" in auth) return auth.response;
+    const session = await requireSession();
+    if (!session) return json({ error: "Unauthorized" }, { status: 401 });
 
-    await connectDb();
-    await Customer.findByIdAndDelete(params.id);
-
-    await logAuditAction({
-      userId: auth.session.id,
-      action: "DELETE_CUSTOMER",
-      entityType: "Customer",
-      entityId: params.id,
-    });
-
-    return json({ success: true });
+    return json(
+      { error: "Deletion now requires manager approval. Submit a delete request." },
+      { status: 403 },
+    );
   } catch (error) {
     return handleRouteError(error);
   }

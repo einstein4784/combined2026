@@ -2,8 +2,10 @@ import { connectDb } from "@/lib/db";
 import { Policy } from "@/models/Policy";
 import { Payment } from "@/models/Payment";
 import { Customer } from "@/models/Customer";
+import { User } from "@/models/User";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/PrintButton";
+import { getSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,6 +14,11 @@ type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ policyI
 
 export default async function PolicyNoticePage({ params, searchParams }: Params) {
   await connectDb();
+
+  const session = await getSession();
+  const sessionUser = session
+    ? await User.findById(session.id).select("fullName username email role users_location").lean()
+    : null;
 
   const resolvedParams = await params;
   const resolvedSearch = await searchParams;
@@ -22,14 +29,19 @@ export default async function PolicyNoticePage({ params, searchParams }: Params)
   let policy =
     (await Policy.findById(candidateId)
       .populate("customerId", "firstName lastName idNumber address contactNumber email")
+      .populate("customerIds", "firstName middleName lastName idNumber address contactNumber email")
       .lean()) ||
     (await Policy.findOne({ policyNumber: candidateNumber })
       .populate("customerId", "firstName lastName idNumber address contactNumber email")
+      .populate("customerIds", "firstName middleName lastName idNumber address contactNumber email")
       .lean());
 
   if (!policy) return notFound();
 
-  const customer = policy.customerId as any;
+  const customers = [
+    policy.customerId,
+    ...(Array.isArray(policy.customerIds) ? policy.customerIds : []),
+  ].filter(Boolean) as any[];
 
   const lastPayment = await Payment.find({ policyId: policy._id })
     .sort({ paymentDate: -1 })
@@ -82,6 +94,9 @@ export default async function PolicyNoticePage({ params, searchParams }: Params)
             className="h-64 w-auto object-contain -mt-2"
           />
           <h2 className="text-2xl font-bold text-[var(--ic-navy)] tracking-tight">Policy Renewal Notice</h2>
+          <p className="text-sm font-bold underline text-[var(--ic-gray-800)]">
+            Location: {(sessionUser as any)?.users_location || (session as any)?.users_location || "—"}
+          </p>
           <div className="grid w-full gap-3 rounded-md border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)] p-3 text-xs font-semibold text-[var(--ic-gray-700)] leading-snug md:grid-cols-3">
             <div className="text-left space-y-0.5">
               <p>P.O. GM 636, Gablewoods Mall</p>
@@ -101,31 +116,62 @@ export default async function PolicyNoticePage({ params, searchParams }: Params)
           </div>
         </div>
 
+        <div className="mt-3 grid gap-2 rounded-md border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)] p-3 text-xs font-semibold text-[var(--ic-gray-700)] md:grid-cols-3">
+          <div className="text-left space-y-0.5">
+            <p>Prepared by: {sessionUser?.fullName || session?.fullName || "—"}</p>
+            <p>Username: {sessionUser?.username || session?.username || "—"}</p>
+          </div>
+          <div className="text-center space-y-0.5">
+            <p>Role: {sessionUser?.role || session?.role || "—"}</p>
+            <p>Location: {(sessionUser as any)?.users_location || (session as any)?.users_location || "—"}</p>
+          </div>
+          <div className="text-right space-y-0.5">
+            <p>Email: {sessionUser?.email || session?.email || "—"}</p>
+            <p>Date: {new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+
         <div className="notice-grid">
           <div className="notice-section">
             <h3>Customer Information</h3>
             <dl>
               <div>
-                <dt>Name:</dt>
+                <dt>Name(s):</dt>
                 <dd>
-                  {[customer?.firstName, customer?.lastName].filter(Boolean).join(" ")}
+                  {customers.length
+                    ? customers
+                        .map((c) =>
+                          [c?.firstName, c?.middleName, c?.lastName]
+                            .filter(Boolean)
+                            .join(" "),
+                        )
+                        .filter(Boolean)
+                        .join(", ")
+                    : "—"}
                 </dd>
               </div>
               <div>
-                <dt>ID Number:</dt>
-                <dd>{customer?.idNumber || "—"}</dd>
+                <dt>ID Number(s):</dt>
+                <dd>
+                  {customers.length
+                    ? customers
+                        .map((c) => c?.idNumber)
+                        .filter(Boolean)
+                        .join(", ")
+                    : "—"}
+                </dd>
               </div>
               <div>
                 <dt>Address:</dt>
-                <dd>{customer?.address || "—"}</dd>
+                <dd>{customers[0]?.address || "—"}</dd>
               </div>
               <div>
                 <dt>Contact:</dt>
-                <dd>{customer?.contactNumber || "—"}</dd>
+                <dd>{customers.map((c) => c?.contactNumber).filter(Boolean).join(", ") || "—"}</dd>
               </div>
               <div>
                 <dt>Email:</dt>
-                <dd>{customer?.email || "—"}</dd>
+                <dd>{customers.map((c) => c?.email).filter(Boolean).join(", ") || "—"}</dd>
               </div>
             </dl>
           </div>
