@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { showGlobalError } from "./GlobalErrorPopup";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -24,6 +25,10 @@ export default function LoginForm() {
 
     if (res?.error) {
       setError(res.error || "Login failed");
+      showGlobalError({
+        title: "Login failed",
+        message: res.error || "Please check your username/password and try again.",
+      });
     } else {
       router.push(res?.url || "/dashboard");
     }

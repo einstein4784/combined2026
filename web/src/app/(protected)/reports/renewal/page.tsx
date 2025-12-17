@@ -2,6 +2,7 @@ import { connectDb } from "@/lib/db";
 import { Policy } from "@/models/Policy";
 import { Customer } from "@/models/Customer";
 import Link from "next/link";
+import { PrintButton } from "@/components/PrintButton";
 
 type SearchParams = {
   q?: string | string[];
@@ -47,11 +48,13 @@ export default async function RenewalSearchPage({
   const customerIds = customers.map((c: any) => c._id);
 
   const policies = await Policy.find({
+    status: "Active", // Only show active policies in renewal reports
     ...(q
       ? {
           $or: [
             { policyNumber: { $regex: q, $options: "i" } },
             { customerId: { $in: customerIds } },
+            { customerIds: { $in: customerIds } },
           ],
         }
       : {}),
@@ -65,6 +68,7 @@ export default async function RenewalSearchPage({
       : {}),
   })
     .populate("customerId", "firstName lastName email contactNumber idNumber")
+    .populate("customerIds", "firstName lastName email contactNumber idNumber")
     .sort({ coverageEndDate: 1 })
     .lean();
 
@@ -85,9 +89,12 @@ export default async function RenewalSearchPage({
             </p>
           )}
         </div>
-        <Link href="/reports" className="btn print:hidden">
-          Back to Reports
-        </Link>
+        <div className="flex items-center gap-2">
+          <PrintButton />
+          <Link href="/reports" className="btn print:hidden">
+            Back to Reports
+          </Link>
+        </div>
       </div>
 
       <div className="card print:border-none print:shadow-none">
@@ -101,30 +108,36 @@ export default async function RenewalSearchPage({
             </tr>
           </thead>
           <tbody>
-            {policies.map((p: any) => (
-              <tr key={p._id.toString()}>
-                <td>{p.policyNumber}</td>
-                <td>
-                  {[p.customerId?.firstName, p.customerId?.lastName].filter(Boolean).join(" ")}
-                </td>
-                <td>
-                  {p.coverageEndDate
-                    ? new Date(p.coverageEndDate).toLocaleDateString()
-                    : "—"}
-                </td>
-                <td>
-                  <Link
-                    href={`/policies/notice?policyId=${p._id.toString()}&policyNumber=${encodeURIComponent(
-                      p.policyNumber || "",
-                    )}`}
-                    target="_blank"
-                    className="text-[var(--ic-navy)] underline"
-                  >
-                    Open notice
-                  </Link>
-                </td>
-              </tr>
-            ))}
+            {policies.map((p: any) => {
+              const customers = [p.customerId, ...(Array.isArray(p.customerIds) ? p.customerIds : [])].filter(Boolean);
+              const customerName = customers
+                .map((c: any) => `${c?.firstName ?? ""} ${c?.lastName ?? ""}`.trim())
+                .filter(Boolean)
+                .join(", ");
+              
+              return (
+                <tr key={p._id.toString()}>
+                  <td>{p.policyNumber}</td>
+                  <td>{customerName || "—"}</td>
+                  <td>
+                    {p.coverageEndDate
+                      ? new Date(p.coverageEndDate).toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td>
+                    <Link
+                      href={`/policies/notice?policyId=${p._id.toString()}&policyNumber=${encodeURIComponent(
+                        p.policyNumber || "",
+                      )}`}
+                      className="text-[var(--ic-navy)] underline"
+                      target="_blank"
+                    >
+                      Open notice
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
             {!policies.length && (
               <tr>
                 <td colSpan={4} className="py-4 text-center text-sm text-slate-500">

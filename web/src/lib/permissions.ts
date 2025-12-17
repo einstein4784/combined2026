@@ -11,7 +11,8 @@ export type SystemFunctionId =
   | "reset_system"
   | "close_period"
   | "view_dashboard"
-  | "manage_permissions";
+  | "manage_permissions"
+  | "approve_deletions";
 
 export const SYSTEM_FUNCTIONS: Record<
   SystemFunctionId,
@@ -83,6 +84,12 @@ export const SYSTEM_FUNCTIONS: Record<
     description: "Ability to assign functions to roles",
     category: "System Administration",
   },
+  approve_deletions: {
+    id: "approve_deletions",
+    name: "Approve Deletions",
+    description: "Approve or deny delete requests raised by staff",
+    category: "System Administration",
+  },
 };
 
 export const DEFAULT_PERMISSIONS: Record<UserRole, SystemFunctionId[]> = {
@@ -97,6 +104,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, SystemFunctionId[]> = {
     "override_outstanding_balance",
     "close_period",
     "view_dashboard",
+    "approve_deletions",
   ],
   Cashier: ["receive_payment", "generate_cash_statements", "view_dashboard"],
   Underwriter: ["create_edit_customer", "create_edit_policy", "view_dashboard"],

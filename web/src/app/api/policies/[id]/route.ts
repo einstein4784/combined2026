@@ -1,10 +1,18 @@
 import { connectDb } from "@/lib/db";
-import { guardPermission } from "@/lib/api-auth";
+import { requireSession } from "@/lib/auth";
 import { json, handleRouteError } from "@/lib/utils";
 import { policySchema } from "@/lib/validators";
 import { Policy } from "@/models/Policy";
 import { logAuditAction } from "@/lib/audit";
 import type { NextRequest } from "next/server";
+
+const parseDateOnly = (value?: string) => {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  const d = new Date(`${trimmed}T00:00:00.000Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
 
 type RouteContext =
   | { params: { id: string } }
@@ -19,8 +27,8 @@ export const dynamic = "force-dynamic";
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const params = await resolveParams(context);
-    const auth = await guardPermission("view_dashboard");
-    if ("response" in auth) return auth.response;
+    const session = await requireSession();
+    if (!session) return json({ error: "Unauthorized" }, { status: 401 });
 
     await connectDb();
     const policy = await Policy.findById(params.id).populate(
@@ -37,14 +45,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
     const params = await resolveParams(context);
-    const auth = await guardPermission("create_edit_policy");
-    if ("response" in auth) return auth.response;
+    const session = await requireSession();
+    if (!session) return json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const parsed = policySchema.safeParse(body);
-    if (!parsed.success) {
-      return json({ error: "Invalid payload" }, { status: 400 });
-    }
 
     await connectDb();
     const existing = await Policy.findById(params.id);
@@ -52,18 +56,56 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return json({ error: "Not found" }, { status: 404 });
     }
 
-    existing.coverageType = parsed.data.coverageType;
-    existing.coverageStartDate = parsed.data.coverageStartDate;
-    existing.coverageEndDate = parsed.data.coverageEndDate;
+    // Ensure customerIds is present for validation; updates may omit it from the UI.
+    // Also normalize ObjectIds to strings so zod validation passes.
+    const parsed = policySchema.safeParse({
+      ...body,
+      customerIds:
+        Array.isArray(body.customerIds) && body.customerIds.length
+          ? body.customerIds.map((id: any) => id?.toString?.() || id)
+          : existing.customerIds?.length
+            ? existing.customerIds.map((id: any) => id?.toString?.() || id)
+            : body.customerId
+              ? [body.customerId]
+              : [],
+    });
+    if (!parsed.success) {
+      return json({ error: "Invalid payload" }, { status: 400 });
+    }
+
+    const coverageType = parsed.data.coverageType.trim();
+    if (!coverageType) {
+      return json({ error: "Coverage type is required" }, { status: 400 });
+    }
+    const registrationNumber =
+      parsed.data.registrationNumber?.toString().trim() || "TBA";
+    const notes = parsed.data.notes?.toString().trim() || null;
+
+    const coverageStartDate = parseDateOnly(parsed.data.coverageStartDate);
+    const coverageEndDate = parseDateOnly(parsed.data.coverageEndDate);
+    if (!coverageStartDate || !coverageEndDate) {
+      return json({ error: "Invalid coverage dates" }, { status: 400 });
+    }
+    if (coverageEndDate < coverageStartDate) {
+      return json({ error: "Coverage end date cannot be before start date" }, { status: 400 });
+    }
+
+    existing.coverageType = coverageType;
+    existing.registrationNumber = registrationNumber;
+    existing.policyNumber = parsed.data.policyNumber || existing.policyNumber;
+    existing.policyIdNumber = parsed.data.policyIdNumber;
+    existing.coverageStartDate = coverageStartDate;
+    existing.coverageEndDate = coverageEndDate;
     existing.totalPremiumDue = parsed.data.totalPremiumDue;
     existing.status = parsed.data.status || existing.status;
     existing.outstandingBalance =
       parsed.data.totalPremiumDue - (existing.amountPaid || 0);
+    existing.notes = notes;
 
     await existing.save();
 
     await logAuditAction({
-      userId: auth.session.id,
+      userId: session.id,
       action: "UPDATE_POLICY",
       entityType: "Policy",
       entityId: params.id,
@@ -79,20 +121,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const params = await resolveParams(context);
-    const auth = await guardPermission("create_edit_policy");
-    if ("response" in auth) return auth.response;
+    const session = await requireSession();
+    if (!session) return json({ error: "Unauthorized" }, { status: 401 });
 
-    await connectDb();
-    await Policy.findByIdAndDelete(params.id);
-
-    await logAuditAction({
-      userId: auth.session.id,
-      action: "DELETE_POLICY",
-      entityType: "Policy",
-      entityId: params.id,
-    });
-
-    return json({ success: true });
+    return json(
+      { error: "Deletion now requires manager approval. Submit a delete request." },
+      { status: 403 },
+    );
   } catch (error) {
     return handleRouteError(error);
   }

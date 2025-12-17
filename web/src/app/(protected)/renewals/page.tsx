@@ -4,6 +4,7 @@ import { Policy } from "@/models/Policy";
 import { Customer } from "@/models/Customer";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import RenewalsClient from "./RenewalsClient";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -33,24 +34,39 @@ export default async function RenewalsPage({ searchParams }: Props) {
   };
 
   const q = normalize(safeParams.q).trim();
+  const preset = normalize(safeParams.preset);
   const fromParam = toDate(normalize(safeParams.from));
   const toParam = toDate(normalize(safeParams.to));
 
   const today = new Date();
-  const tenDays = new Date();
-  tenDays.setDate(today.getDate() + 10);
+  const presetDays = (() => {
+    if (preset === "7") return 7;
+    if (preset === "14") return 14;
+    if (preset === "21") return 21;
+    if (preset === "30") return 30;
+    return 10;
+  })();
+  const presetEnd = new Date(today);
+  presetEnd.setDate(today.getDate() + presetDays);
 
-  const from = fromParam ?? today;
-  const to = toParam ?? tenDays;
+  const useSearch = q.length > 0;
+  const hasDateInput = Boolean(normalize(safeParams.from) || normalize(safeParams.to));
+
+  // Exclusive logic: if searching, ignore date filters; otherwise use provided dates or default window.
+  const from = useSearch ? null : hasDateInput ? fromParam : today;
+  const to = useSearch ? null : hasDateInput ? toParam : presetEnd;
 
   await connectDb();
 
-  const customerMatch = q
+  const customerMatch = useSearch
     ? {
         $or: [
           { firstName: { $regex: q, $options: "i" } },
           { lastName: { $regex: q, $options: "i" } },
+          { middleName: { $regex: q, $options: "i" } },
           { email: { $regex: q, $options: "i" } },
+          { contactNumber: { $regex: q, $options: "i" } },
+          { idNumber: { $regex: q, $options: "i" } },
         ],
       }
     : {};
@@ -60,20 +76,62 @@ export default async function RenewalsPage({ searchParams }: Props) {
       ? (await Customer.find(customerMatch).select("_id").lean()).map((c: any) => c._id)
       : [];
 
+  const dateFilter =
+    from || to
+      ? {
+          coverageEndDate: {
+            ...(from ? { $gte: from } : {}),
+            ...(to ? { $lte: to } : {}),
+          },
+        }
+      : {};
+
   const policies = await Policy.find({
-    coverageEndDate: { $gte: from, $lte: to },
-    ...(q
+    ...(useSearch ? {} : dateFilter),
+    ...(useSearch
       ? {
           $or: [
             { policyNumber: { $regex: q, $options: "i" } },
-            { customerId: { $in: customerIds } },
+            { coverageType: { $regex: q, $options: "i" } },
+            ...(customerIds.length
+              ? [{ $or: [{ customerId: { $in: customerIds } }, { customerIds: { $in: customerIds } }] }]
+              : []),
           ],
         }
       : {}),
   })
-    .populate("customerId", "firstName lastName email contactNumber")
+    .populate("customerId", "firstName lastName middleName email contactNumber idNumber")
+    .populate("customerIds", "firstName middleName lastName email contactNumber idNumber")
     .sort({ coverageEndDate: 1 })
     .lean();
+
+  const policyRows = policies.map((p: any) => {
+    const customers = [p.customerId, ...(Array.isArray(p.customerIds) ? p.customerIds : [])].filter(Boolean);
+    const customerName = customers
+      .map((c: any) => `${c?.firstName ?? ""} ${c?.middleName ?? ""} ${c?.lastName ?? ""}`.trim())
+      .filter(Boolean)
+      .join(", ");
+    const customerEmail = customers.map((c: any) => c?.email).find((e: string) => !!e) || "";
+    const customerContact = customers.map((c: any) => c?.contactNumber).find((e: string) => !!e) || "";
+    const customerIdNumber = customers.map((c: any) => c?.idNumber).find((e: string) => !!e) || "";
+    return {
+      id: p._id.toString(),
+      policyNumber: p.policyNumber,
+      policyIdNumber: p.policyIdNumber,
+      coverageStartDate: p.coverageStartDate ? new Date(p.coverageStartDate).toISOString() : null,
+      coverageEndDate: p.coverageEndDate ? new Date(p.coverageEndDate).toISOString() : null,
+      outstandingBalance: p.outstandingBalance ?? 0,
+    totalPremiumDue: p.totalPremiumDue ?? 0,
+    amountPaid: p.amountPaid ?? 0,
+      coverageType: p.coverageType,
+      registrationNumber: p.registrationNumber || null,
+      customerName,
+      customerEmail,
+      customerContact,
+      customerIdNumber,
+      renewalNoticeSentAt: p.renewalNoticeSentAt ? new Date(p.renewalNoticeSentAt).toISOString() : null,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -81,7 +139,7 @@ export default async function RenewalsPage({ searchParams }: Props) {
         <p className="section-heading">Renewals</p>
         <h4>Upcoming renewals</h4>
         <p className="page-subtitle">
-          Default shows renewals due in the next 10 days. Search by customer or policy, or pick a date range.
+          Quickly filter upcoming renewals and email notices individually or in bulk.
         </p>
       </div>
 
@@ -101,7 +159,7 @@ export default async function RenewalsPage({ searchParams }: Props) {
             <input
               type="date"
               name="from"
-              defaultValue={from.toISOString().slice(0, 10)}
+              defaultValue={!useSearch && from ? from.toISOString().slice(0, 10) : ""}
               className="mt-1"
             />
           </div>
@@ -110,72 +168,54 @@ export default async function RenewalsPage({ searchParams }: Props) {
             <input
               type="date"
               name="to"
-              defaultValue={to.toISOString().slice(0, 10)}
+              defaultValue={!useSearch && to ? to.toISOString().slice(0, 10) : ""}
               className="mt-1"
             />
           </div>
-          <div className="md:col-span-4 flex gap-2">
+          <div className="md:col-span-4 flex flex-wrap gap-2">
             <button type="submit" className="btn btn-primary">
               Search
             </button>
             <Link href="/renewals" className="btn btn-ghost border-[var(--ic-gray-200)]">
               Clear
             </Link>
+            {!useSearch && (
+              <div className="flex flex-wrap gap-2">
+                {[7, 14, 21, 30].map((d) => {
+                  const toDate = new Date(today);
+                  toDate.setDate(today.getDate() + d);
+                  const params = new URLSearchParams({
+                    preset: String(d),
+                    from: today.toISOString().slice(0, 10),
+                    to: toDate.toISOString().slice(0, 10),
+                  });
+                  return (
+                    <Link
+                      key={d}
+                      href={`/renewals?${params.toString()}`}
+                      className={`btn btn-ghost border-[var(--ic-gray-200)] ${
+                        presetDays === d ? "bg-[var(--ic-teal)]/10 text-[var(--ic-navy)] border-[var(--ic-teal)]" : ""
+                      }`}
+                    >
+                      Next {d} days
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </form>
       </div>
 
-      <div className="card">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[var(--ic-navy)]">Results</h3>
-          <span className="badge success">{policies.length} records</span>
-        </div>
-        <table className="mt-4">
-          <thead>
-            <tr>
-              <th>Policy</th>
-              <th>Customer</th>
-              <th>Coverage end</th>
-              <th>Outstanding</th>
-              <th>Notice</th>
-            </tr>
-          </thead>
-          <tbody>
-            {policies.map((p: any) => (
-              <tr key={p._id.toString()}>
-                <td>{p.policyNumber}</td>
-                <td>
-                  {[p.customerId?.firstName, p.customerId?.lastName].filter(Boolean).join(" ")}
-                </td>
-                <td>
-                  {p.coverageEndDate
-                    ? new Date(p.coverageEndDate).toLocaleDateString()
-                    : "—"}
-                </td>
-                <td>${(p.outstandingBalance || 0).toFixed(2)}</td>
-                <td>
-                  <Link
-                    href={`/policies/notice?policyId=${p._id.toString()}&policyNumber=${encodeURIComponent(
-                      p.policyNumber || "",
-                    )}`}
-                    target="_blank"
-                    className="text-[var(--ic-navy)] underline"
-                  >
-                    Open notice
-                  </Link>
-                </td>
-              </tr>
-            ))}
-            {!policies.length && (
-              <tr>
-                <td colSpan={5} className="py-4 text-center text-sm text-slate-500">
-                  No renewals in range.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <RenewalsClient 
+        policies={policyRows} 
+        totalCount={policyRows.length}
+        searchParams={{
+          q: q || undefined,
+          from: !useSearch && from ? from.toISOString().slice(0, 10) : undefined,
+          to: !useSearch && to ? to.toISOString().slice(0, 10) : undefined,
+        }}
+      />
     </div>
   );
 }

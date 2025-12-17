@@ -1,8 +1,11 @@
 import { connectDb } from "@/lib/db";
 import { Policy } from "@/models/Policy";
 import { Payment } from "@/models/Payment";
+import { User } from "@/models/User";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/PrintButton";
+import { getSession } from "@/lib/auth";
+import { SendNoticeEmailButton } from "@/components/SendNoticeEmailButton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -37,6 +40,10 @@ export default async function PolicyNoticeQueryPage({
   searchParams: Promise<SearchParams>;
 }) {
   await connectDb();
+  const session = await getSession();
+  const sessionUser = session
+    ? await User.findById(session.id).select("fullName username email role users_location").lean()
+    : null;
   const resolvedSearch = await searchParams;
 
   const policy =
@@ -90,17 +97,38 @@ export default async function PolicyNoticeQueryPage({
             {policy.policyNumber}
           </h1>
         </div>
-        <PrintButton />
+        <div className="flex gap-2">
+          <SendNoticeEmailButton
+            policyId={policy._id.toString()}
+            policyNumber={policy.policyNumber}
+            policyIdNumber={policy.policyIdNumber}
+            customerName={[customer?.firstName, customer?.lastName].filter(Boolean).join(" ")}
+            customerContact={customer?.contactNumber}
+            customerIdNumber={customer?.idNumber}
+            coverageStart={coverageStart}
+            coverageEnd={coverageEnd}
+            outstanding={outstanding}
+            coverageType={policy.coverageType}
+            registrationNumber={(policy as any).registrationNumber || undefined}
+            totalPremiumDue={policy.totalPremiumDue}
+            amountPaid={policy.amountPaid}
+            customerEmail={customer?.email}
+          />
+          <PrintButton />
+        </div>
       </div>
 
       <div className="notice-wrapper">
         <div className="flex flex-col items-center gap-2 text-center">
           <img
-            src="/IC-LOGO-NEW.png"
+            src="/Untitled-5.png"
             alt="Combined Insurance Services"
             className="h-64 w-auto object-contain -mt-2"
           />
           <h2 className="text-2xl font-bold text-[var(--ic-navy)] tracking-tight">Policy Renewal Notice</h2>
+          <p className="text-sm font-bold underline text-[var(--ic-gray-800)]">
+            Location: {(sessionUser as any)?.users_location || (session as any)?.users_location || "—"}
+          </p>
           <div className="grid w-full gap-3 rounded-md border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)] p-3 text-xs font-semibold text-[var(--ic-gray-700)] leading-snug md:grid-cols-3">
             <div className="text-left space-y-0.5">
               <p>P.O. GM 636, Gablewoods Mall</p>
@@ -117,6 +145,21 @@ export default async function PolicyNoticeQueryPage({
               <p>Soufriere</p>
               <p>Tel: 457-1500</p>
             </div>
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-2 rounded-md border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)] p-3 text-xs font-semibold text-[var(--ic-gray-700)] md:grid-cols-3">
+          <div className="text-left space-y-0.5">
+            <p>Prepared by: {sessionUser?.fullName || session?.fullName || "—"}</p>
+            <p>Username: {sessionUser?.username || session?.username || "—"}</p>
+          </div>
+          <div className="text-center space-y-0.5">
+            <p>Role: {sessionUser?.role || session?.role || "—"}</p>
+            <p>Location: {(sessionUser as any)?.users_location || (session as any)?.users_location || "—"}</p>
+          </div>
+          <div className="text-right space-y-0.5">
+            <p>Email: {sessionUser?.email || session?.email || "—"}</p>
+            <p>Date: {new Date().toLocaleDateString()}</p>
           </div>
         </div>
 
@@ -154,6 +197,10 @@ export default async function PolicyNoticeQueryPage({
               <div>
                 <dt>Policy Number:</dt>
                 <dd>{policy.policyNumber}</dd>
+              </div>
+              <div>
+                <dt>Registration Number:</dt>
+                <dd>{policy.registrationNumber || "TBA"}</dd>
               </div>
               <div>
                 <dt>Coverage Type:</dt>

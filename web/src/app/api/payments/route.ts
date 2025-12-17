@@ -1,10 +1,11 @@
 import { connectDb } from "@/lib/db";
-import { guardPermission } from "@/lib/api-auth";
+import { guardPermission, guardSession } from "@/lib/api-auth";
 import { json, handleRouteError } from "@/lib/utils";
 import { paymentSchema } from "@/lib/validators";
 import { Policy } from "@/models/Policy";
 import { Payment } from "@/models/Payment";
 import { Receipt } from "@/models/Receipt";
+import "@/models/Customer";
 import { generateReceiptNumber } from "@/lib/ids";
 import { logAuditAction } from "@/lib/audit";
 import { User } from "@/models/User";
@@ -33,7 +34,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const auth = await guardPermission("receive_payment");
+    const auth = await guardSession();
     if ("response" in auth) return auth.response;
 
     const body = await request.json();
@@ -42,17 +43,25 @@ export async function POST(request: Request) {
       return json({ error: "Invalid payload" }, { status: 400 });
     }
 
+    const amount = Number(parsed.data.amount ?? 0);
+    const refundAmount = Number(parsed.data.refundAmount ?? 0);
+
     await connectDb();
-    const user = await User.findById(auth.session.id).select("fullName").lean();
+    const user = await User.findById(auth.session.id).select("fullName users_location").lean();
     const receivedByName = user?.fullName;
+    const userLocation = (user as any)?.users_location || null;
     const policy = await Policy.findById(parsed.data.policyId).populate(
       "customerId",
       "firstName lastName email contactNumber",
     );
     if (!policy) return json({ error: "Policy not found" }, { status: 404 });
 
-    const outstanding = policy.totalPremiumDue - policy.amountPaid;
-    if (parsed.data.amount > outstanding) {
+    const totalPremiumDue = Number(policy.totalPremiumDue ?? 0);
+    const amountPaidSoFar = Number((policy as any).amountPaid ?? 0);
+    const outstanding = Math.max(totalPremiumDue - amountPaidSoFar, 0);
+    const appliedToOutstanding = amount + refundAmount; // refunds reduce outstanding directly
+
+    if (appliedToOutstanding > outstanding) {
       if (!parsed.data.arrearsOverrideUsed) {
         return json({ error: "Payment exceeds outstanding balance" }, { status: 400 });
       }
@@ -61,16 +70,15 @@ export async function POST(request: Request) {
     }
 
     const receiptNumber = generateReceiptNumber();
-    policy.amountPaid += parsed.data.amount;
-    policy.outstandingBalance = Math.max(
-      policy.totalPremiumDue - policy.amountPaid,
-      0,
-    );
+    const newAmountPaid = Math.max(amountPaidSoFar + appliedToOutstanding, 0);
+    policy.amountPaid = newAmountPaid;
+    policy.outstandingBalance = Math.max(totalPremiumDue - newAmountPaid, 0);
     await policy.save();
 
     const payment = await Payment.create({
       policyId: policy._id,
-      amount: parsed.data.amount,
+      amount: amount, // store the payment received
+      refundAmount,
       paymentDate: new Date(),
       paymentMethod: parsed.data.paymentMethod || "Cash",
       receiptNumber,
@@ -84,13 +92,16 @@ export async function POST(request: Request) {
       paymentId: payment._id,
       policyId: policy._id,
       customerId: policy.customerId,
-      amount: parsed.data.amount,
+      amount: amount, // cash received
       paymentDate: payment.paymentDate,
       generatedBy: auth.session.id,
       generatedByName: receivedByName,
       paymentMethod: parsed.data.paymentMethod || "Cash",
       notes: parsed.data.notes,
+      location: userLocation || undefined,
+      registrationNumber: (policy as any).registrationNumber || "TBA",
       policyNumberSnapshot: policy.policyNumber,
+      policyIdNumberSnapshot: policy.policyIdNumber,
       customerNameSnapshot: `${(policy as any).customerId?.firstName ?? ""} ${
         (policy as any).customerId?.lastName ?? ""
       }`.trim(),

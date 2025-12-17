@@ -24,3 +24,4 @@ export default async function ResetUserPasswordPage({ params }: Params) {
   redirect(`/users?reset=${encodeURIComponent(user.username)}&temp=${encodeURIComponent(newPassword)}`);
 }
 
+

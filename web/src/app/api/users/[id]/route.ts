@@ -30,14 +30,29 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     await connectDb();
+    const target = await User.findById(params.id).select("username");
+    if (!target) {
+      return json({ error: "User not found" }, { status: 404 });
+    }
+    const isLocked =
+      target.username && target.username.toLowerCase() === "nicholas.dass";
+    if (isLocked && parsed.data.password) {
+      return json(
+        { error: "Password for this account is locked and cannot be changed." },
+        { status: 400 },
+      );
+    }
+
+    const location = parsed.data.users_location || "Castries";
     const update: Record<string, unknown> = {
       username: parsed.data.username,
       email: parsed.data.email,
       role: parsed.data.role,
       fullName: parsed.data.fullName,
+      users_location: location,
     };
 
-    if (parsed.data.password) {
+    if (parsed.data.password && !isLocked) {
       update.password = await bcrypt.hash(parsed.data.password, 10);
     }
 
@@ -63,21 +78,10 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     const auth = await guardPermission("create_edit_delete_user");
     if ("response" in auth) return auth.response;
 
-    if (auth.session.id === params.id) {
-      return json({ error: "Cannot delete your own account" }, { status: 400 });
-    }
-
-    await connectDb();
-    await User.findByIdAndDelete(params.id);
-
-    await logAuditAction({
-      userId: auth.session.id,
-      action: "DELETE_USER",
-      entityType: "User",
-      entityId: params.id,
-    });
-
-    return json({ success: true });
+    return json(
+      { error: "Deletion now requires manager approval. Submit a delete request." },
+      { status: 403 },
+    );
   } catch (error) {
     return handleRouteError(error);
   }

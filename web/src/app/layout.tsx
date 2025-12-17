@@ -15,7 +15,10 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "I&C Insurance | Admin",
+  title: {
+    default: "Combined Insurance | Admin",
+    template: "%s | Combined Insurance",
+  },
   description: "Management console rebuilt on Next.js 14",
 };
 

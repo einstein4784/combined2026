@@ -8,16 +8,47 @@ import { logAuditAction } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+import type { NextRequest } from "next/server";
+
+export async function GET(req: NextRequest) {
   try {
-    const auth = await guardPermission("generate_user_report");
+    const scope = new URL(req.url).searchParams.get("scope");
+    const idsParam = new URL(req.url).searchParams.get("ids");
+    const auth =
+      scope === "dropdown"
+        ? await guardPermission("view_dashboard")
+        : await guardPermission("generate_user_report");
     if ("response" in auth) return auth.response;
 
     await connectDb();
-    const users = await User.find({}, "username email role fullName createdAt").sort({
-      createdAt: -1,
-    });
-    return json(users);
+    const projection =
+      scope === "dropdown" || idsParam
+        ? "username fullName"
+        : "username email role fullName users_location createdAt";
+
+    const filter: any = {};
+    if (idsParam) {
+      const ids = idsParam
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean);
+      if (ids.length) {
+        filter._id = { $in: ids };
+      }
+    }
+
+    const users = await User.find(filter, projection).sort({ createdAt: -1 }).lean();
+
+    if (scope === "dropdown" || idsParam) {
+      const mapped = users.map((u: any) => ({
+        id: u._id.toString(),
+        username: u.username,
+        fullName: u.fullName,
+      }));
+      return json({ users: mapped });
+    }
+
+    return json({ users });
   } catch (error) {
     return handleRouteError(error);
   }
@@ -36,6 +67,7 @@ export async function POST(request: Request) {
 
     await connectDb();
     const hashedPassword = await bcrypt.hash(parsed.data.password, 10);
+    const location = parsed.data.users_location || "Castries";
 
     const created = await User.create({
       username: parsed.data.username,
@@ -43,6 +75,7 @@ export async function POST(request: Request) {
       password: hashedPassword,
       role: parsed.data.role,
       fullName: parsed.data.fullName,
+      users_location: location,
     });
 
     await logAuditAction({
@@ -59,6 +92,7 @@ export async function POST(request: Request) {
       email: created.email,
       role: created.role,
       fullName: created.fullName,
+      users_location: created.users_location,
     });
   } catch (error) {
     return handleRouteError(error);

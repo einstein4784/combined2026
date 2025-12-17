@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import LoginForm from "@/components/LoginForm";
 import { getSession } from "@/lib/auth";
 import { WeatherPanel } from "@/components/WeatherPanel";
+import { GlobalErrorPopup } from "@/components/GlobalErrorPopup";
+import { BackButton } from "@/components/BackButton";
 
 export default async function LoginPage() {
   const session = await getSession();
@@ -11,7 +13,11 @@ export default async function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#e8f1fb] to-white">
+      <GlobalErrorPopup />
       <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 md:px-8 py-10">
+        <div className="absolute left-6 top-6 md:left-10 md:top-10">
+          <BackButton fallbackHref="/" />
+        </div>
         <div className="grid w-full gap-8 md:grid-cols-[1.05fr_0.95fr]">
           <div className="relative overflow-hidden rounded-2xl border border-[var(--ic-gray-200)] bg-white shadow-xl">
             <img

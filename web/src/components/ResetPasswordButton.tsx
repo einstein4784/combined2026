@@ -46,8 +46,13 @@ export function ResetPasswordButton({ userId, username }: Props) {
 
   return (
     <>
-      <button className="text-[var(--ic-navy)] underline" onClick={() => setOpen(true)}>
-        Reset password
+      <button
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--ic-gray-200)] bg-white text-[var(--ic-navy)] shadow-sm hover:bg-[var(--ic-gray-50)]"
+        onClick={() => setOpen(true)}
+        title="Reset password"
+        aria-label="Reset password"
+      >
+        🔑
       </button>
 
       {open && (
@@ -110,4 +115,5 @@ export function ResetPasswordButton({ userId, username }: Props) {
     </>
   );
 }
+
 
