@@ -126,10 +126,20 @@ function createProgressStream(
           
           // Drop unique indexes to allow duplicates
           try {
+            // Drop policy number unique index (if exists)
             await Policy.collection.dropIndex("policyNumber_1").catch(() => {
               // Index might not exist, ignore error
             });
+            // Drop receipt number unique index (if exists)
             await Receipt.collection.dropIndex("receiptNumber_1").catch(() => {
+              // Index might not exist, ignore error
+            });
+            // Drop customer idNumber unique index to allow duplicates
+            await Customer.collection.dropIndex("idNumber_1").catch(() => {
+              // Index might not exist, ignore error
+            });
+            // Drop payment receiptNumber unique index to allow duplicates
+            await Payment.collection.dropIndex("receiptNumber_1").catch(() => {
               // Index might not exist, ignore error
             });
           } catch (e) {
@@ -253,6 +263,17 @@ function createProgressStream(
                   }
                 }
                 
+                // Handle optional fields - trim and set to null if empty
+                if (record.middleName && typeof record.middleName === "string") {
+                  record.middleName = record.middleName.trim() || null;
+                }
+                if (record.contactNumber2 && typeof record.contactNumber2 === "string") {
+                  record.contactNumber2 = record.contactNumber2.trim() || null;
+                }
+                if (record.sex && typeof record.sex === "string") {
+                  record.sex = record.sex.trim() || null;
+                }
+                
                 try {
                   await Customer.create(record);
                   imported++;
@@ -320,6 +341,24 @@ function createProgressStream(
                 }
                 if (!record.status || record.status === null) record.status = "Active";
                 if (!record.coverageType || record.coverageType === null) record.coverageType = "Third Party";
+                
+                // Handle optional string fields - trim and set to null if empty
+                if (record.registrationNumber && typeof record.registrationNumber === "string") {
+                  record.registrationNumber = record.registrationNumber.trim() || null;
+                }
+                if (record.engineNumber && typeof record.engineNumber === "string") {
+                  record.engineNumber = record.engineNumber.trim() || null;
+                }
+                if (record.chassisNumber && typeof record.chassisNumber === "string") {
+                  record.chassisNumber = record.chassisNumber.trim() || null;
+                }
+                if (record.vehicleType && typeof record.vehicleType === "string") {
+                  record.vehicleType = record.vehicleType.trim() || null;
+                }
+                if (record.notes && typeof record.notes === "string") {
+                  record.notes = record.notes.trim() || null;
+                }
+                
                 try {
                   await Policy.create(record);
                   imported++;
@@ -602,6 +641,38 @@ function createProgressStream(
                   if (policy?.policyIdNumber && policy.policyIdNumber.trim().toUpperCase().startsWith("VF")) {
                     record.location = "Vieux Fort";
                   }
+                }
+                
+                // Handle optional fields - trim and set to null if empty
+                if (record.location && typeof record.location === "string") {
+                  record.location = record.location.trim() || null;
+                }
+                if (record.registrationNumber && typeof record.registrationNumber === "string") {
+                  record.registrationNumber = record.registrationNumber.trim() || null;
+                }
+                if (record.paymentMethod && typeof record.paymentMethod === "string") {
+                  record.paymentMethod = record.paymentMethod.trim() || null;
+                }
+                if (record.policyNumberSnapshot && typeof record.policyNumberSnapshot === "string") {
+                  record.policyNumberSnapshot = record.policyNumberSnapshot.trim() || null;
+                }
+                if (record.policyIdNumberSnapshot && typeof record.policyIdNumberSnapshot === "string") {
+                  record.policyIdNumberSnapshot = record.policyIdNumberSnapshot.trim() || null;
+                }
+                if (record.customerNameSnapshot && typeof record.customerNameSnapshot === "string") {
+                  record.customerNameSnapshot = record.customerNameSnapshot.trim() || null;
+                }
+                if (record.customerEmailSnapshot && typeof record.customerEmailSnapshot === "string") {
+                  record.customerEmailSnapshot = record.customerEmailSnapshot.trim() || null;
+                }
+                if (record.customerContactSnapshot && typeof record.customerContactSnapshot === "string") {
+                  record.customerContactSnapshot = record.customerContactSnapshot.trim() || null;
+                }
+                if (record.generatedByName && typeof record.generatedByName === "string") {
+                  record.generatedByName = record.generatedByName.trim() || null;
+                }
+                if (record.notes && typeof record.notes === "string") {
+                  record.notes = record.notes.trim() || null;
                 }
 
                 try {

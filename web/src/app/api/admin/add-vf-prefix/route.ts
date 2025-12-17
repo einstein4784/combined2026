@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { connectDb } from "@/lib/db";
-import { requireSession } from "@/lib/auth";
+import { guardPermission } from "@/lib/api-auth";
 import { Policy } from "@/models/Policy";
 import { Receipt } from "@/models/Receipt";
 import { json, handleRouteError } from "@/lib/utils";
@@ -34,20 +34,22 @@ function addVFPrefix(value: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireSession();
-    if (!session) {
-      return json({ error: "Unauthorized" }, { status: 401 });
+    // Ensure user has admin permissions (manage_permissions is admin-only)
+    const auth = await guardPermission("manage_permissions");
+    if ("response" in auth) {
+      return auth.response;
     }
 
-    // Check if user is admin
-    const { User } = await import("@/models/User");
     await connectDb();
-    const user = await User.findById(session.id).lean();
-    if (!user || (user as any).role !== "admin") {
-      return json({ error: "Admin access required" }, { status: 403 });
-    }
 
-    const policies = await Policy.find({}).lean();
+    // Find only policies that have "VF" in their policy ID or policy number
+    const policies = await Policy.find({
+      $or: [
+        { policyIdNumber: { $regex: /VF/i } },
+        { policyNumber: { $regex: /VF/i } },
+      ],
+    }).lean();
+    
     let updated = 0;
     let skipped = 0;
     const errors: string[] = [];

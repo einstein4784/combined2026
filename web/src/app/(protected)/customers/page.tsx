@@ -4,6 +4,7 @@ import { CustomerForm } from "@/components/forms/CustomerForm";
 import { DeleteCustomerButton } from "@/components/DeleteCustomerButton";
 import { EditCustomerButton } from "@/components/EditCustomerButton";
 import { Pagination } from "@/components/Pagination";
+import { SortableHeader } from "@/components/SortableHeader";
 import Link from "next/link";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -17,6 +18,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const params = await searchParams;
   const q = normalize(params.q).trim();
   const page = Math.max(1, parseInt(normalize(params.page)) || 1);
+  const sortBy = normalize(params.sortBy) || "createdAt";
+  const sortOrder = normalize(params.sortOrder) === "asc" ? 1 : -1;
 
   await connectDb();
   const filter =
@@ -34,9 +37,21 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           ],
         };
 
+  // Build sort object
+  const sortObject: Record<string, 1 | -1> = {};
+  const sortFieldMap: Record<string, string> = {
+    name: "lastName", // Sort by lastName for name column
+    contact: "contactNumber",
+    email: "email",
+    id: "idNumber",
+    createdAt: "createdAt",
+  };
+  const dbSortField = sortFieldMap[sortBy] || "createdAt";
+  sortObject[dbSortField] = sortOrder;
+
   const [totalCount, customers] = await Promise.all([
     Customer.countDocuments(filter),
-    Customer.find(filter).sort({ createdAt: -1 }).skip((page - 1) * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE).lean(),
+    Customer.find(filter).sort(sortObject).skip((page - 1) * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE).lean(),
   ]);
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -73,10 +88,46 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             <table className="min-w-full">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Contact</th>
-                  <th>Email</th>
-                  <th>ID</th>
+                  <th>
+                    <SortableHeader
+                      field="name"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Name"
+                      basePath="/customers"
+                      searchParams={params}
+                    />
+                  </th>
+                  <th>
+                    <SortableHeader
+                      field="contact"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Contact"
+                      basePath="/customers"
+                      searchParams={params}
+                    />
+                  </th>
+                  <th>
+                    <SortableHeader
+                      field="email"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Email"
+                      basePath="/customers"
+                      searchParams={params}
+                    />
+                  </th>
+                  <th>
+                    <SortableHeader
+                      field="id"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="ID"
+                      basePath="/customers"
+                      searchParams={params}
+                    />
+                  </th>
                   <th className="text-right">Actions</th>
                 </tr>
               </thead>

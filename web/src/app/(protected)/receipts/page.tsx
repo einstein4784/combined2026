@@ -5,6 +5,7 @@ import "@/models/Policy";
 import Link from "next/link";
 import { DeleteReceiptButton } from "@/components/DeleteReceiptButton";
 import { Pagination } from "@/components/Pagination";
+import { SortableHeader } from "@/components/SortableHeader";
 import { guardPermission } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 import { VoidReceiptButton } from "@/components/VoidReceiptButton";
@@ -26,6 +27,8 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
   const qRaw = normalize(params.q);
   const q = qRaw.trim();
   const page = Math.max(1, parseInt(normalize(params.page)) || 1);
+  const sortBy = normalize(params.sortBy) || "generatedAt";
+  const sortOrder = normalize(params.sortOrder) === "asc" ? 1 : -1;
 
   await connectDb();
   const num = q ? Number(q) : NaN;
@@ -45,12 +48,23 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
           ],
         };
 
+  // Build sort object
+  const sortObject: Record<string, 1 | -1> = {};
+  const sortFieldMap: Record<string, string> = {
+    receiptNumber: "receiptNumber",
+    amount: "amount",
+    paymentDate: "paymentDate",
+    generatedAt: "generatedAt",
+  };
+  const dbSortField = sortFieldMap[sortBy] || "generatedAt";
+  sortObject[dbSortField] = sortOrder;
+
   const [totalCount, receipts] = await Promise.all([
     Receipt.countDocuments(filter),
     Receipt.find(filter)
       .populate("customerId", "firstName lastName email contactNumber")
       .populate("policyId", "policyNumber policyIdNumber")
-      .sort({ generatedAt: -1 })
+      .sort(sortObject)
       .skip((page - 1) * ITEMS_PER_PAGE)
       .limit(ITEMS_PER_PAGE)
       .lean(),
@@ -104,14 +118,41 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
         <table className="mt-4">
           <thead>
             <tr>
-              <th>Receipt #</th>
+              <th>
+                <SortableHeader
+                  field="receiptNumber"
+                  currentSort={sortBy}
+                  currentOrder={sortOrder}
+                  label="Receipt #"
+                  basePath="/receipts"
+                  searchParams={params}
+                />
+              </th>
               <th>Policy</th>
               <th>Policy ID</th>
               <th>Customer</th>
               <th>Email</th>
               <th>Contact</th>
-              <th>Amount</th>
-              <th>Date</th>
+              <th>
+                <SortableHeader
+                  field="amount"
+                  currentSort={sortBy}
+                  currentOrder={sortOrder}
+                  label="Amount"
+                  basePath="/receipts"
+                  searchParams={params}
+                />
+              </th>
+              <th>
+                <SortableHeader
+                  field="paymentDate"
+                  currentSort={sortBy}
+                  currentOrder={sortOrder}
+                  label="Date"
+                  basePath="/receipts"
+                  searchParams={params}
+                />
+              </th>
               <th />
             </tr>
           </thead>

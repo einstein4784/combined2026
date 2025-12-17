@@ -4,6 +4,7 @@ import { Policy } from "@/models/Policy";
 import { Customer } from "@/models/Customer";
 import { PolicyForm } from "@/components/forms/PolicyForm";
 import { Pagination } from "@/components/Pagination";
+import { SortableHeader } from "@/components/SortableHeader";
 import mongoose from "mongoose";
 import { DeletePolicyButton } from "@/components/DeletePolicyButton";
 
@@ -20,6 +21,8 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   const q = normalize(params.q).trim();
   const page = Math.max(1, parseInt(normalize(params.page)) || 1);
+  const sortBy = normalize(params.sortBy) || "createdAt";
+  const sortOrder = normalize(params.sortOrder) === "asc" ? 1 : -1;
 
   await connectDb();
 
@@ -49,12 +52,24 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
           ],
         };
 
+  // Build sort object
+  const sortObject: Record<string, 1 | -1> = {};
+  const sortFieldMap: Record<string, string> = {
+    policyNumber: "policyNumber",
+    coverageType: "coverageType",
+    totalPremiumDue: "totalPremiumDue",
+    outstandingBalance: "outstandingBalance",
+    createdAt: "createdAt",
+  };
+  const dbSortField = sortFieldMap[sortBy] || "createdAt";
+  sortObject[dbSortField] = sortOrder;
+
   const [totalCount, policies, customers] = await Promise.all([
     Policy.countDocuments(filter as any),
     Policy.find(filter as any)
       .populate("customerId", "firstName middleName lastName email contactNumber")
       .populate("customerIds", "firstName middleName lastName email contactNumber")
-      .sort({ createdAt: -1 })
+      .sort(sortObject)
       .skip((page - 1) * ITEMS_PER_PAGE)
       .limit(ITEMS_PER_PAGE)
       .lean(),
@@ -145,11 +160,47 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
             <table className="min-w-full">
               <thead>
                 <tr>
-                  <th>Policy #</th>
+                  <th>
+                    <SortableHeader
+                      field="policyNumber"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Policy #"
+                      basePath="/policies"
+                      searchParams={params}
+                    />
+                  </th>
                   <th>Customer</th>
-                  <th>Coverage</th>
-                  <th>Total</th>
-                  <th>Outstanding</th>
+                  <th>
+                    <SortableHeader
+                      field="coverageType"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Coverage"
+                      basePath="/policies"
+                      searchParams={params}
+                    />
+                  </th>
+                  <th>
+                    <SortableHeader
+                      field="totalPremiumDue"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Total"
+                      basePath="/policies"
+                      searchParams={params}
+                    />
+                  </th>
+                  <th>
+                    <SortableHeader
+                      field="outstandingBalance"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Outstanding"
+                      basePath="/policies"
+                      searchParams={params}
+                    />
+                  </th>
                   <th>Notice</th>
                   <th className="text-right">Actions</th>
                 </tr>

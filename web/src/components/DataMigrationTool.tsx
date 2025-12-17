@@ -33,14 +33,17 @@ const FIELD_DEFINITIONS: Record<CollectionType, FieldDefinition[]> = {
   ],
   policies: [
     { name: "policyNumber", label: "Policy Number", required: true, type: "string" },
-    { name: "policyIdNumber", label: "Policy ID Number", required: true, type: "string" },
+    { name: "policyIdNumber", label: "Policy ID Number (Account Number)", required: true, type: "string" },
     { name: "customerId", label: "Customer ID (or email/idNumber to lookup)", required: true, type: "string" },
     { name: "coverageType", label: "Coverage Type", required: false, type: "string" },
     { name: "registrationNumber", label: "Registration Number", required: false, type: "string" },
-    { name: "coverageStartDate", label: "Coverage Start Date", required: false, type: "date" },
-    { name: "coverageEndDate", label: "Coverage End Date", required: false, type: "date" },
-    { name: "totalPremiumDue", label: "Total Premium Due", required: true, type: "number" },
-    { name: "amountPaid", label: "Amount Paid", required: false, type: "number" },
+    { name: "engineNumber", label: "Engine Number", required: false, type: "string" },
+    { name: "chassisNumber", label: "Chassis Number", required: false, type: "string" },
+    { name: "vehicleType", label: "Vehicle Type", required: false, type: "string" },
+    { name: "coverageStartDate", label: "Coverage Start Date (Commencement Date)", required: false, type: "date" },
+    { name: "coverageEndDate", label: "Coverage End Date (Expiry Date)", required: false, type: "date" },
+    { name: "totalPremiumDue", label: "Total Premium Due (Amount Due)", required: true, type: "number" },
+    { name: "amountPaid", label: "Amount Paid (Total Received)", required: false, type: "number" },
     { name: "outstandingBalance", label: "Outstanding Balance", required: true, type: "number" },
     { name: "status", label: "Status", required: false, type: "string", options: ["Active", "Cancelled", "Suspended"] },
     { name: "notes", label: "Notes", required: false, type: "string" },
@@ -157,7 +160,72 @@ export function DataMigrationTool() {
           const lowerHeader = header.toLowerCase().replace(/[^a-z0-9]/g, "");
           fieldDefinitions.forEach((field) => {
             const lowerField = field.name.toLowerCase();
-            if (lowerHeader === lowerField || lowerHeader.includes(lowerField) || lowerField.includes(lowerHeader)) {
+            
+            // Enhanced matching logic for better CSV column recognition
+            let matched = false;
+            
+            // Exact match
+            if (lowerHeader === lowerField) {
+              matched = true;
+            }
+            // Contains match
+            else if (lowerHeader.includes(lowerField) || lowerField.includes(lowerHeader)) {
+              matched = true;
+            }
+            // Special mappings for common CSV column variations
+            else if (field.name === "firstName" && (lowerHeader.includes("first") || lowerHeader.includes("fname"))) {
+              matched = true;
+            }
+            else if (field.name === "lastName" && (lowerHeader.includes("last") || lowerHeader.includes("lname"))) {
+              matched = true;
+            }
+            else if (field.name === "contactNumber" && (lowerHeader.includes("cell") || lowerHeader.includes("phone") || lowerHeader.includes("mobile"))) {
+              matched = true;
+            }
+            else if (field.name === "contactNumber2" && (lowerHeader.includes("work") || lowerHeader.includes("secondary"))) {
+              matched = true;
+            }
+            else if (field.name === "policyIdNumber" && (lowerHeader.includes("account") || lowerHeader.includes("policyid") || lowerHeader.includes("idnumber"))) {
+              matched = true;
+            }
+            else if (field.name === "coverageStartDate" && (lowerHeader.includes("commencement") || lowerHeader.includes("start") || lowerHeader.includes("begin"))) {
+              matched = true;
+            }
+            else if (field.name === "coverageEndDate" && (lowerHeader.includes("expiry") || lowerHeader.includes("end") || lowerHeader.includes("expire"))) {
+              matched = true;
+            }
+            else if (field.name === "totalPremiumDue" && (lowerHeader.includes("amountdue") || lowerHeader.includes("premium") || lowerHeader.includes("due"))) {
+              matched = true;
+            }
+            else if (field.name === "amountPaid" && (lowerHeader.includes("totalreceived") || lowerHeader.includes("paid") || lowerHeader.includes("received"))) {
+              matched = true;
+            }
+            else if (field.name === "engineNumber" && (lowerHeader.includes("engine") || lowerHeader.includes("engineno"))) {
+              matched = true;
+            }
+            else if (field.name === "chassisNumber" && (lowerHeader.includes("chassis") || lowerHeader.includes("chassisno"))) {
+              matched = true;
+            }
+            else if (field.name === "vehicleType" && (lowerHeader.includes("vehicle") || lowerHeader.includes("vehtype"))) {
+              matched = true;
+            }
+            else if (field.name === "registrationNumber" && (lowerHeader.includes("registration") || lowerHeader.includes("reg") || lowerHeader.includes("plate"))) {
+              matched = true;
+            }
+            else if (field.name === "coverageType" && (lowerHeader.includes("coverage") || lowerHeader.includes("type"))) {
+              matched = true;
+            }
+            else if (field.name === "paymentDate" && (lowerHeader.includes("recdate") || lowerHeader.includes("paymentdate") || lowerHeader.includes("date"))) {
+              matched = true;
+            }
+            else if (field.name === "receiptNumber" && (lowerHeader.includes("recnumber") || lowerHeader.includes("receipt"))) {
+              matched = true;
+            }
+            else if (field.name === "amount" && (lowerHeader.includes("recamt") || lowerHeader.includes("amount") || lowerHeader.includes("amt"))) {
+              matched = true;
+            }
+            
+            if (matched && !autoMappings[field.name]) {
               autoMappings[field.name] = header;
             }
           });
@@ -438,8 +506,90 @@ export function DataMigrationTool() {
             className="w-full rounded-md border border-[var(--ic-gray-200)] px-3 py-2"
             value={collectionType}
             onChange={(e) => {
-              setCollectionType(e.target.value as CollectionType);
-              setFieldMappings({});
+              const newCollectionType = e.target.value as CollectionType;
+              setCollectionType(newCollectionType);
+              // Re-run auto-mapping if CSV data is already loaded
+              if (csvData && csvData.headers.length > 0) {
+                const newFieldDefinitions = FIELD_DEFINITIONS[newCollectionType];
+                const autoMappings: Record<string, string> = {};
+                csvData.headers.forEach((header) => {
+                  const lowerHeader = header.toLowerCase().replace(/[^a-z0-9]/g, "");
+                  newFieldDefinitions.forEach((field) => {
+                    const lowerField = field.name.toLowerCase();
+                    
+                    // Enhanced matching logic for better CSV column recognition
+                    let matched = false;
+                    
+                    // Exact match
+                    if (lowerHeader === lowerField) {
+                      matched = true;
+                    }
+                    // Contains match
+                    else if (lowerHeader.includes(lowerField) || lowerField.includes(lowerHeader)) {
+                      matched = true;
+                    }
+                    // Special mappings for common CSV column variations
+                    else if (field.name === "firstName" && (lowerHeader.includes("first") || lowerHeader.includes("fname"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "lastName" && (lowerHeader.includes("last") || lowerHeader.includes("lname"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "contactNumber" && (lowerHeader.includes("cell") || lowerHeader.includes("phone") || lowerHeader.includes("mobile"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "contactNumber2" && (lowerHeader.includes("work") || lowerHeader.includes("secondary"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "policyIdNumber" && (lowerHeader.includes("account") || lowerHeader.includes("policyid") || lowerHeader.includes("idnumber"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "coverageStartDate" && (lowerHeader.includes("commencement") || lowerHeader.includes("start") || lowerHeader.includes("begin"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "coverageEndDate" && (lowerHeader.includes("expiry") || lowerHeader.includes("end") || lowerHeader.includes("expire"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "totalPremiumDue" && (lowerHeader.includes("amountdue") || lowerHeader.includes("premium") || lowerHeader.includes("due"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "amountPaid" && (lowerHeader.includes("totalreceived") || lowerHeader.includes("paid") || lowerHeader.includes("received"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "engineNumber" && (lowerHeader.includes("engine") || lowerHeader.includes("engineno"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "chassisNumber" && (lowerHeader.includes("chassis") || lowerHeader.includes("chassisno"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "vehicleType" && (lowerHeader.includes("vehicle") || lowerHeader.includes("vehtype"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "registrationNumber" && (lowerHeader.includes("registration") || lowerHeader.includes("reg") || lowerHeader.includes("plate"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "coverageType" && (lowerHeader.includes("coverage") || lowerHeader.includes("type"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "paymentDate" && (lowerHeader.includes("recdate") || lowerHeader.includes("paymentdate") || lowerHeader.includes("date"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "receiptNumber" && (lowerHeader.includes("recnumber") || lowerHeader.includes("receipt"))) {
+                      matched = true;
+                    }
+                    else if (field.name === "amount" && (lowerHeader.includes("recamt") || lowerHeader.includes("amount") || lowerHeader.includes("amt"))) {
+                      matched = true;
+                    }
+                    
+                    if (matched && !autoMappings[field.name]) {
+                      autoMappings[field.name] = header;
+                    }
+                  });
+                });
+                setFieldMappings(autoMappings);
+              } else {
+                setFieldMappings({});
+              }
             }}
             disabled={busy}
           >
@@ -475,32 +625,52 @@ export function DataMigrationTool() {
               <div className="rounded-md border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)] overflow-hidden">
                 <div className="max-h-96 overflow-y-auto p-3">
                   <div className="space-y-2">
-                    {fieldDefinitions.map((field) => (
-                      <div key={field.name} className="flex items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <label className="block text-xs font-semibold text-[var(--ic-gray-700)]">
-                            {field.label}
-                            {field.required && <span className="text-red-600 ml-1">*</span>}
-                            <span className="text-[var(--ic-gray-500)] ml-1 text-xs font-normal">
-                              ({field.type})
-                            </span>
-                          </label>
-                          <select
-                            className="mt-1 w-full rounded-md border border-[var(--ic-gray-200)] px-2 py-1 text-sm"
-                            value={fieldMappings[field.name] || ""}
-                            onChange={(e) => handleMappingChange(field.name, e.target.value)}
-                            disabled={busy}
-                          >
-                            <option value="">-- Select CSV column --</option>
-                            {csvData.headers.map((header) => (
-                              <option key={header} value={header}>
-                                {header}
-                              </option>
-                            ))}
-                          </select>
+                    {fieldDefinitions.map((field) => {
+                      const isMapped = !!fieldMappings[field.name];
+                      const mappedColumn = fieldMappings[field.name];
+                      return (
+                        <div key={field.name} className="flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <label className="block text-xs font-semibold text-[var(--ic-gray-700)]">
+                              {field.label}
+                              {field.required && <span className="text-red-600 ml-1">*</span>}
+                              <span className="text-[var(--ic-gray-500)] ml-1 text-xs font-normal">
+                                ({field.type})
+                              </span>
+                              {isMapped && (
+                                <span className="ml-2 text-xs text-green-600 font-normal">
+                                  ✓ Mapped to: "{mappedColumn}"
+                                </span>
+                              )}
+                            </label>
+                            <select
+                              className={`mt-1 w-full rounded-md border px-2 py-1 text-sm ${
+                                field.required && !isMapped
+                                  ? "border-red-300 bg-red-50"
+                                  : isMapped
+                                  ? "border-green-300 bg-green-50"
+                                  : "border-[var(--ic-gray-200)]"
+                              }`}
+                              value={fieldMappings[field.name] || ""}
+                              onChange={(e) => handleMappingChange(field.name, e.target.value)}
+                              disabled={busy}
+                            >
+                              <option value="">-- Select CSV column --</option>
+                              {csvData.headers.map((header) => (
+                                <option key={header} value={header}>
+                                  {header}
+                                </option>
+                              ))}
+                            </select>
+                            {field.required && !isMapped && (
+                              <p className="mt-1 text-xs text-red-600">
+                                This field is required and must be mapped
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>

@@ -10,6 +10,9 @@ type PolicyEdit = {
   policyIdNumber: string;
   coverageType: string;
   registrationNumber?: string | null;
+  engineNumber?: string | null;
+  chassisNumber?: string | null;
+  vehicleType?: string | null;
   coverageStartDate?: string;
   coverageEndDate?: string;
   totalPremiumDue: number;
@@ -44,6 +47,9 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
     policyIdSuffix: idParts.suffix,
     coverageType: policy.coverageType,
     registrationNumber: policy.registrationNumber || "",
+    engineNumber: policy.engineNumber || "",
+    chassisNumber: policy.chassisNumber || "",
+    vehicleType: policy.vehicleType || "",
     coverageStartDate: policy.coverageStartDate
       ? policy.coverageStartDate.slice(0, 10)
       : "",
@@ -110,6 +116,9 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
         policyIdNumber,
         coverageType: form.coverageType,
         registrationNumber: form.registrationNumber || undefined,
+        engineNumber: form.engineNumber || undefined,
+        chassisNumber: form.chassisNumber || undefined,
+        vehicleType: form.vehicleType || undefined,
         coverageStartDate: form.coverageStartDate,
         coverageEndDate: form.coverageEndDate,
         totalPremiumDue: Number(form.totalPremiumDue || 0),
@@ -196,6 +205,33 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
                     className="mt-1"
                     value={form.registrationNumber}
                     onChange={(e) => update("registrationNumber", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label>Engine Number</label>
+                  <input
+                    className="mt-1"
+                    value={form.engineNumber}
+                    onChange={(e) => update("engineNumber", e.target.value)}
+                    placeholder="Engine number"
+                  />
+                </div>
+                <div>
+                  <label>Chassis Number</label>
+                  <input
+                    className="mt-1"
+                    value={form.chassisNumber}
+                    onChange={(e) => update("chassisNumber", e.target.value)}
+                    placeholder="Chassis number"
+                  />
+                </div>
+                <div>
+                  <label>Vehicle Type</label>
+                  <input
+                    className="mt-1"
+                    value={form.vehicleType}
+                    onChange={(e) => update("vehicleType", e.target.value)}
+                    placeholder="Vehicle type (e.g., Sedan, SUV, Truck)"
                   />
                 </div>
               </div>

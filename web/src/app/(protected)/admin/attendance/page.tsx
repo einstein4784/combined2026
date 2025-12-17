@@ -4,8 +4,9 @@ import { guardPermission } from "@/lib/api-auth";
 import { AuditLog } from "@/models/AuditLog";
 import { User } from "@/models/User";
 import { PrintButton } from "@/components/PrintButton";
+import { SortableHeader } from "@/components/SortableHeader";
 
-type SearchParams = Promise<{ from?: string; to?: string; userId?: string }>;
+type SearchParams = Promise<{ from?: string; to?: string; userId?: string; sortBy?: string; sortOrder?: string }>;
 
 function parseDate(value?: string | null): Date | null {
   if (!value) return null;
@@ -41,17 +42,28 @@ export default async function AttendancePage({ searchParams }: { searchParams: S
   const from = startOfDay(parseDate(params.from)) ?? startOfDay(new Date());
   const to = endOfDay(parseDate(params.to)) ?? endOfDay(new Date());
   const selectedUserId = (params.userId || "").toString();
+  const sortBy = params.sortBy || "createdAt";
+  const sortOrder = params.sortOrder === "asc" ? 1 : -1;
 
   await connectDb();
 
   const users = await User.find({}, "username fullName").sort({ username: 1 }).lean();
+
+  // Build sort object
+  const sortObject: Record<string, 1 | -1> = {};
+  const sortFieldMap: Record<string, string> = {
+    createdAt: "createdAt",
+    action: "action",
+  };
+  const dbSortField = sortFieldMap[sortBy] || "createdAt";
+  sortObject[dbSortField] = sortOrder;
 
   const logs = await AuditLog.find({
     action: { $in: ["LOGIN", "LOGOUT"] },
     createdAt: { $gte: from!, $lte: to! },
   })
     .populate("userId", "username fullName role")
-    .sort({ createdAt: -1 })
+    .sort(sortObject)
     .lean();
 
   const mapUser = (u: any) => u?.fullName || u?.username || "Unknown";
@@ -171,8 +183,26 @@ export default async function AttendancePage({ searchParams }: { searchParams: S
             <thead>
               <tr>
                 <th>User</th>
-                <th>Action</th>
-                <th>When</th>
+                <th>
+                  <SortableHeader
+                    field="action"
+                    currentSort={sortBy}
+                    currentOrder={sortOrder}
+                    label="Action"
+                    basePath="/admin/attendance"
+                    searchParams={params}
+                  />
+                </th>
+                <th>
+                  <SortableHeader
+                    field="createdAt"
+                    currentSort={sortBy}
+                    currentOrder={sortOrder}
+                    label="When"
+                    basePath="/admin/attendance"
+                    searchParams={params}
+                  />
+                </th>
                 <th>Details</th>
               </tr>
             </thead>

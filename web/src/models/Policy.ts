@@ -9,6 +9,9 @@ export type PolicyDocument = {
   // Coverage types are configurable; store as free-form string
   coverageType: string;
   registrationNumber?: string | null;
+  engineNumber?: string | null;
+  chassisNumber?: string | null;
+  vehicleType?: string | null;
   notes?: string | null;
   coverageStartDate?: Date;
   coverageEndDate?: Date;
@@ -44,6 +47,9 @@ const PolicySchema = new Schema<PolicyDocument>(
       default: "Third Party",
     },
     registrationNumber: { type: String, trim: true, default: null },
+    engineNumber: { type: String, trim: true, default: null },
+    chassisNumber: { type: String, trim: true, default: null },
+    vehicleType: { type: String, trim: true, default: null },
     notes: { type: String, maxlength: 2000, default: null },
     coverageStartDate: { type: Date, index: true },
     coverageEndDate: { type: Date, index: true },

@@ -28,6 +28,9 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
     policyIdNumber: "",
     coverageType: "Third Party",
     registrationNumber: "",
+    engineNumber: "",
+    chassisNumber: "",
+    vehicleType: "",
     coverageStartDate: "",
     coverageEndDate: "",
     totalPremiumDue: "",
@@ -139,6 +142,9 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
         policyNumber: policyNumberValue,
         policyIdNumber: policyIdValue,
         registrationNumber: form.registrationNumber.trim() || undefined,
+        engineNumber: form.engineNumber.trim() || undefined,
+        chassisNumber: form.chassisNumber.trim() || undefined,
+        vehicleType: form.vehicleType.trim() || undefined,
         totalPremiumDue: Number(form.totalPremiumDue || 0),
         notes: form.notes.trim() || undefined,
         status: form.status,
@@ -152,6 +158,9 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
         policyIdNumber: "",
         coverageType: "Third Party",
         registrationNumber: "",
+        engineNumber: "",
+        chassisNumber: "",
+        vehicleType: "",
         coverageStartDate: "",
         coverageEndDate: "",
         totalPremiumDue: "",
@@ -263,6 +272,39 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
             value={form.registrationNumber}
             onChange={(e) => update("registrationNumber", e.target.value)}
             placeholder="Vehicle registration"
+          />
+        </div>
+        <div>
+          <label className="flex items-center gap-2">
+            Engine Number <InfoTooltip content="Vehicle engine number, if applicable." />
+          </label>
+          <input
+            className="mt-1"
+            value={form.engineNumber}
+            onChange={(e) => update("engineNumber", e.target.value)}
+            placeholder="Engine number"
+          />
+        </div>
+        <div>
+          <label className="flex items-center gap-2">
+            Chassis Number <InfoTooltip content="Vehicle chassis number, if applicable." />
+          </label>
+          <input
+            className="mt-1"
+            value={form.chassisNumber}
+            onChange={(e) => update("chassisNumber", e.target.value)}
+            placeholder="Chassis number"
+          />
+        </div>
+        <div>
+          <label className="flex items-center gap-2">
+            Vehicle Type <InfoTooltip content="Type of vehicle (e.g., Sedan, SUV, Truck, Motorcycle, etc.)." />
+          </label>
+          <input
+            className="mt-1"
+            value={form.vehicleType}
+            onChange={(e) => update("vehicleType", e.target.value)}
+            placeholder="Vehicle type"
           />
         </div>
         <div>

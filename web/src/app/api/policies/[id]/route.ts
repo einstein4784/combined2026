@@ -79,6 +79,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
     const registrationNumber =
       parsed.data.registrationNumber?.toString().trim() || "TBA";
+    const engineNumber = parsed.data.engineNumber?.toString().trim() || null;
+    const chassisNumber = parsed.data.chassisNumber?.toString().trim() || null;
+    const vehicleType = parsed.data.vehicleType?.toString().trim() || null;
     const notes = parsed.data.notes?.toString().trim() || null;
 
     const coverageStartDate = parseDateOnly(parsed.data.coverageStartDate);
@@ -92,6 +95,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     existing.coverageType = coverageType;
     existing.registrationNumber = registrationNumber;
+    existing.engineNumber = engineNumber;
+    existing.chassisNumber = chassisNumber;
+    existing.vehicleType = vehicleType;
     existing.policyNumber = parsed.data.policyNumber || existing.policyNumber;
     existing.policyIdNumber = parsed.data.policyIdNumber;
     existing.coverageStartDate = coverageStartDate;

@@ -5,6 +5,7 @@ import { Receipt } from "@/models/Receipt";
 import { PaymentForm } from "@/components/forms/PaymentForm";
 import { DeletePaymentButton } from "@/components/DeletePaymentButton";
 import { Pagination } from "@/components/Pagination";
+import { SortableHeader } from "@/components/SortableHeader";
 import { guardSession } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 
@@ -24,8 +25,22 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(normalize(params.page)) || 1);
+  const sortBy = normalize(params.sortBy) || "paymentDate";
+  const sortOrder = normalize(params.sortOrder) === "asc" ? 1 : -1;
 
   await connectDb();
+  
+  // Build sort object
+  const sortObject: Record<string, 1 | -1> = {};
+  const sortFieldMap: Record<string, string> = {
+    amount: "amount",
+    paymentDate: "paymentDate",
+    paymentMethod: "paymentMethod",
+    createdAt: "createdAt",
+  };
+  const dbSortField = sortFieldMap[sortBy] || "paymentDate";
+  sortObject[dbSortField] = sortOrder;
+
   const [totalCount, payments] = await Promise.all([
     Payment.countDocuments(),
     Payment.find()
@@ -38,7 +53,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
           { path: "customerIds", select: "firstName lastName" },
         ],
       })
-      .sort({ paymentDate: -1 })
+      .sort(sortObject)
       .skip((page - 1) * ITEMS_PER_PAGE)
       .limit(ITEMS_PER_PAGE)
       .lean(),
@@ -152,10 +167,37 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                   <th>Policy ID</th>
                   <th>Customer</th>
                   <th>Total Premium Due</th>
-                  <th>Amount</th>
+                  <th>
+                    <SortableHeader
+                      field="amount"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Amount"
+                      basePath="/payments"
+                      searchParams={params}
+                    />
+                  </th>
                   <th>Outstanding</th>
-                  <th>Method</th>
-                  <th>Date</th>
+                  <th>
+                    <SortableHeader
+                      field="paymentMethod"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Method"
+                      basePath="/payments"
+                      searchParams={params}
+                    />
+                  </th>
+                  <th>
+                    <SortableHeader
+                      field="paymentDate"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Date"
+                      basePath="/payments"
+                      searchParams={params}
+                    />
+                  </th>
                   <th className="text-right">Receipt</th>
                 </tr>
               </thead>

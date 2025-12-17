@@ -4,6 +4,7 @@ import { UserForm } from "@/components/forms/UserForm";
 import { ResetPasswordButton } from "@/components/ResetPasswordButton";
 import { DeleteUserButton } from "@/components/DeleteUserButton";
 import { EditUserButton } from "@/components/EditUserButton";
+import { SortableHeader } from "@/components/SortableHeader";
 import { guardPermission } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
@@ -12,43 +13,6 @@ import Link from "next/link";
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const normalize = (val?: string | string[]) => (Array.isArray(val) ? val[0] ?? "" : val ?? "");
-
-function SortableHeader({
-  field,
-  currentSort,
-  currentOrder,
-  label,
-  basePath = "/users",
-}: {
-  field: string;
-  currentSort: string;
-  currentOrder: number;
-  label: string;
-  basePath?: string;
-}) {
-  const isActive = currentSort === field;
-  const nextOrder = isActive && currentOrder === -1 ? "asc" : "desc";
-  const searchParams = new URLSearchParams();
-  searchParams.set("sortBy", field);
-  searchParams.set("sortOrder", nextOrder);
-  
-  return (
-    <Link
-      href={`${basePath}?${searchParams.toString()}`}
-      className="flex items-center gap-1 hover:text-[var(--ic-navy)] cursor-pointer select-none"
-      title={`Sort by ${label} ${nextOrder === "asc" ? "(ascending)" : "(descending)"}`}
-    >
-      <span>{label}</span>
-      {isActive ? (
-        <span className="text-[var(--ic-navy)] font-semibold">
-          {currentOrder === -1 ? "↓" : "↑"}
-        </span>
-      ) : (
-        <span className="text-[var(--ic-gray-400)] text-xs opacity-50">⇅</span>
-      )}
-    </Link>
-  );
-}
 
 export default async function UsersPage({
   searchParams,
@@ -100,19 +64,54 @@ export default async function UsersPage({
             <thead>
               <tr>
                 <th>
-                  <SortableHeader field="fullName" currentSort={sortBy} currentOrder={sortOrder} label="User" />
+                  <SortableHeader
+                    field="fullName"
+                    currentSort={sortBy}
+                    currentOrder={sortOrder}
+                    label="User"
+                    basePath="/users"
+                    searchParams={params}
+                  />
                 </th>
                 <th>
-                  <SortableHeader field="email" currentSort={sortBy} currentOrder={sortOrder} label="Email" />
+                  <SortableHeader
+                    field="email"
+                    currentSort={sortBy}
+                    currentOrder={sortOrder}
+                    label="Email"
+                    basePath="/users"
+                    searchParams={params}
+                  />
                 </th>
                 <th>
-                  <SortableHeader field="role" currentSort={sortBy} currentOrder={sortOrder} label="Role" />
+                  <SortableHeader
+                    field="role"
+                    currentSort={sortBy}
+                    currentOrder={sortOrder}
+                    label="Role"
+                    basePath="/users"
+                    searchParams={params}
+                  />
                 </th>
                 <th>
-                  <SortableHeader field="location" currentSort={sortBy} currentOrder={sortOrder} label="Location" />
+                  <SortableHeader
+                    field="location"
+                    currentSort={sortBy}
+                    currentOrder={sortOrder}
+                    label="Location"
+                    basePath="/users"
+                    searchParams={params}
+                  />
                 </th>
                 <th>
-                  <SortableHeader field="createdAt" currentSort={sortBy} currentOrder={sortOrder} label="Created" />
+                  <SortableHeader
+                    field="createdAt"
+                    currentSort={sortBy}
+                    currentOrder={sortOrder}
+                    label="Created"
+                    basePath="/users"
+                    searchParams={params}
+                  />
                 </th>
                 <th className="text-right">Actions</th>
               </tr>
