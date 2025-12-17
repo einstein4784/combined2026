@@ -267,22 +267,17 @@ export function CoverageTypeManager() {
         ) : (
           <ul className="divide-y divide-[var(--ic-gray-200)]">
             {items.map((item) => (
-              <li key={item._id} className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--ic-gray-50)] transition-colors">
-                {/* Checkbox for bulk selection */}
-                <input
-                  type="checkbox"
-                  checked={selectedIds.has(item._id)}
-                  onChange={() => toggleSelection(item._id)}
-                  className="w-4 h-4 cursor-pointer rounded border-[var(--ic-gray-300)] text-[var(--ic-navy)] focus:ring-[var(--ic-navy)]"
-                  disabled={editingId === item._id}
-                  title="Select for bulk deletion"
-                />
-                
-                <div className="flex items-center justify-between gap-3 flex-1">
-                  {editingId === item._id ? (
-                    <>
+              <li key={item._id} className="px-4 py-3 hover:bg-[var(--ic-gray-50)] transition-colors">
+                {editingId === item._id ? (
+                  // Edit mode - full width
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-[var(--ic-gray-600)] mb-1">
+                        Edit Coverage Type Name
+                      </label>
                       <input
-                        className="flex-1 px-3 py-1.5 text-sm border border-[var(--ic-gray-300)] rounded focus:ring-2 focus:ring-[var(--ic-navy)] focus:border-transparent"
+                        type="text"
+                        className="w-full px-3 py-2 text-sm border border-[var(--ic-gray-300)] rounded focus:ring-2 focus:ring-[var(--ic-navy)] focus:border-transparent"
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
                         autoFocus
@@ -291,27 +286,37 @@ export function CoverageTypeManager() {
                           if (e.key === "Escape") cancelEdit();
                         }}
                       />
-                      <div className="flex gap-2">
-                        <button
-                          className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={() => saveEdit(item._id)}
-                          disabled={saving || !editingName.trim()}
-                        >
-                          {saving ? "Saving…" : "Save"}
-                        </button>
-                        <button
-                          className="px-3 py-1.5 text-sm font-medium text-[var(--ic-gray-700)] bg-[var(--ic-gray-200)] hover:bg-[var(--ic-gray-300)] rounded disabled:opacity-50"
-                          onClick={cancelEdit}
-                          disabled={saving}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className="flex-1 text-sm font-semibold text-[var(--ic-navy)]">{item.name}</span>
-                      <div className="flex gap-2">
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        className="px-4 py-2 text-sm font-medium text-[var(--ic-gray-700)] bg-[var(--ic-gray-200)] hover:bg-[var(--ic-gray-300)] rounded disabled:opacity-50"
+                        onClick={cancelEdit}
+                        disabled={saving}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => saveEdit(item._id)}
+                        disabled={saving || !editingName.trim()}
+                      >
+                        {saving ? "Saving…" : "Save Changes"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // View mode - with checkbox
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(item._id)}
+                      onChange={() => toggleSelection(item._id)}
+                      className="w-4 h-4 flex-shrink-0 cursor-pointer rounded border-[var(--ic-gray-300)] text-[var(--ic-navy)] focus:ring-[var(--ic-navy)]"
+                      title="Select for bulk deletion"
+                    />
+                    <div className="flex items-center justify-between gap-3 flex-1 min-w-0">
+                      <span className="flex-1 text-sm font-semibold text-[var(--ic-navy)] truncate">{item.name}</span>
+                      <div className="flex gap-2 flex-shrink-0">
                         <button
                           className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
                           onClick={() => startEdit(item)}
@@ -325,9 +330,9 @@ export function CoverageTypeManager() {
                           Delete
                         </button>
                       </div>
-                    </>
-                  )}
-                </div>
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
