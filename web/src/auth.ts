@@ -24,27 +24,6 @@ if (!process.env.AUTH_SECRET) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   debug: false, // Suppress NextAuth internal error logging
-  logger: {
-    error(code, metadata) {
-      // Suppress JWTSessionError logging - it's expected when cookies are invalid
-      const errorName = metadata?.error?.name || "";
-      const errorMessage = metadata?.error?.message || "";
-      const codeStr = String(code || "");
-      
-      if (
-        codeStr === "JWTSessionError" ||
-        errorName === "JWTSessionError" ||
-        errorMessage.includes("JWTSessionError") ||
-        errorMessage.includes("authjs.dev#jwtsessionerror") ||
-        codeStr.includes("JWT") ||
-        codeStr.includes("session")
-      ) {
-        return; // Don't log this error - it's expected when cookies are invalid
-      }
-      // Log other errors normally
-      console.error("[auth]", code, metadata);
-    },
-  },
   session: { strategy: "jwt", maxAge: 4 * 60 * 60, updateAge: 30 * 60 },
   secret: process.env.AUTH_SECRET,
   pages: {
