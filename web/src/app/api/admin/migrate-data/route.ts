@@ -339,27 +339,24 @@ export async function POST(req: NextRequest) {
           }
           if (!record.status || record.status === null) record.status = "Active";
           
-          // Auto-create coverage type if it doesn't exist
+          // Validate coverage type - do NOT auto-create new ones
           if (!record.coverageType || record.coverageType === null) {
             record.coverageType = "Third Party";
           } else {
             const trimmedCoverage = String(record.coverageType).trim();
             if (trimmedCoverage) {
-              try {
-                // Check if coverage type exists
-                const existingCoverageType = await CoverageType.findOne({ 
-                  name: trimmedCoverage 
-                }).lean();
-                
-                if (!existingCoverageType) {
-                  // Create new coverage type from CSV data
-                  await CoverageType.create({ name: trimmedCoverage });
-                }
-                
+              // Check if coverage type exists
+              const existingCoverageType = await CoverageType.findOne({ 
+                name: trimmedCoverage 
+              }).lean();
+              
+              if (existingCoverageType) {
+                // Use the existing coverage type
                 record.coverageType = trimmedCoverage;
-              } catch (coverageErr: any) {
-                // If coverage type creation fails, log but continue with default
-                record.coverageType = trimmedCoverage; // Use the value from CSV anyway
+              } else {
+                // Coverage type doesn't exist - use default instead
+                record.coverageType = "Third Party";
+                errors.push(`Row ${rowIdx + 2}: Coverage type "${trimmedCoverage}" not found, defaulting to "Third Party"`);
               }
             } else {
               record.coverageType = "Third Party";
