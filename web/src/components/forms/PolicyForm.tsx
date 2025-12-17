@@ -17,6 +17,7 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<CustomerOption[]>(initialCustomers || []);
+  const [refreshingCustomers, setRefreshingCustomers] = useState(false);
   const [coverageOptions, setCoverageOptions] = useState<string[]>([
     "Third Party",
     "Fully Comprehensive",
@@ -36,9 +37,19 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
   });
 
   // Fetch customers dynamically to get the latest list
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (showLoading = false) => {
+    if (showLoading) {
+      setRefreshingCustomers(true);
+    }
     try {
-      const res = await fetch("/api/customers");
+      // Add cache-busting timestamp and no-cache headers to ensure fresh data
+      const res = await fetch(`/api/customers?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         const customerList = Array.isArray(data) ? data : [];
@@ -47,10 +58,16 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
           name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
         }));
         setCustomers(customerOptions);
+      } else {
+        console.error("Failed to fetch customers:", res.status, res.statusText);
       }
     } catch (err) {
       // If fetch fails, keep using existing customers
       console.error("Failed to fetch customers:", err);
+    } finally {
+      if (showLoading) {
+        setRefreshingCustomers(false);
+      }
     }
   };
 
@@ -184,11 +201,12 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="flex items-center gap-1 rounded-md bg-[var(--ic-gray-200)] px-2 py-1 text-xs font-semibold text-[var(--ic-gray-700)] shadow-sm transition hover:bg-[var(--ic-gray-300)]"
-              onClick={fetchCustomers}
+              className={`flex items-center gap-1 rounded-md bg-[var(--ic-gray-200)] px-2 py-1 text-xs font-semibold text-[var(--ic-gray-700)] shadow-sm transition hover:bg-[var(--ic-gray-300)] ${refreshingCustomers ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => fetchCustomers(true)}
+              disabled={refreshingCustomers}
               title="Refresh customer list"
             >
-              ↻
+              {refreshingCustomers ? '⟳' : '↻'}
             </button>
             <button
               type="button"

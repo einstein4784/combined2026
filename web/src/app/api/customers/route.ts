@@ -14,7 +14,13 @@ export async function GET() {
 
     await connectDb();
     const customers = await Customer.find().sort({ createdAt: -1 });
-    return json(customers);
+    return json(customers, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   } catch (error) {
     return handleRouteError(error);
   }
