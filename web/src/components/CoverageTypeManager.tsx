@@ -9,9 +9,11 @@ export function CoverageTypeManager() {
   const [items, setItems] = useState<CoverageType[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const load = async () => {
     try {
@@ -96,8 +98,80 @@ export function CoverageTypeManager() {
         throw new Error(data.error || "Failed to delete coverage type");
       }
       setItems((prev) => prev.filter((i) => i._id !== id));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     } catch (err: any) {
       showGlobalError({ title: "Delete failed", message: err.message || "Could not delete coverage type" });
+    }
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(items.map((item) => item._id)));
+  };
+
+  const deselectAll = () => {
+    setSelectedIds(new Set());
+  };
+
+  const bulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedIds.size} coverage type(s)?\n\nThis action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      let successCount = 0;
+      const errors: string[] = [];
+
+      for (const id of Array.from(selectedIds)) {
+        try {
+          const res = await fetch(`/api/coverage-types?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            errors.push(data.error || "Failed to delete");
+          } else {
+            successCount++;
+          }
+        } catch (err: any) {
+          errors.push(err.message || "Unknown error");
+        }
+      }
+
+      if (errors.length > 0) {
+        showGlobalError({
+          title: "Partial deletion",
+          message: `Deleted ${successCount} of ${selectedIds.size} coverage types. ${errors.length} errors occurred.`,
+        });
+      }
+
+      // Reload to get fresh data
+      await load();
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      showGlobalError({ title: "Bulk delete failed", message: err.message || "Could not delete coverage types" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -123,6 +197,43 @@ export function CoverageTypeManager() {
         </button>
       </form>
 
+      {/* Bulk selection controls */}
+      {items.length > 0 && (
+        <div className="flex items-center justify-between gap-3 p-3 bg-[var(--ic-gray-100)] rounded-lg border border-[var(--ic-gray-200)]">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={selectAll}
+              className="text-sm font-medium text-[var(--ic-navy)] hover:underline"
+            >
+              Select All
+            </button>
+            <button
+              type="button"
+              onClick={deselectAll}
+              className="text-sm font-medium text-[var(--ic-gray-600)] hover:underline"
+            >
+              Deselect All
+            </button>
+            {selectedIds.size > 0 && (
+              <span className="text-sm text-[var(--ic-gray-600)]">
+                {selectedIds.size} selected
+              </span>
+            )}
+          </div>
+          {selectedIds.size > 0 && (
+            <button
+              type="button"
+              onClick={bulkDelete}
+              disabled={deleting}
+              className="btn btn-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : `Delete Selected (${selectedIds.size})`}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="rounded-lg border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)]">
         {loading ? (
           <p className="p-3 text-sm text-[var(--ic-gray-600)]">Loading…</p>
@@ -131,55 +242,66 @@ export function CoverageTypeManager() {
         ) : (
           <ul className="divide-y divide-[var(--ic-gray-200)]">
             {items.map((item) => (
-              <li key={item._id} className="flex items-center justify-between gap-3 px-3 py-2">
-                {editingId === item._id ? (
-                  <>
-                    <input
-                      className="flex-1 text-sm"
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveEdit(item._id);
-                        if (e.key === "Escape") cancelEdit();
-                      }}
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        className="btn btn-ghost text-sm text-green-600"
-                        onClick={() => saveEdit(item._id)}
-                        disabled={saving}
-                      >
-                        {saving ? "Saving…" : "Save"}
-                      </button>
-                      <button
-                        className="btn btn-ghost text-sm text-[var(--ic-gray-600)]"
-                        onClick={cancelEdit}
-                        disabled={saving}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="flex-1 text-sm font-semibold text-[var(--ic-navy)]">{item.name}</span>
-                    <div className="flex gap-2">
-                      <button
-                        className="btn btn-ghost text-sm text-blue-600"
-                        onClick={() => startEdit(item)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-ghost text-sm text-red-600"
-                        onClick={() => remove(item._id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </>
-                )}
+              <li key={item._id} className="flex items-center gap-3 px-3 py-2">
+                {/* Checkbox for bulk selection */}
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(item._id)}
+                  onChange={() => toggleSelection(item._id)}
+                  className="w-4 h-4 cursor-pointer"
+                  disabled={editingId === item._id}
+                />
+                
+                <div className="flex items-center justify-between gap-3 flex-1">
+                  {editingId === item._id ? (
+                    <>
+                      <input
+                        className="flex-1 text-sm"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveEdit(item._id);
+                          if (e.key === "Escape") cancelEdit();
+                        }}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          className="btn btn-ghost text-sm text-green-600"
+                          onClick={() => saveEdit(item._id)}
+                          disabled={saving}
+                        >
+                          {saving ? "Saving…" : "Save"}
+                        </button>
+                        <button
+                          className="btn btn-ghost text-sm text-[var(--ic-gray-600)]"
+                          onClick={cancelEdit}
+                          disabled={saving}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex-1 text-sm font-semibold text-[var(--ic-navy)]">{item.name}</span>
+                      <div className="flex gap-2">
+                        <button
+                          className="btn btn-ghost text-sm text-blue-600"
+                          onClick={() => startEdit(item)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-ghost text-sm text-red-600"
+                          onClick={() => remove(item._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
