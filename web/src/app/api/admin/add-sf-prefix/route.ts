@@ -43,8 +43,33 @@ export async function POST(req: NextRequest) {
 
     await connectDb();
 
-    // Find all policies and populate customer information
-    const policies = await Policy.find({}).populate("customerId").lean();
+    // Find all customers with SF prefix first
+    const sfCustomers = await Customer.find({
+      idNumber: { $regex: /^SF/i }
+    }).select("_id idNumber").lean();
+
+    if (sfCustomers.length === 0) {
+      return json({
+        success: true,
+        policies: {
+          total: 0,
+          updated: 0,
+          skipped: 0,
+        },
+        receipts: {
+          total: 0,
+          updated: 0,
+        },
+        message: "No customers with SF prefix found",
+      });
+    }
+
+    const sfCustomerIds = sfCustomers.map(c => c._id);
+
+    // Find policies for SF customers
+    const policies = await Policy.find({
+      customerId: { $in: sfCustomerIds }
+    }).lean();
     
     let updated = 0;
     let skipped = 0;
@@ -52,21 +77,6 @@ export async function POST(req: NextRequest) {
 
     for (const policy of policies) {
       try {
-        // Check if the customer's idNumber begins with "SF"
-        const customer = policy.customerId as any;
-        if (!customer || !customer.idNumber) {
-          skipped++;
-          continue;
-        }
-
-        const customerIdNumber = customer.idNumber.toString().trim().toUpperCase();
-        
-        // Only process if customer ID starts with "SF"
-        if (!customerIdNumber.startsWith("SF")) {
-          skipped++;
-          continue;
-        }
-
         const currentPolicyIdNumber = policy.policyIdNumber || "";
         const currentPolicyNumber = policy.policyNumber || "";
         
@@ -100,24 +110,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Update receipt locations for all policies that now have SF prefix
-    let receiptsUpdated = 0;
-    const receipts = await Receipt.find({}).lean();
-    for (const receipt of receipts) {
-      try {
-        const policy = await Policy.findById(receipt.policyId).select("policyIdNumber").lean();
-        if (policy?.policyIdNumber && policy.policyIdNumber.trim().toUpperCase().startsWith("SF")) {
-          // Set location for SF prefix - you can customize this location name
-          await Receipt.updateOne(
-            { _id: receipt._id },
-            { $set: { location: "Soufriere" } }
-          );
-          receiptsUpdated++;
-        }
-      } catch (err: any) {
-        errors.push(`Receipt ${receipt._id}: ${err.message}`);
+    // Update receipt locations for policies with SF prefix
+    const receiptsUpdated = await Receipt.updateMany(
+      { 
+        policyId: { $in: policies.map(p => p._id) }
+      },
+      { 
+        $set: { location: "Soufriere" } 
       }
-    }
+    );
 
     return json({
       success: true,
@@ -127,8 +128,8 @@ export async function POST(req: NextRequest) {
         skipped,
       },
       receipts: {
-        total: receipts.length,
-        updated: receiptsUpdated,
+        total: receiptsUpdated.matchedCount || 0,
+        updated: receiptsUpdated.modifiedCount || 0,
       },
       errors: errors.length > 0 ? errors : undefined,
     });
