@@ -43,20 +43,23 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
     }
     try {
       // Add cache-busting timestamp and no-cache headers to ensure fresh data
-      const res = await fetch(`/api/customers?t=${Date.now()}`, {
+      // Use credentials: 'include' to ensure cookies are sent
+      const res = await fetch(`/api/customers?t=${Date.now()}&_=${Math.random()}`, {
         cache: 'no-store',
+        credentials: 'include',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
+          'Expires': '0',
         },
       });
       if (res.ok) {
         const data = await res.json();
         const customerList = Array.isArray(data) ? data : [];
         const customerOptions = customerList.map((c: any) => ({
-          id: c._id.toString(),
-          name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
-        }));
+          id: c._id?.toString() || c._id || '',
+          name: `${c.firstName || ""} ${c.middleName || ""} ${c.lastName || ""}`.trim(),
+        })).filter((c: any) => c.id && c.name); // Filter out invalid entries
         setCustomers(customerOptions);
       } else {
         console.error("Failed to fetch customers:", res.status, res.statusText);
@@ -73,6 +76,26 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
 
   useEffect(() => {
     fetchCustomers();
+    
+    // Refresh customers when page becomes visible (user switches tabs/windows)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCustomers();
+      }
+    };
+    
+    // Refresh customers when window regains focus
+    const handleFocus = () => {
+      fetchCustomers();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const options = useMemo(() => customers || [], [customers]);
@@ -225,6 +248,7 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
                 selectClassName="flex-1"
                 value={id}
                 onChange={(value) => updateCustomer(idx, value)}
+                onFocus={() => fetchCustomers()}
           options={options.map((customer) => ({
             value: customer.id,
             label: customer.name,
