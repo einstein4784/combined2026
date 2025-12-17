@@ -4,6 +4,7 @@ import { RolePermissionManager } from "@/components/RolePermissionManager";
 import { guardPermission } from "@/lib/api-auth";
 import { BackupManager } from "@/components/BackupManager";
 import { CoverageTypeManager } from "@/components/CoverageTypeManager";
+import { CoverageTypeCleanup } from "@/components/CoverageTypeCleanup";
 import { StatementRecipientManager } from "@/components/StatementRecipientManager";
 import { DeleteAllDataButton } from "@/components/DeleteAllDataButton";
 import { DataMigrationTool } from "@/components/DataMigrationTool";
@@ -69,6 +70,7 @@ export default async function AdminPage() {
       <RolePermissionManager />
       <BackupManager />
       <DataMigrationTool />
+      <CoverageTypeCleanup />
       <CoverageTypeManager />
       <StatementRecipientManager />
       <AssignVFPrefixButton />
