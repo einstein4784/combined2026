@@ -92,6 +92,7 @@ export default async function RenewalsPage({ searchParams }: Props) {
       ? {
           $or: [
             { policyNumber: { $regex: q, $options: "i" } },
+            { policyIdNumber: { $regex: q, $options: "i" } },
             { coverageType: { $regex: q, $options: "i" } },
             ...(customerIds.length
               ? [{ $or: [{ customerId: { $in: customerIds } }, { customerIds: { $in: customerIds } }] }]
@@ -154,10 +155,10 @@ export default async function RenewalsPage({ searchParams }: Props) {
       <div className="card space-y-3">
         <form className="grid gap-3 md:grid-cols-4" action="/renewals" method="GET">
           <div className="md:col-span-2">
-            <label>Search (customer or policy)</label>
+            <label>Search (customer, policy number, or prefix)</label>
             <input
               name="q"
-              placeholder="POL-123 or Jane Doe"
+              placeholder="VF, SF, POL-123, or Jane Doe"
               defaultValue={q}
               className="mt-1"
             />
