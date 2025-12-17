@@ -20,6 +20,9 @@ export function PaymentUploadTool() {
   const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [progress, setProgress] = useState<{ current: number; total: number; imported: number } | null>(null);
+  const [liveErrors, setLiveErrors] = useState<string[]>([]);
+  const [liveWarnings, setLiveWarnings] = useState<string[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -77,8 +80,11 @@ export function PaymentUploadTool() {
     try {
       setUploading(true);
       setResult(null);
+      setProgress(null);
+      setLiveErrors([]);
+      setLiveWarnings([]);
 
-      const res = await fetch("/api/admin/upload-payments", {
+      const res = await fetch("/api/admin/upload-payments-stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -87,30 +93,67 @@ export function PaymentUploadTool() {
         }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Upload failed");
+      if (!res.ok || !res.body) {
+        throw new Error("Upload request failed");
       }
 
-      setResult(data);
-      showSuccessToast({
-        title: "Upload complete",
-        message: `Successfully imported ${data.imported} payment(s)`,
-      });
-      
-      // Clear form
-      setCsvText("");
-      setHeaders([]);
-      setFieldMappings({});
-      
-      // Clear file input
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      if (fileInput) fileInput.value = "";
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n\n");
+
+        for (const line of lines) {
+          if (!line.trim() || !line.startsWith("data: ")) continue;
+          
+          const jsonStr = line.substring(6);
+          try {
+            const event = JSON.parse(jsonStr);
+            
+            if (event.type === "progress") {
+              setProgress({
+                current: event.current,
+                total: event.total,
+                imported: event.imported,
+              });
+            } else if (event.type === "error") {
+              setLiveErrors((prev) => [...prev, event.error]);
+            } else if (event.type === "warning") {
+              setLiveWarnings((prev) => [...prev, event.error]);
+            } else if (event.type === "complete") {
+              setResult({
+                imported: event.imported,
+                errors: event.errors,
+                warnings: event.warnings,
+              });
+              showSuccessToast({
+                title: "Upload complete",
+                message: `Successfully imported ${event.imported} payment(s)`,
+              });
+              
+              // Clear form
+              setCsvText("");
+              setHeaders([]);
+              setFieldMappings({});
+              
+              // Clear file input
+              const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+              if (fileInput) fileInput.value = "";
+            }
+          } catch (e) {
+            // Skip malformed JSON
+          }
+        }
+      }
     } catch (err: any) {
       showGlobalError({ title: "Upload failed", message: err.message || "Could not upload payments" });
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   };
 
@@ -189,6 +232,9 @@ export function PaymentUploadTool() {
               setHeaders([]);
               setFieldMappings({});
               setResult(null);
+              setProgress(null);
+              setLiveErrors([]);
+              setLiveWarnings([]);
               const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
               if (fileInput) fileInput.value = "";
             }}
@@ -197,6 +243,32 @@ export function PaymentUploadTool() {
           >
             Clear
           </button>
+        </div>
+      )}
+
+      {/* Progress bar */}
+      {progress && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-blue-800">
+              Processing: {progress.current} / {progress.total}
+            </span>
+            <span className="text-sm font-medium text-green-700">
+              Imported: {progress.imported}
+            </span>
+          </div>
+          <div className="w-full bg-blue-200 rounded-full h-2.5">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+              style={{ width: `${(progress.current / progress.total) * 100}%` }}
+            ></div>
+          </div>
+          {(liveErrors.length > 0 || liveWarnings.length > 0) && (
+            <div className="mt-2 text-xs text-blue-700">
+              {liveWarnings.length > 0 && <span>⚠️ {liveWarnings.length} warnings </span>}
+              {liveErrors.length > 0 && <span>❌ {liveErrors.length} errors</span>}
+            </div>
+          )}
         </div>
       )}
 
