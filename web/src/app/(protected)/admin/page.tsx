@@ -11,6 +11,7 @@ import { DeleteAllDataButton } from "@/components/DeleteAllDataButton";
 import { DataMigrationTool } from "@/components/DataMigrationTool";
 import { DeleteDuplicateCustomersButton } from "@/components/DeleteDuplicateCustomersButton";
 import { AssignVFPrefixButton } from "@/components/AssignVFPrefixButton";
+import { AssignSFPrefixButton } from "@/components/AssignSFPrefixButton";
 
 export default async function AdminPage() {
   const auth = await guardPermission("manage_permissions");
@@ -76,6 +77,7 @@ export default async function AdminPage() {
       <CoverageTypeManager />
       <StatementRecipientManager />
       <AssignVFPrefixButton />
+      <AssignSFPrefixButton />
       <DeleteDuplicateCustomersButton />
       <DeleteAllDataButton />
     </div>
