@@ -37,10 +37,18 @@ export default async function AdvancedPaymentsPage() {
   ]);
 
   const policyOptions = policies.map((p: any) => {
-    const customers = [
+    const allCustomers = [
       p.customerId,
       ...(Array.isArray(p.customerIds) ? p.customerIds : []),
     ].filter(Boolean) as any[];
+    // Deduplicate by _id
+    const seen = new Set();
+    const customers = allCustomers.filter((c: any) => {
+      const id = c?._id?.toString() || c?.toString();
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
     const customerName = customers
       .map((c) => `${c?.firstName ?? ""} ${c?.lastName ?? ""}`.trim())
       .filter(Boolean)

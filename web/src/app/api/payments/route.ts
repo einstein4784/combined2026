@@ -87,6 +87,12 @@ export async function POST(request: Request) {
       notes: parsed.data.notes,
     });
 
+    // Set location based on policy ID prefix
+    let receiptLocation = userLocation || undefined;
+    if (policy.policyIdNumber && policy.policyIdNumber.trim().toUpperCase().startsWith("VF")) {
+      receiptLocation = "Vieux Fort";
+    }
+
     const receipt = await Receipt.create({
       receiptNumber,
       paymentId: payment._id,
@@ -98,7 +104,7 @@ export async function POST(request: Request) {
       generatedByName: receivedByName,
       paymentMethod: parsed.data.paymentMethod || "Cash",
       notes: parsed.data.notes,
-      location: userLocation || undefined,
+      location: receiptLocation,
       registrationNumber: (policy as any).registrationNumber || "TBA",
       policyNumberSnapshot: policy.policyNumber,
       policyIdNumberSnapshot: policy.policyIdNumber,

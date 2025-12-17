@@ -131,18 +131,28 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
       .lean(),
   ]);
   
+  // Helper function to get unique customers from a policy
+  const getUniqueCustomers = (p: any) => {
+    const allCustomers = [
+      p.customerId,
+      ...(Array.isArray(p.customerIds) ? p.customerIds : []),
+    ].filter(Boolean);
+    // Deduplicate by _id
+    const seen = new Set();
+    return allCustomers.filter((c: any) => {
+      const id = c?._id?.toString() || c?.toString();
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  };
+
   // Sort by customer name if needed (after populating)
   let sortedPolicies = policies;
   if (sortBy === "customerName") {
     sortedPolicies = policies.sort((a: any, b: any) => {
-      const customersA = [
-        a.customerId,
-        ...(Array.isArray(a.customerIds) ? a.customerIds : []),
-      ].filter(Boolean);
-      const customersB = [
-        b.customerId,
-        ...(Array.isArray(b.customerIds) ? b.customerIds : []),
-      ].filter(Boolean);
+      const customersA = getUniqueCustomers(a);
+      const customersB = getUniqueCustomers(b);
       
       const nameA = customersA
         .map((c: any) => `${c?.firstName ?? ""} ${c?.middleName ?? ""} ${c?.lastName ?? ""}`.trim())
@@ -160,10 +170,7 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
   }
 
   const policyRows = sortedPolicies.map((p: any) => {
-    const customers = [
-      p.customerId,
-      ...(Array.isArray(p.customerIds) ? p.customerIds : []),
-    ].filter(Boolean);
+    const customers = getUniqueCustomers(p);
     const customerName = customers
       .map(
         (c: any) =>

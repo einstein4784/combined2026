@@ -108,6 +108,41 @@ async function findPaymentByIdentifier(identifier: string): Promise<string | nul
   return null;
 }
 
+function splitPrefix(value: string): { prefix: string; suffix: string } {
+  if (!value) return { prefix: "", suffix: "" };
+  const [first, ...rest] = value.split("-");
+  return { prefix: first || "", suffix: rest.join("-") || "" };
+}
+
+function combinePrefixAndSuffix(prefix: string | null | undefined, value: string): string {
+  if (!value) return prefix || "";
+  
+  const trimmedPrefix = prefix?.trim().toUpperCase() || "";
+  const trimmedValue = value.trim();
+  
+  // If value already has a prefix, extract suffix
+  const parts = splitPrefix(trimmedValue);
+  
+  // If a prefix is provided, use it; otherwise use existing prefix or value as-is
+  if (trimmedPrefix && (trimmedPrefix === "CA" || trimmedPrefix === "VF" || trimmedPrefix === "SF")) {
+    // Use provided prefix
+    if (parts.suffix) {
+      return `${trimmedPrefix}-${parts.suffix}`;
+    } else {
+      // Value might be just a suffix or already have prefix
+      // If it starts with a known prefix, replace it; otherwise append
+      const existingPrefix = parts.prefix.toUpperCase();
+      if (existingPrefix === "CA" || existingPrefix === "VF" || existingPrefix === "SF") {
+        return `${trimmedPrefix}-${parts.suffix || trimmedValue}`;
+      }
+      return `${trimmedPrefix}-${trimmedValue}`;
+    }
+  } else {
+    // No prefix provided, use value as-is (might already have prefix)
+    return trimmedValue;
+  }
+}
+
 // Create a readable stream for Server-Sent Events
 function createProgressStream(
   csv: string,
@@ -208,6 +243,8 @@ function createProgressStream(
                     fieldType = "number";
                   } else if (dbField.includes("Date")) {
                     fieldType = "date";
+                  } else if (dbField === "policyPrefix") {
+                    fieldType = "string";
                   }
                 } else if (collectionType === "payments") {
                   if (["amount", "refundAmount"].includes(dbField)) {
@@ -297,13 +334,29 @@ function createProgressStream(
                   );
                   continue;
                 }
-                // Allow duplicate policy numbers - no checking needed
-                if (!record.policyNumber || record.policyNumber === null) {
-                  record.policyNumber = `POL-${Date.now()}-${rowIdx}`;
+                // Handle policy prefix - combine with policyNumber and policyIdNumber if provided
+                const policyPrefix = record.policyPrefix || null;
+                
+                // Combine prefix with policyNumber
+                if (record.policyNumber && record.policyNumber !== null) {
+                  record.policyNumber = combinePrefixAndSuffix(policyPrefix, record.policyNumber);
+                } else {
+                  // Use defaults for blank required fields
+                  const defaultPrefix = policyPrefix || "CA";
+                  record.policyNumber = `${defaultPrefix}-${Date.now()}-${rowIdx}`;
                 }
-                if (!record.policyIdNumber || record.policyIdNumber === null) {
-                  record.policyIdNumber = `PID-${Date.now()}-${rowIdx}`;
+                
+                // Combine prefix with policyIdNumber
+                if (record.policyIdNumber && record.policyIdNumber !== null) {
+                  record.policyIdNumber = combinePrefixAndSuffix(policyPrefix, record.policyIdNumber);
+                } else {
+                  // Use defaults for blank required fields
+                  const defaultPrefix = policyPrefix || "CA";
+                  record.policyIdNumber = `${defaultPrefix}-${Date.now()}-${rowIdx}`;
                 }
+                
+                // Remove policyPrefix from record as it's not a database field
+                delete record.policyPrefix;
                 if (record.totalPremiumDue === undefined || record.totalPremiumDue === null) {
                   record.totalPremiumDue = 0;
                 }
@@ -594,6 +647,14 @@ function createProgressStream(
                 }
                 if (!record.generatedAt) {
                   record.generatedAt = new Date();
+                }
+
+                // Set location based on policy ID prefix (VF = Vieux Fort)
+                if (!record.location && record.policyId) {
+                  const policy = await Policy.findById(record.policyId).select("policyIdNumber").lean();
+                  if (policy?.policyIdNumber && policy.policyIdNumber.trim().toUpperCase().startsWith("VF")) {
+                    record.location = "Vieux Fort";
+                  }
                 }
 
                 try {

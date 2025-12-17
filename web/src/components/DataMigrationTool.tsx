@@ -32,8 +32,9 @@ const FIELD_DEFINITIONS: Record<CollectionType, FieldDefinition[]> = {
     { name: "idNumber", label: "ID Number", required: true, type: "string" },
   ],
   policies: [
-    { name: "policyNumber", label: "Policy Number", required: true, type: "string" },
-    { name: "policyIdNumber", label: "Policy ID Number", required: true, type: "string" },
+    { name: "policyPrefix", label: "Policy Prefix (CA/VF/SF)", required: false, type: "string", options: ["CA", "VF", "SF"] },
+    { name: "policyNumber", label: "Policy Number (or suffix if prefix provided)", required: true, type: "string" },
+    { name: "policyIdNumber", label: "Policy ID Number (or suffix if prefix provided)", required: true, type: "string" },
     { name: "customerId", label: "Customer ID (or email/idNumber to lookup)", required: true, type: "string" },
     { name: "coverageType", label: "Coverage Type", required: false, type: "string" },
     { name: "registrationNumber", label: "Registration Number", required: false, type: "string" },

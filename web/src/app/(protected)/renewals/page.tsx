@@ -106,7 +106,15 @@ export default async function RenewalsPage({ searchParams }: Props) {
     .lean();
 
   const policyRows = policies.map((p: any) => {
-    const customers = [p.customerId, ...(Array.isArray(p.customerIds) ? p.customerIds : [])].filter(Boolean);
+    const allCustomers = [p.customerId, ...(Array.isArray(p.customerIds) ? p.customerIds : [])].filter(Boolean);
+    // Deduplicate by _id
+    const seen = new Set();
+    const customers = allCustomers.filter((c: any) => {
+      const id = c?._id?.toString() || c?.toString();
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
     const customerName = customers
       .map((c: any) => `${c?.firstName ?? ""} ${c?.middleName ?? ""} ${c?.lastName ?? ""}`.trim())
       .filter(Boolean)
