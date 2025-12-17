@@ -72,6 +72,12 @@ export default async function PolicyNoticePage({ params, searchParams }: Params)
       })
     : "—";
 
+  // Set location based on policy ID prefix (VF = Vieux Fort)
+  const displayLocation =
+    policy.policyIdNumber && policy.policyIdNumber.trim().toUpperCase().startsWith("VF")
+      ? "Vieux Fort"
+      : (sessionUser as any)?.users_location || (session as any)?.users_location || "—";
+
   return (
     <div className="p-2 space-y-3">
       <div className="flex items-center justify-between print:hidden">
@@ -95,7 +101,7 @@ export default async function PolicyNoticePage({ params, searchParams }: Params)
           />
           <h2 className="text-2xl font-bold text-[var(--ic-navy)] tracking-tight">Policy Renewal Notice</h2>
           <p className="text-sm font-bold underline text-[var(--ic-gray-800)]">
-            Location: {(sessionUser as any)?.users_location || (session as any)?.users_location || "—"}
+            Location: {displayLocation}
           </p>
           <div className="grid w-full gap-3 rounded-md border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)] p-3 text-xs font-semibold text-[var(--ic-gray-700)] leading-snug md:grid-cols-3">
             <div className="text-left space-y-0.5">
@@ -123,11 +129,11 @@ export default async function PolicyNoticePage({ params, searchParams }: Params)
           </div>
           <div className="text-center space-y-0.5">
             <p>Role: {sessionUser?.role || session?.role || "—"}</p>
-            <p>Location: {(sessionUser as any)?.users_location || (session as any)?.users_location || "—"}</p>
+            <p>Location: {displayLocation}</p>
           </div>
           <div className="text-right space-y-0.5">
             <p>Email: {sessionUser?.email || session?.email || "—"}</p>
-            <p>Date: {new Date().toLocaleDateString()}</p>
+            <p suppressHydrationWarning>Date: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
           </div>
         </div>
 

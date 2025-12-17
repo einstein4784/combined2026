@@ -7,6 +7,7 @@ export type CustomerDocument = {
   lastName: string;
   address: string;
   contactNumber: string;
+  contactNumber2?: string | null;
   email: string;
   sex?: "Male" | "Female" | "Other" | null;
   idNumber: string;
@@ -25,6 +26,7 @@ const CustomerSchema = new Schema<CustomerDocument>(
     lastName: { type: String, required: true },
     address: { type: String, required: true },
     contactNumber: { type: String, required: true },
+    contactNumber2: { type: String },
     email: { type: String, required: true, index: true },
     sex: { type: String, enum: ["Male", "Female", "Other"], default: null },
     idNumber: { type: String, required: true, unique: true, index: true },
@@ -35,6 +37,11 @@ const CustomerSchema = new Schema<CustomerDocument>(
   },
   { timestamps: true },
 );
+
+// Compound indexes for common query patterns
+CustomerSchema.index({ createdAt: -1 });
+CustomerSchema.index({ firstName: 1, lastName: 1 });
+CustomerSchema.index({ email: 1, idNumber: 1 });
 
 export const Customer =
   models.Customer || model<CustomerDocument>("Customer", CustomerSchema);

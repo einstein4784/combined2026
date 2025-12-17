@@ -32,5 +32,9 @@ const PaymentSchema = new Schema<PaymentDocument>(
   { timestamps: true },
 );
 
+// Compound indexes for common query patterns
+PaymentSchema.index({ policyId: 1, paymentDate: -1 });
+PaymentSchema.index({ paymentDate: -1, paymentMethod: 1 });
+
 export const Payment = models.Payment || model<PaymentDocument>("Payment", PaymentSchema);
 

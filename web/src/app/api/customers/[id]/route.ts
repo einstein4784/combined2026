@@ -50,6 +50,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       ...parsed.data,
       email,
       middleName: parsed.data.middleName || null,
+      contactNumber2: parsed.data.contactNumber2 || null,
       sex: parsed.data.sex || null,
     });
 

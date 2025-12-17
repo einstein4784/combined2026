@@ -15,8 +15,9 @@ export default async function AdvancedPaymentsPage() {
 
   await connectDb();
 
+  // Limit queries to prevent loading all data - use pagination or reasonable limits
   const [policies, payments] = await Promise.all([
-    Policy.find()
+    Policy.find({ status: "Active" }) // Only active policies
       .select(
         "policyNumber policyIdNumber totalPremiumDue outstandingBalance amountPaid customerId customerIds",
       )
@@ -25,19 +26,29 @@ export default async function AdvancedPaymentsPage() {
         { path: "customerIds", select: "firstName lastName" },
       ])
       .sort({ createdAt: -1 })
+      .limit(500) // Limit to 500 most recent active policies
       .lean(),
     Payment.find()
       .select("policyId amount refundAmount paymentMethod paymentDate notes")
       .populate({ path: "policyId", select: "policyNumber" })
       .sort({ paymentDate: -1 })
+      .limit(1000) // Limit to 1000 most recent payments
       .lean(),
   ]);
 
   const policyOptions = policies.map((p: any) => {
-    const customers = [
+    const allCustomers = [
       p.customerId,
       ...(Array.isArray(p.customerIds) ? p.customerIds : []),
     ].filter(Boolean) as any[];
+    // Deduplicate by _id
+    const seen = new Set();
+    const customers = allCustomers.filter((c: any) => {
+      const id = c?._id?.toString() || c?.toString();
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
     const customerName = customers
       .map((c) => `${c?.firstName ?? ""} ${c?.lastName ?? ""}`.trim())
       .filter(Boolean)

@@ -26,7 +26,7 @@ export type PolicyDocument = {
 
 const PolicySchema = new Schema<PolicyDocument>(
   {
-    policyNumber: { type: String, required: true, unique: true, index: true },
+    policyNumber: { type: String, required: true, index: true }, // Removed unique constraint to allow duplicates
     policyIdNumber: { type: String, required: true, index: true },
     customerId: { type: Schema.Types.ObjectId, ref: "Customer", required: true, index: true },
     customerIds: {
@@ -45,12 +45,12 @@ const PolicySchema = new Schema<PolicyDocument>(
     },
     registrationNumber: { type: String, trim: true, default: null },
     notes: { type: String, maxlength: 2000, default: null },
-    coverageStartDate: Date,
-    coverageEndDate: Date,
+    coverageStartDate: { type: Date, index: true },
+    coverageEndDate: { type: Date, index: true },
     totalPremiumDue: { type: Number, required: true },
     amountPaid: { type: Number, default: 0 },
     outstandingBalance: { type: Number, required: true },
-    status: { type: String, enum: ["Active", "Cancelled", "Suspended"], default: "Active" },
+    status: { type: String, enum: ["Active", "Cancelled", "Suspended"], default: "Active", index: true },
     financialPeriodId: { type: Schema.Types.ObjectId, ref: "FinancialPeriod" },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     renewalNoticeSentAt: { type: Date, default: null },
@@ -82,4 +82,12 @@ export const Policy =
   existingPolicyModel || model<PolicyDocument>("Policy", PolicySchema);
 
 stripCoverageTypeEnum(Policy);
+
+// Compound indexes for common query patterns (only add if model doesn't exist yet)
+if (!existingPolicyModel) {
+  PolicySchema.index({ status: 1, outstandingBalance: 1 });
+  PolicySchema.index({ status: 1, coverageEndDate: 1 });
+  PolicySchema.index({ customerId: 1, status: 1 });
+  PolicySchema.index({ createdAt: -1 });
+}
 

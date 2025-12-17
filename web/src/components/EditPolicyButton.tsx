@@ -74,7 +74,23 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
     loadCoverageTypes();
   }, []);
 
-  const update = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
+  const update = (key: string, value: string) => {
+    setForm((prev) => {
+      const updated = { ...prev, [key]: value };
+      // Auto-set prefix to VF if policy ID suffix begins with VF
+      if (key === "policyIdSuffix") {
+        const trimmedValue = value.trim().toUpperCase();
+        if (trimmedValue.startsWith("VF-")) {
+          updated.policyPrefix = "VF";
+          updated.policyIdSuffix = trimmedValue.substring(3).trim();
+        } else if (trimmedValue.startsWith("VF") && trimmedValue.length > 2) {
+          updated.policyPrefix = "VF";
+          updated.policyIdSuffix = trimmedValue.substring(2).trim();
+        }
+      }
+      return updated;
+    });
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

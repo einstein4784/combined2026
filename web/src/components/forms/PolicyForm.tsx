@@ -12,10 +12,11 @@ type Props = {
   customers: CustomerOption[];
 };
 
-export function PolicyForm({ customers }: Props) {
+export function PolicyForm({ customers: initialCustomers }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customerOptions, setCustomerOptions] = useState<CustomerOption[]>(initialCustomers || []);
   const [coverageOptions, setCoverageOptions] = useState<string[]>([
     "Third Party",
     "Fully Comprehensive",
@@ -34,10 +35,29 @@ export function PolicyForm({ customers }: Props) {
     status: "Active",
   });
 
-  const options = useMemo(() => customers || [], [customers]);
+  const options = useMemo(() => customerOptions || [], [customerOptions]);
 
   useEffect(() => {
-    const loadCoverageTypes = async () => {
+    const loadData = async () => {
+      // Load customers from API to get the latest list
+      try {
+        const customersRes = await fetch("/api/customers");
+        if (customersRes.ok) {
+          const customersData = await customersRes.json();
+          const formatted = customersData.map((c: any) => ({
+            id: c._id.toString(),
+            name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+          }));
+          setCustomerOptions(formatted);
+        }
+      } catch {
+        // Fallback to initial customers if API fails
+        if (initialCustomers && initialCustomers.length > 0) {
+          setCustomerOptions(initialCustomers);
+        }
+      }
+
+      // Load coverage types
       try {
         const res = await fetch("/api/coverage-types");
         if (!res.ok) return;
@@ -54,11 +74,26 @@ export function PolicyForm({ customers }: Props) {
         // swallow errors; fallback defaults remain
       }
     };
-    loadCoverageTypes();
-  }, []);
+    loadData();
+  }, [initialCustomers]);
 
-  const update = (key: string, value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const update = (key: string, value: string) => {
+    setForm((prev) => {
+      const updated = { ...prev, [key]: value };
+      // Auto-set prefix to VF if policy ID begins with VF
+      if (key === "policyIdNumber") {
+        const trimmedValue = value.trim().toUpperCase();
+        if (trimmedValue.startsWith("VF-")) {
+          setPolicyPrefix("VF");
+          updated.policyIdNumber = trimmedValue.substring(3).trim();
+        } else if (trimmedValue.startsWith("VF") && trimmedValue.length > 2) {
+          setPolicyPrefix("VF");
+          updated.policyIdNumber = trimmedValue.substring(2).trim();
+        }
+      }
+      return updated;
+    });
+  };
 
   const updateCustomer = (idx: number, value: string) => {
     setForm((prev) => {
@@ -158,6 +193,22 @@ export function PolicyForm({ customers }: Props) {
                 selectClassName="flex-1"
                 value={id}
                 onChange={(value) => updateCustomer(idx, value)}
+                onFocus={async () => {
+                  // Refresh customer list when user focuses on the select
+                  try {
+                    const res = await fetch("/api/customers");
+                    if (res.ok) {
+                      const customersData = await res.json();
+                      const formatted = customersData.map((c: any) => ({
+                        id: c._id.toString(),
+                        name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+                      }));
+                      setCustomerOptions(formatted);
+                    }
+                  } catch {
+                    // Ignore errors, keep existing list
+                  }
+                }}
           options={options.map((customer) => ({
             value: customer.id,
             label: customer.name,

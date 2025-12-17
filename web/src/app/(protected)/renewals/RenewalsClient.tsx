@@ -25,9 +25,14 @@ type PolicyRow = {
 type Props = {
   policies: PolicyRow[];
   totalCount: number;
+  searchParams?: {
+    q?: string;
+    from?: string;
+    to?: string;
+  };
 };
 
-export default function RenewalsClient({ policies, totalCount }: Props) {
+export default function RenewalsClient({ policies, totalCount, searchParams = {} }: Props) {
   const [rows, setRows] = useState<PolicyRow[]>(policies);
   const [noteAll, setNoteAll] = useState("");
   const [sendingAll, setSendingAll] = useState(false);
@@ -149,6 +154,17 @@ export default function RenewalsClient({ policies, totalCount }: Props) {
     }
   };
 
+  // Build report URL with current filters
+  const buildReportUrl = () => {
+    const params = new URLSearchParams();
+    
+    if (searchParams.q) params.set("q", searchParams.q);
+    if (searchParams.from) params.set("from", searchParams.from);
+    if (searchParams.to) params.set("to", searchParams.to);
+    
+    return `/reports/renewal?${params.toString()}`;
+  };
+
   return (
     <div className="card">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -158,7 +174,18 @@ export default function RenewalsClient({ policies, totalCount }: Props) {
             {rows.length} record{rows.length === 1 ? "" : "s"} · Email individually or send all.
           </p>
         </div>
-        <span className="badge success">{rows.length} records</span>
+        <div className="flex items-center gap-2">
+          <span className="badge success">{rows.length} records</span>
+          {rows.length > 0 && (
+            <Link
+              href={buildReportUrl()}
+              className="btn btn-secondary"
+              target="_blank"
+            >
+              Generate Report
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 rounded-lg border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)] p-3">

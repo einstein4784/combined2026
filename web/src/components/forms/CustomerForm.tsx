@@ -16,6 +16,7 @@ export function CustomerForm() {
     lastName: "",
     address: "",
     contactNumber: "",
+    contactNumber2: "",
     email: "",
     sex: "Male",
     idNumber: "",
@@ -45,6 +46,7 @@ export function CustomerForm() {
         lastName: "",
         address: "",
         contactNumber: "",
+        contactNumber2: "",
         email: "",
         sex: "Male",
         idNumber: "",
@@ -61,7 +63,7 @@ export function CustomerForm() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="card space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <label className="inline-flex items-center gap-2">
@@ -108,6 +110,17 @@ export function CustomerForm() {
             value={form.contactNumber}
             onChange={(e) => update("contactNumber", e.target.value)}
             required
+          />
+        </div>
+        <div>
+          <label className="inline-flex items-center gap-2">
+            Secondary Contact
+            <InfoTooltip content="Optional secondary phone number." />
+          </label>
+          <input
+            className="mt-1"
+            value={form.contactNumber2}
+            onChange={(e) => update("contactNumber2", e.target.value)}
           />
         </div>
       </div>

@@ -45,7 +45,7 @@ export function SendNoticeEmailButton({
   const [sent, setSent] = useState(false);
   const [rawError, setRawError] = useState<string | null>(null);
 
-  const subject = "Message from CISL System";
+  const subject = "Policy Renewal Notice";
 
   const onSend = async () => {
     if (!to) {

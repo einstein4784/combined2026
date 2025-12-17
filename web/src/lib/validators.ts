@@ -21,6 +21,7 @@ export const customerSchema = z.object({
   lastName: z.string().min(1),
   address: z.string().min(1),
   contactNumber: z.string().min(3),
+  contactNumber2: z.string().optional().nullable(),
   email: z
     .string()
     .email()

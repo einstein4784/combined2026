@@ -23,6 +23,7 @@ const ChatThreadSchema = new Schema<ChatThreadDocument>(
 );
 
 ChatThreadSchema.index({ participants: 1 });
+ChatThreadSchema.index({ participants: 1, lastMessageAt: -1 });
 
 export const ChatThread =
   models.ChatThread || model<ChatThreadDocument>("ChatThread", ChatThreadSchema);

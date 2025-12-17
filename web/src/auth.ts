@@ -12,6 +12,15 @@ type CredentialsInput = {
   password?: string;
 };
 
+// Validate AUTH_SECRET is set
+if (!process.env.AUTH_SECRET) {
+  throw new Error(
+    "AUTH_SECRET environment variable is not set. " +
+    "Please set it in your environment variables. " +
+    "You can generate one by running: npm run generate-auth-secret"
+  );
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt", maxAge: 4 * 60 * 60, updateAge: 30 * 60 },

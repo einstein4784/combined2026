@@ -11,6 +11,7 @@ type Props = {
     lastName?: string;
     address?: string;
     contactNumber?: string;
+    contactNumber2?: string;
     email?: string;
     sex?: string | null;
     idNumber?: string;
@@ -28,6 +29,7 @@ export function EditCustomerButton({ customer }: Props) {
     lastName: customer.lastName || "",
     address: customer.address || "",
     contactNumber: customer.contactNumber || "",
+    contactNumber2: customer.contactNumber2 || "",
     email: customer.email || "",
     sex: customer.sex || "Male",
     idNumber: customer.idNumber || "",
@@ -111,6 +113,14 @@ export function EditCustomerButton({ customer }: Props) {
                     value={form.contactNumber}
                     onChange={(e) => update("contactNumber", e.target.value)}
                     required
+                  />
+                </div>
+                <div>
+                  <label>Secondary Contact</label>
+                  <input
+                    className="mt-1"
+                    value={form.contactNumber2}
+                    onChange={(e) => update("contactNumber2", e.target.value)}
                   />
                 </div>
               </div>

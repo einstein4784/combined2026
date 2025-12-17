@@ -72,9 +72,17 @@ export default async function ReportsViewPage({
   let statementRecipients: { email: string; name?: string }[] = [];
 
   if (type === "cash") {
-    const receipts = await Receipt.find({
+    // Build filter with prefix early if provided
+    const receiptFilter: any = {
       paymentDate: { $gte: from, $lte: to },
-    })
+    };
+    
+    // If prefix filter is provided, add it to the query (more efficient than filtering in memory)
+    if (prefixParam && prefixParam !== "ALL") {
+      receiptFilter.policyNumberSnapshot = { $regex: `^${prefixParam}-` };
+    }
+    
+    const receipts = await Receipt.find(receiptFilter)
       .populate({
         path: "policyId",
         select: "policyNumber policyIdNumber coverageStartDate coverageEndDate customerId customerIds",
@@ -100,8 +108,16 @@ export default async function ReportsViewPage({
         policy?._id?.toString?.() ||
         "—";
       const policyNumber = policy?.policyNumber || r.policyNumberSnapshot || policy?._id?.toString?.() || "—";
-      const customerFromPolicy = [policy?.customerId, ...(Array.isArray(policy?.customerIds) ? policy.customerIds : [])]
-        .filter(Boolean)
+      const allCustomersFromPolicy = [policy?.customerId, ...(Array.isArray(policy?.customerIds) ? policy.customerIds : [])].filter(Boolean);
+      // Deduplicate by _id
+      const seen = new Set();
+      const uniqueCustomersFromPolicy = allCustomersFromPolicy.filter((c: any) => {
+        const id = c?._id?.toString() || c?.toString();
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+      const customerFromPolicy = uniqueCustomersFromPolicy
         .map(
           (c: any) =>
             `${c?.firstName ?? ""} ${c?.middleName ?? ""} ${c?.lastName ?? ""}`.trim(),
@@ -148,9 +164,7 @@ export default async function ReportsViewPage({
     const recips = await StatementRecipient.find().sort({ email: 1 }).lean();
     statementRecipients = recips.map((r: any) => ({ email: r.email, name: r.name }));
 
-    if (prefixParam && prefixParam !== "ALL") {
-      cashRows = cashRows.filter((p) => p.policyNumber?.startsWith(`${prefixParam}-`));
-    }
+    // Prefix filtering is now done in the query above, only apply search filter if needed
     if (qParam) {
       const qLower = qParam.toLowerCase();
       cashRows = cashRows.filter((p) => {
@@ -195,27 +209,34 @@ export default async function ReportsViewPage({
       .sort({ paymentDate: -1 })
       .lean();
 
-    outstandingRows = policies.map((p: any) => ({
-      _id: p._id.toString(),
-      policyNumber: p.policyNumber,
-      customerName: [
-        p.customerId,
-        ...(Array.isArray(p.customerIds) ? p.customerIds : []),
-      ]
-        .filter(Boolean)
-        .map(
-          (c: any) =>
-            `${c?.firstName ?? ""} ${c?.middleName ?? ""} ${c?.lastName ?? ""}`.trim(),
-        )
-        .filter(Boolean)
-        .join(", "),
+    outstandingRows = policies.map((p: any) => {
+      const allCustomers = [p.customerId, ...(Array.isArray(p.customerIds) ? p.customerIds : [])].filter(Boolean);
+      // Deduplicate by _id
+      const seen = new Set();
+      const uniqueCustomers = allCustomers.filter((c: any) => {
+        const id = c?._id?.toString() || c?.toString();
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+      return {
+        _id: p._id.toString(),
+        policyNumber: p.policyNumber,
+        customerName: uniqueCustomers
+          .map(
+            (c: any) =>
+              `${c?.firstName ?? ""} ${c?.middleName ?? ""} ${c?.lastName ?? ""}`.trim(),
+          )
+          .filter(Boolean)
+          .join(", "),
       outstandingBalance: p.outstandingBalance,
       coverageEndDate: p.coverageEndDate,
       coverageStartDate: p.coverageStartDate,
       latestReceiptNumber:
         paymentsByPolicy.find((pay) => pay.policyId?.toString() === p._id.toString())
           ?.receiptNumber || "—",
-    }));
+      };
+    });
     totalOutstanding = outstandingRows.reduce(
       (sum, r) => sum + (r.outstandingBalance || 0),
       0,
@@ -236,27 +257,34 @@ export default async function ReportsViewPage({
       .sort({ paymentDate: -1 })
       .lean();
 
-    renewalRows = policies.map((p: any) => ({
-      _id: p._id.toString(),
-      policyNumber: p.policyNumber,
-      customerName: [
-        p.customerId,
-        ...(Array.isArray(p.customerIds) ? p.customerIds : []),
-      ]
-        .filter(Boolean)
-        .map(
-          (c: any) =>
-            `${c?.firstName ?? ""} ${c?.middleName ?? ""} ${c?.lastName ?? ""}`.trim(),
-        )
-        .filter(Boolean)
-        .join(", "),
+    renewalRows = policies.map((p: any) => {
+      const allCustomers = [p.customerId, ...(Array.isArray(p.customerIds) ? p.customerIds : [])].filter(Boolean);
+      // Deduplicate by _id
+      const seen = new Set();
+      const uniqueCustomers = allCustomers.filter((c: any) => {
+        const id = c?._id?.toString() || c?.toString();
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+      return {
+        _id: p._id.toString(),
+        policyNumber: p.policyNumber,
+        customerName: uniqueCustomers
+          .map(
+            (c: any) =>
+              `${c?.firstName ?? ""} ${c?.middleName ?? ""} ${c?.lastName ?? ""}`.trim(),
+          )
+          .filter(Boolean)
+          .join(", "),
       coverageEndDate: p.coverageEndDate,
       coverageStartDate: p.coverageStartDate,
       outstandingBalance: p.outstandingBalance,
       latestReceiptNumber:
         paymentsByPolicy.find((pay) => pay.policyId?.toString() === p._id.toString())
           ?.receiptNumber || "—",
-    }));
+      };
+    });
   }
 
   const reportTitle =

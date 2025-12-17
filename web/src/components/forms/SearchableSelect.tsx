@@ -17,6 +17,7 @@ type Props = {
   disabled?: boolean;
   name?: string;
   id?: string;
+  onFocus?: () => void;
 };
 
 export function SearchableSelect({
@@ -29,6 +30,7 @@ export function SearchableSelect({
   disabled,
   name,
   id,
+  onFocus,
 }: Props) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -69,7 +71,10 @@ export function SearchableSelect({
           setQuery(e.target.value);
           setOpen(true);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setOpen(true);
+          onFocus?.();
+        }}
         onBlur={() => setTimeout(() => setOpen(false), 100)}
         disabled={disabled}
         name={name}
