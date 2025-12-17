@@ -12,10 +12,11 @@ type Props = {
   customers: CustomerOption[];
 };
 
-export function PolicyForm({ customers }: Props) {
+export function PolicyForm({ customers: initialCustomers }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customers, setCustomers] = useState<CustomerOption[]>(initialCustomers || []);
   const [coverageOptions, setCoverageOptions] = useState<string[]>([
     "Third Party",
     "Fully Comprehensive",
@@ -33,6 +34,29 @@ export function PolicyForm({ customers }: Props) {
     notes: "",
     status: "Active",
   });
+
+  // Fetch customers dynamically to get the latest list
+  const fetchCustomers = async () => {
+    try {
+      const res = await fetch("/api/customers");
+      if (res.ok) {
+        const data = await res.json();
+        const customerList = Array.isArray(data) ? data : [];
+        const customerOptions = customerList.map((c: any) => ({
+          id: c._id.toString(),
+          name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+        }));
+        setCustomers(customerOptions);
+      }
+    } catch (err) {
+      // If fetch fails, keep using existing customers
+      console.error("Failed to fetch customers:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
   const options = useMemo(() => customers || [], [customers]);
 
@@ -157,14 +181,24 @@ export function PolicyForm({ customers }: Props) {
         <label className="flex items-center gap-2">
             Customers <InfoTooltip content="Link up to 3 customers to this policy." />
         </label>
-          <button
-            type="button"
-            className="flex items-center gap-1 rounded-md bg-[var(--ic-teal)] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--ic-navy)]"
-            onClick={addCustomerSlot}
-            disabled={form.customerIds.length >= 3}
-          >
-            <span className="text-lg leading-none">+</span> Add
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="flex items-center gap-1 rounded-md bg-[var(--ic-gray-200)] px-2 py-1 text-xs font-semibold text-[var(--ic-gray-700)] shadow-sm transition hover:bg-[var(--ic-gray-300)]"
+              onClick={fetchCustomers}
+              title="Refresh customer list"
+            >
+              ↻
+            </button>
+            <button
+              type="button"
+              className="flex items-center gap-1 rounded-md bg-[var(--ic-teal)] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--ic-navy)]"
+              onClick={addCustomerSlot}
+              disabled={form.customerIds.length >= 3}
+            >
+              <span className="text-lg leading-none">+</span> Add
+            </button>
+          </div>
         </div>
         <div className="mt-2 space-y-2">
           {form.customerIds.map((id, idx) => (
