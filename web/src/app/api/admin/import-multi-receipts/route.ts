@@ -211,26 +211,28 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        // Check if receipt already exists
-        const existingReceipt = await Receipt.findOne({ receiptNumber }).lean();
-        if (existingReceipt) {
-          results.duplicatesSkipped.push(
-            `Receipt #${receiptNumber} already exists (Policy: ${policyNumber})`
-          );
-          results.receiptsSkipped++;
-          continue;
-        }
-
-        // Check if payment with this receipt number exists
-        const existingPayment = await Payment.findOne({ receiptNumber }).lean();
+        // Check if payment with matching details exists (policy, amount, date)
+        const startOfDay = new Date(paymentDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(paymentDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        const existingPayment = await Payment.findOne({
+          policyId: policy._id,
+          amount: amount,
+          paymentDate: {
+            $gte: startOfDay,
+            $lt: endOfDay,
+          },
+        }).lean();
         
         let paymentId: any;
         
         if (existingPayment) {
-          // Use existing payment
+          // Use existing payment with matching details
           paymentId = existingPayment._id;
         } else {
-          // Create a payment for this receipt
+          // Create a new payment
           try {
             const newPayment = await Payment.create({
               policyId: policy._id,

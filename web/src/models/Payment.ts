@@ -23,7 +23,7 @@ const PaymentSchema = new Schema<PaymentDocument>(
     refundAmount: { type: Number, default: 0 },
     paymentDate: { type: Date, default: Date.now, index: true },
     paymentMethod: { type: String, default: "Cash" },
-    receiptNumber: { type: String, required: true, unique: true, index: true },
+    receiptNumber: { type: String, required: true, index: true }, // Removed unique constraint to allow duplicates
     receivedBy: { type: Schema.Types.ObjectId, ref: "User" },
     arrearsOverrideUsed: { type: Boolean, default: false },
     financialPeriodId: { type: Schema.Types.ObjectId, ref: "FinancialPeriod" },

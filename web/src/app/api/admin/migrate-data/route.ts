@@ -488,12 +488,7 @@ export async function POST(req: NextRequest) {
             }
           }
           
-          // Check for duplicate receipt numbers and append suffix if needed
-          const existingPayment = await Payment.findOne({ receiptNumber }).lean();
-          if (existingPayment) {
-            // Duplicate receipt number found - append suffix to make it unique
-            receiptNumber = `${receiptNumber}-${Date.now()}-${rowIdx}`;
-          }
+          // Note: Duplicate receipt numbers are now allowed
           record.receiptNumber = receiptNumber;
 
           // Only update policy balances if policy exists and there's an actual payment amount
@@ -582,13 +577,7 @@ export async function POST(req: NextRequest) {
             record.receiptNumber = String(record.receiptNumber);
           }
           
-          // Handle duplicate receipt numbers - append suffix if duplicate exists
-          const existingReceipt = await Receipt.findOne({ receiptNumber: record.receiptNumber }).lean();
-          const existingPayment = await Payment.findOne({ receiptNumber: record.receiptNumber }).lean();
-          if (existingReceipt || existingPayment) {
-            // Duplicate found - append suffix to make it unique
-            record.receiptNumber = `${record.receiptNumber}-${Date.now()}-${rowIdx}`;
-          }
+          // Note: Duplicate receipt numbers are now allowed
           
           if (!record.amount || record.amount === null) {
             record.amount = 0;
@@ -650,20 +639,7 @@ export async function POST(req: NextRequest) {
             await Receipt.create(record);
             imported++;
           } catch (err: any) {
-            // Handle duplicate key errors - append suffix if duplicate exists (fallback if check failed)
-            if (err?.code === 11000 || err?.message?.includes("duplicate key") || err?.message?.includes("E11000")) {
-              // Duplicate receipt number - append suffix and retry
-              const originalReceiptNumber = record.receiptNumber;
-              record.receiptNumber = `${originalReceiptNumber}-${Date.now()}-${rowIdx}`;
-              try {
-                await Receipt.create(record);
-                imported++;
-              } catch (retryErr: any) {
-                errors.push(`Row ${rowIdx + 2}: ${retryErr?.message || "Failed to create receipt (duplicate)"}`);
-              }
-            } else {
-              errors.push(`Row ${rowIdx + 2}: ${err?.message || "Failed to create receipt"}`);
-            }
+            errors.push(`Row ${rowIdx + 2}: ${err?.message || "Failed to create receipt"}`);
           }
         }
       } catch (err: any) {

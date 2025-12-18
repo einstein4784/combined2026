@@ -192,16 +192,6 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        // Check if receipt number already exists
-        const existingReceipt = await Payment.findOne({ receiptNumber }).lean();
-        if (existingReceipt) {
-          results.duplicatesSkipped.push(
-            `Receipt #${receiptNumber} already exists (Policy: ${policyNumber})`
-          );
-          results.paymentsSkipped++;
-          continue;
-        }
-
         // Create the payment
         try {
           await Payment.create({
