@@ -36,7 +36,7 @@ export default async function PolicyDetailPage(context: PageParams) {
           .lean()
       : [],
     Payment.find({ policyId: id }).sort({ paymentDate: -1 }).lean(),
-    Receipt.find({ policyIds: id }).sort({ generatedAt: -1 }).lean(),
+    Receipt.find({ policyId: id }).sort({ generatedAt: -1 }).lean(),
   ]);
 
   const safePolicy = {
