@@ -3,6 +3,7 @@ import { Policy } from "@/models/Policy";
 import { Customer } from "@/models/Customer";
 import Link from "next/link";
 import { PrintButton } from "@/components/PrintButton";
+import { formatDateOnly } from "@/lib/utils";
 
 type SearchParams = {
   q?: string | string[];
@@ -128,9 +129,7 @@ export default async function RenewalSearchPage({
                   <td>{p.policyNumber}</td>
                   <td>{customerName || "—"}</td>
                   <td>
-                    {p.coverageEndDate
-                      ? new Date(p.coverageEndDate).toLocaleDateString()
-                      : "—"}
+                    {formatDateOnly(p.coverageEndDate)}
                   </td>
                   <td>
                     <Link

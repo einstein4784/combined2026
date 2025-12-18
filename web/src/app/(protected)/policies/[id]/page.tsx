@@ -7,6 +7,7 @@ import { Receipt } from "@/models/Receipt";
 import { Customer } from "@/models/Customer";
 import { EditPolicyButton } from "@/components/EditPolicyButton";
 import { DeletePolicyButton } from "@/components/DeletePolicyButton";
+import { formatDateOnly } from "@/lib/utils";
 
 type PageParams = { params: { id: string } } | { params: Promise<{ id: string }> };
 
@@ -149,11 +150,11 @@ export default async function PolicyDetailPage(context: PageParams) {
             <Detail label="Status" value={safePolicy.status} />
             <Detail
               label="Coverage Start"
-              value={safePolicy.coverageStartDate ? new Date(safePolicy.coverageStartDate).toLocaleDateString() : "—"}
+              value={formatDateOnly(safePolicy.coverageStartDate)}
             />
             <Detail
               label="Coverage End"
-              value={safePolicy.coverageEndDate ? new Date(safePolicy.coverageEndDate).toLocaleDateString() : "—"}
+              value={formatDateOnly(safePolicy.coverageEndDate)}
             />
             <Detail label="Total Premium Due" value={`$${safePolicy.totalPremiumDue.toFixed(2)}`} />
             <Detail label="Amount Paid" value={`$${safePolicy.amountPaid.toFixed(2)}`} />

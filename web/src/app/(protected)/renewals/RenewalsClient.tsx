@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { SendNoticeEmailButton } from "@/components/SendNoticeEmailButton";
+import { formatDateOnly } from "@/lib/utils";
 
 type PolicyRow = {
   id: string;
@@ -59,10 +60,8 @@ export default function RenewalsClient({
   };
 
   const buildHtml = (row: PolicyRow, note?: string) => {
-    const coverageStart = row.coverageStartDate
-      ? new Date(row.coverageStartDate).toLocaleDateString()
-      : "TBA";
-    const coverageEnd = row.coverageEndDate ? new Date(row.coverageEndDate).toLocaleDateString() : "TBA";
+    const coverageStart = formatDateOnly(row.coverageStartDate) === "—" ? "TBA" : formatDateOnly(row.coverageStartDate);
+    const coverageEnd = formatDateOnly(row.coverageEndDate) === "—" ? "TBA" : formatDateOnly(row.coverageEndDate);
     const coverageType = row.coverageType || "—";
     const reg = row.registrationNumber || "TBA";
     const contact = row.customerContact || "—";
@@ -264,9 +263,9 @@ export default function RenewalsClient({
               <td className="text-xs text-[var(--ic-gray-700)]">{p.policyIdNumber || "—"}</td>
               <td>{p.customerName || "—"}</td>
               <td>
-                {(p.coverageStartDate ? new Date(p.coverageStartDate).toLocaleDateString() : "TBA") +
+                {(formatDateOnly(p.coverageStartDate) === "—" ? "TBA" : formatDateOnly(p.coverageStartDate)) +
                   " → " +
-                  (p.coverageEndDate ? new Date(p.coverageEndDate).toLocaleDateString() : "TBA")}
+                  (formatDateOnly(p.coverageEndDate) === "—" ? "TBA" : formatDateOnly(p.coverageEndDate))}
               </td>
               <td>${(p.outstandingBalance || 0).toFixed(2)}</td>
             <td className="text-xs text-[var(--ic-gray-700)]">
@@ -293,9 +292,9 @@ export default function RenewalsClient({
                     customerContact={p.customerContact}
                     customerIdNumber={p.customerIdNumber}
                     coverageStart={
-                      p.coverageStartDate ? new Date(p.coverageStartDate).toLocaleDateString() : "TBA"
+                      formatDateOnly(p.coverageStartDate) === "—" ? "TBA" : formatDateOnly(p.coverageStartDate)
                     }
-                    coverageEnd={p.coverageEndDate ? new Date(p.coverageEndDate).toLocaleDateString() : "TBA"}
+                    coverageEnd={formatDateOnly(p.coverageEndDate) === "—" ? "TBA" : formatDateOnly(p.coverageEndDate)}
                     outstanding={p.outstandingBalance || 0}
                     coverageType={p.coverageType}
                     registrationNumber={p.registrationNumber || undefined}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDateOnly } from "@/lib/utils";
 
 type ReceiptEmailPayload = {
   receiptNumber: string;
@@ -104,9 +105,9 @@ export function SendReceiptEmailButton({ receipt }: Props) {
                 <div class="row">
                   <div class="label">Coverage dates</div>
                   <div class="value">
-                    ${receipt.coverageStartDate ? new Date(receipt.coverageStartDate).toLocaleDateString() : "—"}
+                    ${formatDateOnly(receipt.coverageStartDate)}
                     →
-                    ${receipt.coverageEndDate ? new Date(receipt.coverageEndDate).toLocaleDateString() : "—"}
+                    ${formatDateOnly(receipt.coverageEndDate)}
                   </div>
                 </div>
                 <div class="row">

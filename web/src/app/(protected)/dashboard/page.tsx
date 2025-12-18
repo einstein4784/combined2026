@@ -159,9 +159,9 @@ export default async function DashboardPage() {
                       className="flex items-center gap-3 font-semibold text-[var(--ic-navy)] hover:text-[var(--ic-teal)] transition"
                     >
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-sm font-bold text-blue-700">
-                        {(p.firstName?.[0] || '?').toUpperCase()}{(p.lastName?.[0] || '?').toUpperCase()}
+                        {p.firstName[0]}{p.lastName[0]}
                       </div>
-                      {`${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown'}
+                      {`${p.firstName} ${p.lastName}`}
                     </Link>
                   </td>
                   <td className="px-6 py-4 text-sm text-[var(--ic-gray-700)]">{p.email || "—"}</td>

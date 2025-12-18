@@ -6,6 +6,7 @@ import { User } from "@/models/User";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/PrintButton";
 import { getSession } from "@/lib/auth";
+import { formatDateOnly } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -58,18 +59,23 @@ export default async function PolicyNoticePage({ params, searchParams }: Params)
       ? policy.outstandingBalance
       : Math.max(totalPremium - paid, 0);
 
-  const coverageStart = policy.coverageStartDate
-    ? new Date(policy.coverageStartDate).toLocaleDateString()
-    : "—";
-  const coverageEnd = policy.coverageEndDate
-    ? new Date(policy.coverageEndDate).toLocaleDateString()
-    : "—";
+  const coverageStart = formatDateOnly(policy.coverageStartDate);
+  const coverageEnd = formatDateOnly(policy.coverageEndDate);
+  
+  // For long format, we still need to avoid timezone shift
   const coverageEndLong = policy.coverageEndDate
-    ? new Date(policy.coverageEndDate).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+    ? (() => {
+        const date = new Date(policy.coverageEndDate);
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth();
+        const day = date.getUTCDate();
+        const localDate = new Date(year, month, day);
+        return localDate.toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      })()
     : "—";
 
   // Set location based on policy ID prefix (VF = Vieux Fort)

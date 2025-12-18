@@ -111,8 +111,7 @@ export function PolicyRenewButton({
   const handleSkipPayment = () => {
     showSuccessToast({ title: "Renewal Created", message: "Policy renewed successfully" });
     setShowConfirmModal(false);
-    // Delay refresh to allow modal to close smoothly
-    setTimeout(() => router.refresh(), 150);
+    router.refresh(); // Refresh to show new policy
   };
 
   return (

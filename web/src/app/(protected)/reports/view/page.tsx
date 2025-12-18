@@ -6,6 +6,7 @@ import { PrintButton } from "@/components/PrintButton";
 import { EmailCashStatementButton } from "@/components/EmailCashStatementButton";
 import "@/models/StatementRecipient";
 import { StatementRecipient } from "@/models/StatementRecipient";
+import { formatDateOnly } from "@/lib/utils";
 
 type SearchParams = {
   type?: string | string[];
@@ -418,13 +419,9 @@ export default async function ReportsViewPage({
                   <td>{p.policyNumber}</td>
                   <td>{p.policyIdNumber || "—"}</td>
                   <td>
-                    {p.coverageStartDate
-                      ? new Date(p.coverageStartDate).toLocaleDateString()
-                      : "—"}{" "}
+                    {formatDateOnly(p.coverageStartDate)}{" "}
                     to{" "}
-                    {p.coverageEndDate
-                      ? new Date(p.coverageEndDate).toLocaleDateString()
-                      : "—"}
+                    {formatDateOnly(p.coverageEndDate)}
                   </td>
                   <td>{p.receiptNumber}</td>
                     <td>
@@ -518,20 +515,14 @@ export default async function ReportsViewPage({
                     <td>{r.policyNumber}</td>
                     <td>{r.customerName}</td>
                     <td>
-                      {r.coverageStartDate
-                        ? new Date(r.coverageStartDate).toLocaleDateString()
-                        : "—"}{" "}
+                      {formatDateOnly(r.coverageStartDate)}{" "}
                       to{" "}
-                      {r.coverageEndDate
-                        ? new Date(r.coverageEndDate).toLocaleDateString()
-                        : "—"}
+                      {formatDateOnly(r.coverageEndDate)}
                     </td>
                     <td>{r.latestReceiptNumber}</td>
                     <td>${r.outstandingBalance.toFixed(2)}</td>
                     <td>
-                      {r.coverageEndDate
-                        ? new Date(r.coverageEndDate).toLocaleDateString()
-                        : "—"}
+                      {formatDateOnly(r.coverageEndDate)}
                     </td>
                   </tr>
                 ))}
@@ -579,19 +570,13 @@ export default async function ReportsViewPage({
                     <td>{r.policyNumber}</td>
                     <td>{r.customerName}</td>
                     <td>
-                      {r.coverageStartDate
-                        ? new Date(r.coverageStartDate).toLocaleDateString()
-                        : "—"}{" "}
+                      {formatDateOnly(r.coverageStartDate)}{" "}
                       to{" "}
-                      {r.coverageEndDate
-                        ? new Date(r.coverageEndDate).toLocaleDateString()
-                        : "—"}
+                      {formatDateOnly(r.coverageEndDate)}
                     </td>
                     <td>{r.latestReceiptNumber}</td>
                     <td>
-                      {r.coverageEndDate
-                        ? new Date(r.coverageEndDate).toLocaleDateString()
-                        : "—"}
+                      {formatDateOnly(r.coverageEndDate)}
                     </td>
                     <td>
                       {typeof r.outstandingBalance === "number"

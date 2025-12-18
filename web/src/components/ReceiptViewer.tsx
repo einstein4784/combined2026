@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { formatDateOnly } from "@/lib/utils";
 import { SendReceiptEmailButton } from "./SendReceiptEmailButton";
 
 type ReceiptViewModel = {
@@ -59,12 +60,8 @@ export function ReceiptViewer({ receipt, backHref }: Props) {
     router.back();
   };
 
-  const coverageStart = receipt.coverageStartDate
-    ? new Date(receipt.coverageStartDate).toLocaleDateString()
-    : "—";
-  const coverageEnd = receipt.coverageEndDate
-    ? new Date(receipt.coverageEndDate).toLocaleDateString()
-    : "—";
+  const coverageStart = formatDateOnly(receipt.coverageStartDate);
+  const coverageEnd = formatDateOnly(receipt.coverageEndDate);
   const outstanding =
     typeof receipt.outstandingBalanceAfter === "number"
       ? `$${receipt.outstandingBalanceAfter.toFixed(2)}`
