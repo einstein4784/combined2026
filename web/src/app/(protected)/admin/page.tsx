@@ -12,6 +12,7 @@ import { DeleteDuplicateCustomersButton } from "@/components/DeleteDuplicateCust
 import { AssignVFPrefixButton } from "@/components/AssignVFPrefixButton";
 import { AssignSFPrefixButton } from "@/components/AssignSFPrefixButton";
 import { MultiPaymentImporter } from "@/components/MultiPaymentImporter";
+import { MultiReceiptImporter } from "@/components/MultiReceiptImporter";
 import { DuplicatePaymentCleaner } from "@/components/DuplicatePaymentCleaner";
 
 export default async function AdminPage() {
@@ -74,6 +75,7 @@ export default async function AdminPage() {
       <BackupManager />
       <DataMigrationTool />
       <MultiPaymentImporter />
+      <MultiReceiptImporter />
       <DuplicatePaymentCleaner />
       <ResetCoverageTypesButton />
       <CoverageTypeManager />
