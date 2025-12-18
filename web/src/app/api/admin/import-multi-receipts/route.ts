@@ -214,23 +214,30 @@ export async function POST(req: NextRequest) {
       // Process each receipt for this policy
       for (const receiptCol of receiptColumns) {
         const dateStr = row[receiptCol.dateIdx]?.trim();
-        const receiptNumber = row[receiptCol.numberIdx]?.trim();
+        let receiptNumber = row[receiptCol.numberIdx]?.trim();
         const amountStr = row[receiptCol.amountIdx]?.trim();
 
-        // Skip if no date or no receipt number (means no receipt for this column)
-        if (!dateStr || !receiptNumber) continue;
+        // Skip if no date (means no receipt for this column)
+        if (!dateStr) continue;
 
         const paymentDate = parseDate(dateStr);
-        const amount = parseAmount(amountStr);
+        
+        // Allow invalid amounts - default to 0
+        let amount = parseAmount(amountStr);
+        if (amount === null || amount < 0) {
+          amount = 0; // Default to 0 for invalid amounts
+        }
 
         if (!paymentDate) {
-          results.errors.push(`Row ${rowNum}: Invalid date '${dateStr}' for receipt ${receiptNumber}`);
+          results.errors.push(`Row ${rowNum}: Invalid date '${dateStr}'`);
           continue;
         }
 
-        if (amount === null || amount < 0) {
-          results.errors.push(`Row ${rowNum}: Invalid amount '${amountStr}' for receipt ${receiptNumber}`);
-          continue;
+        // Generate random receipt number if missing but date exists
+        if (!receiptNumber) {
+          const timestamp = Date.now();
+          const random = Math.floor(Math.random() * 10000);
+          receiptNumber = `AUTO-${timestamp}-${random}`;
         }
 
         // Check if payment with matching details exists (policy, amount, date)

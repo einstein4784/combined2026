@@ -182,28 +182,30 @@ export async function POST(req: NextRequest) {
       // Process each payment set for this policy
       for (const paymentCol of paymentColumns) {
         const dateStr = row[paymentCol.dateIdx]?.trim();
-        const receiptNumber = row[paymentCol.numberIdx]?.trim();
+        let receiptNumber = row[paymentCol.numberIdx]?.trim();
         const amountStr = row[paymentCol.amountIdx]?.trim();
 
         // Skip if no date (means no payment for this column)
         if (!dateStr) continue;
 
         const paymentDate = parseDate(dateStr);
-        const amount = parseAmount(amountStr);
+        
+        // Allow invalid amounts - default to 0
+        let amount = parseAmount(amountStr);
+        if (!amount || amount <= 0) {
+          amount = 0; // Default to 0 for invalid amounts
+        }
 
         if (!paymentDate) {
           results.errors.push(`Row ${rowNum}: Invalid date '${dateStr}'`);
           continue;
         }
 
-        if (!amount || amount <= 0) {
-          results.errors.push(`Row ${rowNum}: Invalid amount '${amountStr}'`);
-          continue;
-        }
-
+        // Generate random receipt number if missing but date exists
         if (!receiptNumber) {
-          results.errors.push(`Row ${rowNum}: Missing receipt number for payment on ${dateStr}`);
-          continue;
+          const timestamp = Date.now();
+          const random = Math.floor(Math.random() * 10000);
+          receiptNumber = `AUTO-${timestamp}-${random}`;
         }
 
         // Check for duplicate payment (same policy, date, and amount)

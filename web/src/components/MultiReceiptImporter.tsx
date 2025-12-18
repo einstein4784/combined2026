@@ -188,7 +188,7 @@ export function MultiReceiptImporter() {
           Multi-Receipt CSV Import
         </h2>
         <p className="text-sm text-[var(--ic-gray-600)] mt-1">
-          Import CSV files with multiple receipts per policy. Each row should contain a policy number and up to 10 receipt records. Blank receipt entries will be skipped.
+          Import CSV files with multiple receipts per policy. Each row should contain a policy number and up to 10 receipt records. Blank receipt entries will be skipped. Invalid amounts default to $0. Missing receipt numbers are auto-generated.
         </p>
       </div>
 
