@@ -154,81 +154,17 @@ export function DataMigrationTool() {
       try {
         const parsed = parseCsv(content);
         setCsvData(parsed);
-        // Auto-map fields with similar names
+        // Simple auto-mapping: only exact matches or contains
         const autoMappings: Record<string, string> = {};
-        parsed.headers.forEach((header) => {
-          const lowerHeader = header.toLowerCase().replace(/[^a-z0-9]/g, "");
-          fieldDefinitions.forEach((field) => {
-            const lowerField = field.name.toLowerCase();
-            
-            // Enhanced matching logic for better CSV column recognition
-            let matched = false;
-            
-            // Exact match
-            if (lowerHeader === lowerField) {
-              matched = true;
-            }
-            // Contains match
-            else if (lowerHeader.includes(lowerField) || lowerField.includes(lowerHeader)) {
-              matched = true;
-            }
-            // Special mappings for common CSV column variations
-            else if (field.name === "firstName" && (lowerHeader.includes("first") || lowerHeader.includes("fname"))) {
-              matched = true;
-            }
-            else if (field.name === "lastName" && (lowerHeader.includes("last") || lowerHeader.includes("lname"))) {
-              matched = true;
-            }
-            else if (field.name === "contactNumber" && (lowerHeader.includes("cell") || lowerHeader.includes("phone") || lowerHeader.includes("mobile"))) {
-              matched = true;
-            }
-            else if (field.name === "contactNumber2" && (lowerHeader.includes("work") || lowerHeader.includes("secondary"))) {
-              matched = true;
-            }
-            else if (field.name === "policyIdNumber" && (lowerHeader.includes("account") || lowerHeader.includes("policyid") || lowerHeader.includes("idnumber"))) {
-              matched = true;
-            }
-            else if (field.name === "coverageStartDate" && (lowerHeader.includes("commencement") || lowerHeader.includes("start") || lowerHeader.includes("begin"))) {
-              matched = true;
-            }
-            else if (field.name === "coverageEndDate" && (lowerHeader.includes("expiry") || lowerHeader.includes("end") || lowerHeader.includes("expire"))) {
-              matched = true;
-            }
-            else if (field.name === "totalPremiumDue" && (lowerHeader.includes("amountdue") || lowerHeader.includes("premium") || lowerHeader.includes("due"))) {
-              matched = true;
-            }
-            else if (field.name === "amountPaid" && (lowerHeader.includes("totalreceived") || lowerHeader.includes("paid") || lowerHeader.includes("received"))) {
-              matched = true;
-            }
-            else if (field.name === "engineNumber" && (lowerHeader.includes("engine") || lowerHeader.includes("engineno"))) {
-              matched = true;
-            }
-            else if (field.name === "chassisNumber" && (lowerHeader.includes("chassis") || lowerHeader.includes("chassisno"))) {
-              matched = true;
-            }
-            else if (field.name === "vehicleType" && (lowerHeader.includes("vehicle") || lowerHeader.includes("vehtype"))) {
-              matched = true;
-            }
-            else if (field.name === "registrationNumber" && (lowerHeader.includes("registration") || lowerHeader.includes("reg") || lowerHeader.includes("plate"))) {
-              matched = true;
-            }
-            else if (field.name === "coverageType" && (lowerHeader.includes("coverage") || lowerHeader.includes("type"))) {
-              matched = true;
-            }
-            else if (field.name === "paymentDate" && (lowerHeader.includes("recdate") || lowerHeader.includes("paymentdate") || lowerHeader.includes("date"))) {
-              matched = true;
-            }
-            else if (field.name === "receiptNumber" && (lowerHeader.includes("recnumber") || lowerHeader.includes("receipt"))) {
-              matched = true;
-            }
-            else if (field.name === "amount" && (lowerHeader.includes("recamt") || lowerHeader.includes("amount") || lowerHeader.includes("amt"))) {
-              matched = true;
-            }
-            
-            if (matched && !autoMappings[field.name]) {
-              autoMappings[field.name] = header;
-            }
+        fieldDefinitions.forEach((field) => {
+          const lowerField = field.name.toLowerCase();
+          const matchedHeader = parsed.headers.find((header) => {
+            const lowerHeader = header.toLowerCase().replace(/[^a-z0-9]/g, "");
+            return lowerHeader === lowerField || lowerHeader.includes(lowerField);
           });
+          if (matchedHeader) {
+            autoMappings[field.name] = matchedHeader;
+          }
         });
         setFieldMappings(autoMappings);
       } catch (err) {
