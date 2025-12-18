@@ -4,12 +4,50 @@ import { useState } from "react";
 import { showGlobalError } from "@/components/GlobalErrorPopup";
 import { showSuccessToast } from "@/components/GlobalSuccessToast";
 
+function parseCsv(text: string): { headers: string[]; rows: string[][] } {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length);
+  if (lines.length === 0) return { headers: [], rows: [] };
+
+  const splitCsvRow = (line: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"' && line[i + 1] === '"') {
+        current += '"';
+        i++;
+        continue;
+      }
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+        continue;
+      }
+      if (ch === "," && !inQuotes) {
+        result.push(current.trim());
+        current = "";
+        continue;
+      }
+      current += ch;
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const headers = splitCsvRow(lines[0]);
+  const rows = lines.slice(1).map(splitCsvRow);
+
+  return { headers, rows };
+}
+
 export function MultiReceiptImporter() {
   const [file, setFile] = useState<File | null>(null);
+  const [csvData, setCsvData] = useState<{ headers: string[]; rows: string[][] } | null>(null);
+  const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState<any>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       if (!selectedFile.name.endsWith(".csv")) {
@@ -19,16 +57,70 @@ export function MultiReceiptImporter() {
         });
         return;
       }
+      
       setFile(selectedFile);
       setResults(null);
+      
+      // Parse CSV to show headers for mapping
+      const text = await selectedFile.text();
+      const parsed = parseCsv(text);
+      setCsvData(parsed);
+      
+      // Auto-detect field mappings
+      const autoMappings: Record<string, string> = {};
+      
+      // Policy Number
+      const policyCol = parsed.headers.findIndex(h => 
+        h.toLowerCase().replace(/[\s_]+/g, "").includes("policynumber")
+      );
+      if (policyCol !== -1) autoMappings.policyNumber = parsed.headers[policyCol];
+      
+      // Try to auto-map receipt columns (1-10)
+      for (let i = 1; i <= 10; i++) {
+        const dateCol = parsed.headers.findIndex(h => {
+          const normalized = h.toLowerCase().replace(/[\s_]+/g, "");
+          return normalized.includes(`recdate${i}`) || normalized === `recdate${i}`;
+        });
+        if (dateCol !== -1) autoMappings[`recDate${i}`] = parsed.headers[dateCol];
+        
+        const numberCol = parsed.headers.findIndex(h => {
+          const normalized = h.toLowerCase().replace(/[\s_]+/g, "");
+          return normalized.includes(`recnumb${i}`) || normalized.includes(`recnumber${i}`);
+        });
+        if (numberCol !== -1) autoMappings[`recNumber${i}`] = parsed.headers[numberCol];
+        
+        const amtCol = parsed.headers.findIndex(h => {
+          const normalized = h.toLowerCase().replace(/[\s_]+/g, "");
+          return normalized.includes(`recamt${i}`) || normalized === `recamt${i}`;
+        });
+        if (amtCol !== -1) autoMappings[`recAmt${i}`] = parsed.headers[amtCol];
+      }
+      
+      setFieldMappings(autoMappings);
     }
   };
 
+  const handleMappingChange = (field: string, csvColumn: string) => {
+    setFieldMappings(prev => ({
+      ...prev,
+      [field]: csvColumn,
+    }));
+  };
+
   const handleUpload = async () => {
-    if (!file) {
+    if (!file || !csvData) {
       showGlobalError({
         title: "No File Selected",
         message: "Please select a file first",
+      });
+      return;
+    }
+
+    // Validate required field is mapped
+    if (!fieldMappings.policyNumber) {
+      showGlobalError({
+        title: "Missing Required Mapping",
+        message: "Please map the Policy Number column",
       });
       return;
     }
@@ -37,14 +129,15 @@ export function MultiReceiptImporter() {
     setResults(null);
 
     try {
-      // Read file as text
       const text = await file.text();
 
-      // Send to API
       const response = await fetch("/api/admin/import-multi-receipts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csvText: text }),
+        body: JSON.stringify({ 
+          csvText: text,
+          fieldMappings 
+        }),
       });
 
       const data = await response.json();
@@ -54,17 +147,18 @@ export function MultiReceiptImporter() {
       }
 
       setResults(data);
-      
+
       if (data.receiptsCreated > 0) {
         showSuccessToast({
           title: "Import Successful",
           message: `Successfully imported ${data.receiptsCreated} receipt${data.receiptsCreated !== 1 ? "s" : ""}`,
         });
       }
-      
+
       if (data.errors.length === 0 && data.policiesNotFound.length === 0) {
         setFile(null);
-        // Reset file input
+        setCsvData(null);
+        setFieldMappings({});
         const fileInput = document.getElementById("multi-receipt-file") as HTMLInputElement;
         if (fileInput) fileInput.value = "";
       }
@@ -78,6 +172,15 @@ export function MultiReceiptImporter() {
     }
   };
 
+  const receiptFields = [
+    { key: "policyNumber", label: "Policy Number", required: true },
+    ...Array.from({ length: 10 }, (_, i) => [
+      { key: `recDate${i + 1}`, label: `Receipt Date ${i + 1}`, required: false },
+      { key: `recNumber${i + 1}`, label: `Receipt Number ${i + 1}`, required: false },
+      { key: `recAmt${i + 1}`, label: `Receipt Amount ${i + 1}`, required: false },
+    ]).flat(),
+  ];
+
   return (
     <div className="card space-y-4">
       <div>
@@ -85,7 +188,7 @@ export function MultiReceiptImporter() {
           Multi-Receipt CSV Import
         </h2>
         <p className="text-sm text-[var(--ic-gray-600)] mt-1">
-          Import CSV files with multiple receipts per policy. Each row should contain a policy number and up to 10 receipt records (REC_DATE_1-10, REC_NUMBER-10, REC_AMT_1-10). Blank rows and blank receipt columns are automatically skipped - the upload will continue processing all valid data.
+          Import CSV files with multiple receipts per policy. Each row should contain a policy number and up to 10 receipt records. Blank receipt entries will be skipped.
         </p>
       </div>
 
@@ -109,9 +212,42 @@ export function MultiReceiptImporter() {
           )}
         </div>
 
+        {/* Field Mapping Section */}
+        {csvData && (
+          <div className="border border-[var(--ic-gray-200)] rounded-lg p-4 space-y-3">
+            <h3 className="font-semibold text-[var(--ic-navy)]">📋 Map CSV Columns to Fields</h3>
+            <p className="text-xs text-[var(--ic-gray-600)]">
+              Match your CSV column names to the expected fields. Required fields are marked with *.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+              {receiptFields.map((field) => (
+                <div key={field.key}>
+                  <label className="block text-xs font-medium text-[var(--ic-gray-700)] mb-1">
+                    {field.label} {field.required && <span className="text-red-600">*</span>}
+                  </label>
+                  <select
+                    value={fieldMappings[field.key] || ""}
+                    onChange={(e) => handleMappingChange(field.key, e.target.value)}
+                    className="form-input w-full text-sm"
+                    disabled={uploading}
+                  >
+                    <option value="">-- Not Mapped --</option>
+                    {csvData.headers.map((header, i) => (
+                      <option key={i} value={header}>
+                        {header}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <button
           onClick={handleUpload}
-          disabled={!file || uploading}
+          disabled={!file || !csvData || uploading || !fieldMappings.policyNumber}
           className="btn btn-primary"
         >
           {uploading ? "Importing..." : "Import Receipts"}
@@ -121,23 +257,23 @@ export function MultiReceiptImporter() {
       {results && (
         <div className="space-y-3 mt-4 pt-4 border-t border-[var(--ic-gray-200)]">
           <h3 className="font-semibold text-[var(--ic-navy)]">Import Results</h3>
-          
+
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 bg-blue-50 rounded border border-blue-200">
               <div className="text-sm text-blue-600 font-medium">Total Rows</div>
               <div className="text-2xl font-bold text-blue-900">{results.totalRows}</div>
             </div>
-            
+
             <div className="p-3 bg-green-50 rounded border border-green-200">
               <div className="text-sm text-green-600 font-medium">Receipts Created</div>
               <div className="text-2xl font-bold text-green-900">{results.receiptsCreated}</div>
             </div>
-            
+
             <div className="p-3 bg-yellow-50 rounded border border-yellow-200">
               <div className="text-sm text-yellow-600 font-medium">Receipts Skipped</div>
               <div className="text-2xl font-bold text-yellow-900">{results.receiptsSkipped}</div>
             </div>
-            
+
             <div className="p-3 bg-red-50 rounded border border-red-200">
               <div className="text-sm text-red-600 font-medium">Errors</div>
               <div className="text-2xl font-bold text-red-900">{results.errors.length}</div>
@@ -157,7 +293,7 @@ export function MultiReceiptImporter() {
             </details>
           )}
 
-          {results.duplicatesSkipped.length > 0 && (
+          {results.duplicatesSkipped && results.duplicatesSkipped.length > 0 && (
             <details className="bg-yellow-50 border border-yellow-200 rounded p-3">
               <summary className="cursor-pointer font-medium text-yellow-900">
                 Duplicates Skipped ({results.duplicatesSkipped.length})
@@ -187,4 +323,3 @@ export function MultiReceiptImporter() {
     </div>
   );
 }
-

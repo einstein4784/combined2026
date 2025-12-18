@@ -69,7 +69,10 @@ export async function POST(req: NextRequest) {
     await connectDb();
 
     const body = await req.json();
-    const { csvText } = body;
+    const { csvText, fieldMappings } = body as {
+      csvText: string;
+      fieldMappings?: Record<string, string>;
+    };
 
     if (!csvText || typeof csvText !== "string") {
       return json({ error: "CSV text is required" }, 400);
@@ -84,64 +87,83 @@ export async function POST(req: NextRequest) {
     const headers = splitCsvRow(lines[0]);
     const rows = lines.slice(1).map(splitCsvRow);
 
-    // Find policy number column
-    const policyNumberIdx = headers.findIndex(h => h.toLowerCase().replace(/\s+/g, "").includes("policynumber"));
+    // Find policy number column using field mappings or auto-detect
+    let policyNumberIdx = -1;
+    if (fieldMappings && fieldMappings.policyNumber) {
+      policyNumberIdx = headers.indexOf(fieldMappings.policyNumber);
+    } else {
+      policyNumberIdx = headers.findIndex(h => h.toLowerCase().replace(/\s+/g, "").includes("policynumber"));
+    }
     
     if (policyNumberIdx === -1) {
-      return json({ error: "Could not find 'Policy Number' column" }, 400);
+      return json({ error: "Could not find 'Policy Number' column. Please map it manually." }, 400);
     }
 
-    // Find receipt columns (REC_DATE_1-10, REC_NUMBER/REC_NUMBE2-10, REC_AMT_1-10)
+    // Find receipt columns using field mappings or auto-detect
     const receiptColumns: Array<{dateIdx: number, numberIdx: number, amountIdx: number}> = [];
     
-    // Check for columns 1-10
     for (let i = 1; i <= 10; i++) {
       let dateIdx = -1;
       let numberIdx = -1;
       let amountIdx = -1;
       
-      // For REC_DATE: handle REC_DATE_1, REC_DATE_2, ..., REC_DATE10 (no underscore for 10)
-      if (i === 10) {
-        dateIdx = headers.findIndex(h => {
-          const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
-          return normalized === "recdate10";
-        });
-      } else {
-        dateIdx = headers.findIndex(h => {
-          const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
-          return normalized === `recdate${i}` || normalized === `recdate_${i}`;
-        });
+      // Try field mappings first
+      if (fieldMappings) {
+        const dateMapping = fieldMappings[`recDate${i}`];
+        const numberMapping = fieldMappings[`recNumber${i}`];
+        const amtMapping = fieldMappings[`recAmt${i}`];
+        
+        if (dateMapping) dateIdx = headers.indexOf(dateMapping);
+        if (numberMapping) numberIdx = headers.indexOf(numberMapping);
+        if (amtMapping) amountIdx = headers.indexOf(amtMapping);
       }
       
-      // For REC_NUMBER: handle REC_NUMBER (for 1), REC_NUMBE2-9, REC_NUMB10
-      if (i === 1) {
-        numberIdx = headers.findIndex(h => {
-          const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
-          return normalized === "recnumber" || normalized === "recnumber1";
-        });
-      } else if (i === 10) {
-        numberIdx = headers.findIndex(h => {
-          const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
-          return normalized === "recnumb10";
-        });
-      } else {
-        numberIdx = headers.findIndex(h => {
-          const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
-          return normalized === `recnumbe${i}` || normalized === `recnumber${i}`;
-        });
+      // Fallback to auto-detection if mappings not provided
+      if (dateIdx === -1) {
+        if (i === 10) {
+          dateIdx = headers.findIndex(h => {
+            const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
+            return normalized === "recdate10";
+          });
+        } else {
+          dateIdx = headers.findIndex(h => {
+            const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
+            return normalized === `recdate${i}` || normalized === `recdate_${i}`;
+          });
+        }
       }
       
-      // For REC_AMT: handle REC_AMT_1-9, REC_AMT_10
-      if (i === 10) {
-        amountIdx = headers.findIndex(h => {
-          const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
-          return normalized === "recamt10" || normalized === "recamt_10";
-        });
-      } else {
-        amountIdx = headers.findIndex(h => {
-          const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
-          return normalized === `recamt${i}` || normalized === `recamt_${i}`;
-        });
+      if (numberIdx === -1) {
+        if (i === 1) {
+          numberIdx = headers.findIndex(h => {
+            const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
+            return normalized === "recnumber" || normalized === "recnumber1";
+          });
+        } else if (i === 10) {
+          numberIdx = headers.findIndex(h => {
+            const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
+            return normalized === "recnumb10";
+          });
+        } else {
+          numberIdx = headers.findIndex(h => {
+            const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
+            return normalized === `recnumbe${i}` || normalized === `recnumber${i}`;
+          });
+        }
+      }
+      
+      if (amountIdx === -1) {
+        if (i === 10) {
+          amountIdx = headers.findIndex(h => {
+            const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
+            return normalized === "recamt10" || normalized === "recamt_10";
+          });
+        } else {
+          amountIdx = headers.findIndex(h => {
+            const normalized = h.toLowerCase().replace(/[_\s]+/g, "");
+            return normalized === `recamt${i}` || normalized === `recamt_${i}`;
+          });
+        }
       }
       
       if (dateIdx !== -1 && numberIdx !== -1 && amountIdx !== -1) {
@@ -150,7 +172,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (receiptColumns.length === 0) {
-      return json({ error: "Could not find receipt columns (REC_DATE, REC_NUMBER, REC_AMT)" }, 400);
+      return json({ error: "Could not find any receipt columns. Please map at least one set (Date, Number, Amount)." }, 400);
     }
 
     const results = {

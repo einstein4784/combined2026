@@ -67,7 +67,10 @@ export async function POST(req: NextRequest) {
     await connectDb();
 
     const body = await req.json();
-    const { csvText } = body;
+    const { csvText, fieldMappings } = body as {
+      csvText: string;
+      fieldMappings?: Record<string, string>;
+    };
 
     if (!csvText || typeof csvText !== "string") {
       return json({ error: "CSV text is required" }, 400);
@@ -82,21 +85,55 @@ export async function POST(req: NextRequest) {
     const headers = splitCsvRow(lines[0]);
     const rows = lines.slice(1).map(splitCsvRow);
 
-    // Find column indices
-    const policyNumberIdx = headers.findIndex(h => h.toLowerCase().includes("policy number"));
-    const accountNumberIdx = headers.findIndex(h => h.toLowerCase().includes("account number"));
+    // Find policy number column using field mappings or auto-detect
+    let policyNumberIdx = -1;
+    if (fieldMappings && fieldMappings.policyNumber) {
+      policyNumberIdx = headers.indexOf(fieldMappings.policyNumber);
+    } else {
+      policyNumberIdx = headers.findIndex(h => h.toLowerCase().includes("policy number"));
+    }
     
     if (policyNumberIdx === -1) {
-      return json({ error: "Could not find 'Policy Number' column" }, 400);
+      return json({ error: "Could not find 'Policy Number' column. Please map it manually." }, 400);
     }
 
-    // Find payment columns (Rec Date 2-10, Rec Number 2-10, Rec Amt 2-10)
+    // Find account number column (optional)
+    let accountNumberIdx = -1;
+    if (fieldMappings && fieldMappings.accountNumber) {
+      accountNumberIdx = headers.indexOf(fieldMappings.accountNumber);
+    } else {
+      accountNumberIdx = headers.findIndex(h => h.toLowerCase().includes("account number"));
+    }
+
+    // Find payment columns using field mappings or auto-detect (2-10)
     const paymentColumns: Array<{dateIdx: number, numberIdx: number, amountIdx: number}> = [];
     
     for (let i = 2; i <= 10; i++) {
-      const dateIdx = headers.findIndex(h => h.toLowerCase().includes(`rec date ${i}`));
-      const numberIdx = headers.findIndex(h => h.toLowerCase().includes(`rec number ${i}`));
-      const amountIdx = headers.findIndex(h => h.toLowerCase().includes(`rec amt ${i}`));
+      let dateIdx = -1;
+      let numberIdx = -1;
+      let amountIdx = -1;
+      
+      // Try field mappings first
+      if (fieldMappings) {
+        const dateMapping = fieldMappings[`recDate${i}`];
+        const numberMapping = fieldMappings[`recNumber${i}`];
+        const amtMapping = fieldMappings[`recAmt${i}`];
+        
+        if (dateMapping) dateIdx = headers.indexOf(dateMapping);
+        if (numberMapping) numberIdx = headers.indexOf(numberMapping);
+        if (amtMapping) amountIdx = headers.indexOf(amtMapping);
+      }
+      
+      // Fallback to auto-detection if mappings not provided
+      if (dateIdx === -1) {
+        dateIdx = headers.findIndex(h => h.toLowerCase().includes(`rec date ${i}`));
+      }
+      if (numberIdx === -1) {
+        numberIdx = headers.findIndex(h => h.toLowerCase().includes(`rec number ${i}`));
+      }
+      if (amountIdx === -1) {
+        amountIdx = headers.findIndex(h => h.toLowerCase().includes(`rec amt ${i}`));
+      }
       
       if (dateIdx !== -1 && numberIdx !== -1 && amountIdx !== -1) {
         paymentColumns.push({ dateIdx, numberIdx, amountIdx });
@@ -104,7 +141,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (paymentColumns.length === 0) {
-      return json({ error: "Could not find payment columns (Rec Date, Rec Number, Rec Amt)" }, 400);
+      return json({ error: "Could not find any payment columns. Please map at least one set (Date, Number, Amount)." }, 400);
     }
 
     const results = {
