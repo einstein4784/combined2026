@@ -84,9 +84,13 @@ export default function DataWipePage() {
 
       const data = await res.json();
       if (res.ok) {
+        const totalRecords = Object.values(data.wouldDelete).reduce<number>(
+          (sum: number, count) => sum + (typeof count === 'number' ? count : 0),
+          0
+        );
         showSuccessToast({
           title: "Dry Run Complete",
-          message: `Would delete ${Object.values(data.wouldDelete).reduce((a: number, b: number) => a + b, 0)} records`,
+          message: `Would delete ${totalRecords} records`,
         });
       } else {
         throw new Error(data.error || "Dry run failed");

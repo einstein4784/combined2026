@@ -736,10 +736,9 @@ function createProgressStream(
                 } catch (err: any) {
                   const error = `Row ${rowIdx + 2}: ${err?.message || "Failed to create receipt"}`;
                   errors.push(error);
-                    controller.enqueue(
-                      new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
-                    );
-                  }
+                  controller.enqueue(
+                    new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
+                  );
                 }
                 
                 // Send progress update after each receipt row
