@@ -3,7 +3,6 @@ import { connectDb } from "@/lib/db";
 import { guardPermission } from "@/lib/api-auth";
 import { Policy } from "@/models/Policy";
 import { json, handleRouteError } from "@/lib/utils";
-import mongoose from "mongoose";
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,7 +49,7 @@ export async function POST(req: NextRequest) {
       amountPaid: 0,
       outstandingBalance: parseFloat(totalPremiumDue),
       status: "Active",
-      createdBy: new mongoose.Types.ObjectId(auth.session.id),
+      createdBy: auth.session.id,
     });
 
     return json({
