@@ -36,6 +36,35 @@
   --ic-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+.dark {
+  --ic-navy: #60a5fa;
+  --ic-navy-light: #93c5fd;
+  --ic-navy-dark: #3b82f6;
+  --ic-navy-subtle: rgba(96, 165, 250, 0.1);
+  --ic-teal: #5eead4;
+  --ic-teal-light: #99f6e4;
+  --ic-teal-dark: #2dd4bf;
+  --ic-teal-subtle: rgba(94, 234, 212, 0.1);
+  --ic-mint: #86efac;
+  --ic-mint-light: #bbf7d0;
+  --ic-mint-subtle: rgba(134, 239, 172, 0.1);
+  --ic-gold: #fbbf24;
+  --ic-gold-light: #fcd34d;
+  --ic-gold-subtle: rgba(251, 191, 36, 0.1);
+  --ic-sand: #78716c;
+  --ic-white: #0f172a;
+  --ic-gray-50: #0f172a;
+  --ic-gray-100: #1e293b;
+  --ic-gray-200: #334155;
+  --ic-gray-300: #475569;
+  --ic-gray-400: #64748b;
+  --ic-gray-500: #94a3b8;
+  --ic-gray-600: #cbd5e1;
+  --ic-gray-700: #e2e8f0;
+  --ic-gray-800: #f1f5f9;
+  --ic-gray-900: #f8fafc;
+}
+
 @theme inline {
   --color-background: var(--ic-gray-50);
   --color-foreground: var(--ic-gray-800);
