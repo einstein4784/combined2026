@@ -6,8 +6,25 @@ export function json<T>(data: T, init?: number | ResponseInit) {
 }
 
 export function handleRouteError(error: unknown) {
-  console.error(error);
-  return json({ error: "Internal server error" }, { status: 500 });
+  console.error("[Route Error]", error);
+  
+  // In production, include error details for debugging
+  const errorMessage = error instanceof Error ? error.message : "Internal server error";
+  const errorDetails = error instanceof Error ? error.stack : undefined;
+  
+  // Log full error details
+  if (errorDetails) {
+    console.error("[Error Stack]", errorDetails);
+  }
+  
+  return json(
+    { 
+      error: "Internal server error",
+      message: errorMessage,
+      ...(process.env.NODE_ENV !== "production" && { stack: errorDetails })
+    }, 
+    { status: 500 }
+  );
 }
 
 export function assertEnv(name: string, value: string | undefined) {
