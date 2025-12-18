@@ -105,7 +105,7 @@ export default function AppShell({ session, children }: Props) {
           // ignore
         }
       }
-        const lastSeenStr = typeof window !== "undefined" ? localStorage.getItem("chatLastSeen") : null;
+        const lastSeenStr = localStorage.getItem("chatLastSeen");
         const lastSeen = lastSeenStr ? new Date(lastSeenStr).getTime() : 0;
         const latest = (data.threads || [])
           .map((t: any) => (t.lastMessageAt ? new Date(t.lastMessageAt).getTime() : 0))
@@ -220,7 +220,7 @@ export default function AppShell({ session, children }: Props) {
   };
 
   return (
-    <div className="flex min-h-screen bg-[var(--ic-gray-50)] text-[var(--ic-gray-800)]">
+    <div className="flex min-h-screen bg-[var(--ic-gray-50)] text-[var(--ic-gray-800)]" suppressHydrationWarning>
       <GlobalErrorPopup />
       <GlobalSuccessToast />
       <aside className="w-64 bg-[var(--ic-navy)] text-white shadow-lg flex flex-col">
@@ -288,9 +288,7 @@ export default function AppShell({ session, children }: Props) {
                   onClick={() => {
                     setNotifOpen((v) => !v);
                     setChatAlert(false);
-                    if (typeof window !== "undefined") {
-                      localStorage.setItem("chatLastSeen", new Date().toISOString());
-                    }
+                    localStorage.setItem("chatLastSeen", new Date().toISOString());
                   }}
                 >
                   <span className="relative inline-block">
@@ -321,9 +319,7 @@ export default function AppShell({ session, children }: Props) {
             onOpenChange={(open) => {
               if (open) {
                 setChatAlert(false);
-                if (typeof window !== "undefined") {
-                  localStorage.setItem("chatLastSeen", new Date().toISOString());
-                }
+                localStorage.setItem("chatLastSeen", new Date().toISOString());
               }
             }}
           />

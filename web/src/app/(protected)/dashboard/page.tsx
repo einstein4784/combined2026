@@ -28,81 +28,233 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="page-title-box">
-        <p className="section-heading">Overview</p>
-        <h4>Dashboard</h4>
-        <div className="page-subtitle">Live snapshot of customers, policies, and payments.</div>
+      {/* Enhanced Welcome Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#003d5c] via-[#1e3a5f] to-[#006b7d] p-8 shadow-xl">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30"></div>
+        
+        <div className="relative z-10 flex flex-wrap items-center gap-6">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 p-3 backdrop-blur-sm ring-2 ring-white/20">
+            <img
+              src="/IC-LOGO-NEW.png"
+              alt="Combined Insurance Services"
+              className="h-full w-full object-contain"
+            />
+          </div>
+          <div className="flex-1 space-y-2 rounded-lg bg-black/20 p-4 backdrop-blur-sm">
+            <p className="text-sm font-semibold uppercase tracking-wider text-white">Welcome Back</p>
+            <h1 className="text-3xl font-bold text-white lg:text-4xl">
+              Combined Insurance Services
+            </h1>
+            <p className="text-base text-white">
+              St. Lucia Ltd. • Your comprehensive management dashboard
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/policies"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm ring-1 ring-white/20 transition hover:bg-white/20"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              View Policies
+            </Link>
+            <Link
+              href="/customers"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ic-navy)] transition hover:bg-white/90"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              View Customers
+            </Link>
+          </div>
+        </div>
       </div>
 
-      <div className="card flex flex-wrap items-center gap-4 bg-gradient-to-r from-[#e8f1fb] via-white to-[#e8f1fb]">
-        <img
-          src="/IC-LOGO-NEW.png"
-          alt="Combined Insurance Services"
-          className="h-14 w-auto object-contain"
+      {/* Enhanced Stat Cards */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <StatCard 
+          title="Total Customers" 
+          value={customerCount}
+          icon={
+            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          }
+          gradient="from-blue-500 to-blue-600"
+          linkHref="/customers"
+          linkText="View all"
         />
-        <div className="space-y-1">
-          <p className="text-sm uppercase tracking-[0.12em] text-[var(--ic-gray-600)]">Welcome</p>
-          <h3 className="text-xl font-semibold text-[var(--ic-navy)]">
-            Combined Insurance Services (St. Lucia) Ltd.
-          </h3>
-          <p className="text-sm text-[var(--ic-gray-600)]">
-            Quick glance at customers, policies, and payments.
-          </p>
-        </div>
+        <StatCard 
+          title="Active Policies" 
+          value={policyCount}
+          icon={
+            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          }
+          gradient="from-emerald-500 to-teal-600"
+          linkHref="/policies"
+          linkText="Manage"
+        />
+        <StatCard 
+          title="Total Payments" 
+          value={paymentCount}
+          icon={
+            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          }
+          gradient="from-violet-500 to-purple-600"
+          linkHref="/payments"
+          linkText="View all"
+        />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard title="Customers" value={customerCount} />
-        <StatCard title="Policies" value={policyCount} />
-        <StatCard title="Payments" value={paymentCount} />
-      </div>
-      <div className="card">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Recent Customers</h2>
-          <span className="badge success">Latest</span>
+      {/* Enhanced Recent Customers Card */}
+      <div className="overflow-hidden rounded-2xl border border-[var(--ic-gray-200)] bg-white shadow-sm">
+        <div className="border-b border-[var(--ic-gray-200)] bg-gradient-to-r from-[var(--ic-gray-50)] to-white px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-[var(--ic-navy)]">Recent Customers</h2>
+                <p className="text-sm text-[var(--ic-gray-600)]">Latest additions to your database</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-600/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                Live
+              </span>
+              <Link
+                href="/customers"
+                className="text-sm font-semibold text-[var(--ic-teal)] hover:text-[var(--ic-navy)] transition"
+              >
+                View all →
+              </Link>
+            </div>
+          </div>
         </div>
-        <table className="mt-4">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Contact</th>
-              <th>Added</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((p) => (
-              <tr key={p._id}>
-                <td>
-                  <Link href={`/customers/${p._id}`} className="text-[var(--ic-navy)] underline">
-                    {`${p.firstName} ${p.lastName}`}
-                  </Link>
-                </td>
-                <td>{p.email || "—"}</td>
-                <td>{p.contactNumber || "—"}</td>
-                <td>{new Date(p.createdAt).toLocaleDateString()}</td>
-              </tr>
-            ))}
-            {!rows.length && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-[var(--ic-gray-50)]">
               <tr>
-                <td colSpan={4} className="py-4 text-center text-sm text-slate-500">
-                  No customers yet.
-                </td>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--ic-gray-600)]">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--ic-gray-600)]">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--ic-gray-600)]">Contact</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--ic-gray-600)]">Added</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--ic-gray-600)]">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-[var(--ic-gray-200)]">
+              {rows.map((p, idx) => (
+                <tr key={p._id} className="group hover:bg-[var(--ic-gray-50)] transition-colors">
+                  <td className="px-6 py-4">
+                    <Link 
+                      href={`/customers/${p._id}`} 
+                      className="flex items-center gap-3 font-semibold text-[var(--ic-navy)] hover:text-[var(--ic-teal)] transition"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-sm font-bold text-blue-700">
+                        {p.firstName[0]}{p.lastName[0]}
+                      </div>
+                      {`${p.firstName} ${p.lastName}`}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-[var(--ic-gray-700)]">{p.email || "—"}</td>
+                  <td className="px-6 py-4 text-sm text-[var(--ic-gray-700)]">{p.contactNumber || "—"}</td>
+                  <td className="px-6 py-4 text-sm text-[var(--ic-gray-600)]">
+                    {new Date(p.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric"
+                    })}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <Link
+                      href={`/customers/${p._id}`}
+                      className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-[var(--ic-navy)] opacity-0 ring-1 ring-[var(--ic-gray-300)] transition hover:bg-[var(--ic-navy)] hover:text-white group-hover:opacity-100"
+                    >
+                      View
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+              {!rows.length && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--ic-gray-100)]">
+                        <svg className="h-6 w-6 text-[var(--ic-gray-400)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-medium text-[var(--ic-gray-600)]">No customers yet</p>
+                      <p className="text-xs text-[var(--ic-gray-500)]">Get started by adding your first customer</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
 
-function StatCard({ title, value }: { title: string; value: number }) {
+function StatCard({ 
+  title, 
+  value, 
+  icon,
+  gradient,
+  linkHref,
+  linkText 
+}: { 
+  title: string; 
+  value: number;
+  icon: React.ReactNode;
+  gradient: string;
+  linkHref: string;
+  linkText: string;
+}) {
   return (
-    <div className="rounded-2xl border border-[#d5e3f7] bg-white p-4 shadow-sm transition hover:shadow-md">
-      <div className="text-xs uppercase tracking-[0.1em] text-[var(--ic-gray-600)]">{title}</div>
-      <div className="text-3xl font-semibold text-[var(--ic-navy)] mt-2">{value}</div>
-    </div>
+    <Link href={linkHref}>
+      <div className="group relative overflow-hidden rounded-2xl border border-[var(--ic-gray-200)] bg-white p-6 shadow-sm transition-all hover:shadow-xl hover:scale-[1.02]">
+        <div className="absolute right-0 top-0 h-32 w-32 -translate-y-8 translate-x-8 rounded-full bg-gradient-to-br opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-start justify-between">
+            <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-lg`}>
+              {icon}
+            </div>
+            <div className="text-right">
+              <div className="text-xs font-semibold uppercase tracking-wider text-[var(--ic-gray-500)]">{title}</div>
+              <div className="mt-1 text-3xl font-bold text-[var(--ic-navy)]">
+                {value.toLocaleString()}
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4 flex items-center justify-between border-t border-[var(--ic-gray-100)] pt-4">
+            <span className="text-xs font-medium text-[var(--ic-gray-600)]">
+              {linkText}
+            </span>
+            <svg className="h-4 w-4 text-[var(--ic-gray-400)] transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }
 
