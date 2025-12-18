@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import type { SessionUser } from "@/lib/auth";
 import { signIn, signOut } from "next-auth/react";
 import { DateTimeBadge } from "./DateTimeBadge";
@@ -11,8 +12,13 @@ import { GlobalSuccessToast } from "./GlobalSuccessToast";
 import { Avatar } from "./Avatar";
 import { BackButton } from "./BackButton";
 import type { FormEvent } from "react";
-import { ChatWidget } from "./ChatWidget";
 import { DeleteApprovalTray } from "./DeleteApprovalTray";
+
+// Lazy load ChatWidget - only loads when needed, improves initial page load
+const ChatWidget = dynamic(() => import("./ChatWidget").then(mod => ({ default: mod.ChatWidget })), {
+  ssr: false,
+  loading: () => null, // No loading indicator needed
+});
 
 type Props = {
   session: SessionUser;

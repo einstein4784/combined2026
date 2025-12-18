@@ -37,6 +37,8 @@ export default async function RenewalsPage({ searchParams }: Props) {
   const preset = normalize(safeParams.preset);
   const fromParam = toDate(normalize(safeParams.from));
   const toParam = toDate(normalize(safeParams.to));
+  const page = Math.max(1, parseInt(normalize(safeParams.page)) || 1);
+  const perPage = 20;
 
   const today = new Date();
   const presetDays = (() => {
@@ -73,7 +75,10 @@ export default async function RenewalsPage({ searchParams }: Props) {
 
   const customerIds =
     q?.length && Object.keys(customerMatch).length
-      ? (await Customer.find(customerMatch).select("_id").lean()).map((c: any) => c._id)
+      ? (await Customer.find(customerMatch)
+          .select("_id")
+          .limit(100) // Limit to prevent large result sets
+          .lean()).map((c: any) => c._id)
       : [];
 
   const dateFilter =
@@ -85,6 +90,26 @@ export default async function RenewalsPage({ searchParams }: Props) {
           },
         }
       : {};
+
+  // Get total count for pagination
+  const totalCount = await Policy.countDocuments({
+    ...(useSearch ? {} : dateFilter),
+    ...(useSearch
+      ? {
+          $or: [
+            { policyNumber: { $regex: q, $options: "i" } },
+            { policyIdNumber: { $regex: q, $options: "i" } },
+            { coverageType: { $regex: q, $options: "i" } },
+            ...(customerIds.length
+              ? [{ $or: [{ customerId: { $in: customerIds } }, { customerIds: { $in: customerIds } }] }]
+              : []),
+          ],
+        }
+      : {}),
+  });
+
+  const totalPages = Math.ceil(totalCount / perPage);
+  const skip = (page - 1) * perPage;
 
   const policies = await Policy.find({
     ...(useSearch ? {} : dateFilter),
@@ -104,6 +129,8 @@ export default async function RenewalsPage({ searchParams }: Props) {
     .populate("customerId", "firstName lastName middleName email contactNumber idNumber")
     .populate("customerIds", "firstName middleName lastName email contactNumber idNumber")
     .sort({ coverageEndDate: 1 })
+    .skip(skip)
+    .limit(perPage)
     .lean();
 
   const policyRows = policies.map((p: any) => {
@@ -218,7 +245,10 @@ export default async function RenewalsPage({ searchParams }: Props) {
 
       <RenewalsClient 
         policies={policyRows} 
-        totalCount={policyRows.length}
+        totalCount={totalCount}
+        currentPage={page}
+        totalPages={totalPages}
+        perPage={perPage}
         searchParams={{
           q: q || undefined,
           from: !useSearch && from ? from.toISOString().slice(0, 10) : undefined,

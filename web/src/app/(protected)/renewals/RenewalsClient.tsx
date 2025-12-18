@@ -25,6 +25,9 @@ type PolicyRow = {
 type Props = {
   policies: PolicyRow[];
   totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  perPage: number;
   searchParams?: {
     q?: string;
     from?: string;
@@ -32,7 +35,14 @@ type Props = {
   };
 };
 
-export default function RenewalsClient({ policies, totalCount, searchParams = {} }: Props) {
+export default function RenewalsClient({ 
+  policies, 
+  totalCount, 
+  currentPage, 
+  totalPages, 
+  perPage,
+  searchParams = {} 
+}: Props) {
   const [rows, setRows] = useState<PolicyRow[]>(policies);
   const [noteAll, setNoteAll] = useState("");
   const [sendingAll, setSendingAll] = useState(false);
@@ -165,17 +175,34 @@ export default function RenewalsClient({ policies, totalCount, searchParams = {}
     return `/reports/renewal?${params.toString()}`;
   };
 
+  // Build pagination URL
+  const buildPageUrl = (page: number) => {
+    const params = new URLSearchParams();
+    
+    if (searchParams.q) params.set("q", searchParams.q);
+    if (searchParams.from) params.set("from", searchParams.from);
+    if (searchParams.to) params.set("to", searchParams.to);
+    if (page > 1) params.set("page", page.toString());
+    
+    return `/renewals?${params.toString()}`;
+  };
+
+  // Calculate showing range
+  const startRecord = totalCount > 0 ? (currentPage - 1) * perPage + 1 : 0;
+  const endRecord = Math.min(currentPage * perPage, totalCount);
+
   return (
     <div className="card">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-[var(--ic-navy)]">Results</h3>
           <p className="text-sm text-[var(--ic-gray-600)]">
-            {rows.length} record{rows.length === 1 ? "" : "s"} · Email individually or send all.
+            {totalCount > 0 ? `Showing ${startRecord}-${endRecord} of ${totalCount} record${totalCount === 1 ? "" : "s"}` : "No records found"}
+            {totalCount > 0 && " · Email individually or send all on this page."}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="badge success">{rows.length} records</span>
+          <span className="badge success">{totalCount} total</span>
           {rows.length > 0 && (
             <Link
               href={buildReportUrl()}
@@ -292,6 +319,86 @@ export default function RenewalsClient({ policies, totalCount, searchParams = {}
           )}
         </tbody>
       </table>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between border-t border-[var(--ic-gray-200)] pt-4">
+          <div className="text-sm text-[var(--ic-gray-600)]">
+            Page {currentPage} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            {/* First Page */}
+            {currentPage > 1 && (
+              <Link
+                href={buildPageUrl(1)}
+                className="btn btn-ghost border-[var(--ic-gray-200)] px-3 py-1 text-sm"
+              >
+                First
+              </Link>
+            )}
+            
+            {/* Previous Page */}
+            {currentPage > 1 && (
+              <Link
+                href={buildPageUrl(currentPage - 1)}
+                className="btn btn-ghost border-[var(--ic-gray-200)] px-3 py-1 text-sm"
+              >
+                ← Previous
+              </Link>
+            )}
+
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <Link
+                    key={pageNum}
+                    href={buildPageUrl(pageNum)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      pageNum === currentPage
+                        ? "bg-[var(--ic-navy)] text-white"
+                        : "text-[var(--ic-gray-700)] hover:bg-[var(--ic-gray-100)]"
+                    }`}
+                  >
+                    {pageNum}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Next Page */}
+            {currentPage < totalPages && (
+              <Link
+                href={buildPageUrl(currentPage + 1)}
+                className="btn btn-ghost border-[var(--ic-gray-200)] px-3 py-1 text-sm"
+              >
+                Next →
+              </Link>
+            )}
+
+            {/* Last Page */}
+            {currentPage < totalPages && (
+              <Link
+                href={buildPageUrl(totalPages)}
+                className="btn btn-ghost border-[var(--ic-gray-200)] px-3 py-1 text-sm"
+              >
+                Last
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -131,8 +131,6 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
     };
   });
 
-  const totalPremiumDue = policies.reduce((sum, p: any) => sum + (p.totalPremiumDue || 0), 0);
-
   return (
     <div className="space-y-6">
       <div className="page-title-box">
@@ -141,15 +139,26 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
         <p className="page-subtitle">
           Record full payments or jump to advanced options for partials, refunds, and account management.
         </p>
-        <div className="mt-2">
-          <a className="btn btn-secondary" href="/payments/advanced">
-            Advanced payment options
+        <div className="mt-3">
+          <a 
+            className="btn btn-primary inline-flex items-center gap-2 px-6 py-2.5 text-base font-semibold" 
+            href="/payments/advanced"
+          >
+            <svg 
+              className="h-5 w-5" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6" 
+              />
+            </svg>
+            Advanced Payment Options
           </a>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2 text-sm">
-          <span className="rounded-full bg-[var(--ic-gray-100)] px-3 py-1 font-semibold text-[var(--ic-navy)]">
-            Total premium due (all policies): ${totalPremiumDue.toFixed(2)}
-          </span>
         </div>
       </div>
 

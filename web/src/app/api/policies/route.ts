@@ -26,7 +26,8 @@ export async function GET() {
     const policies = await Policy.find()
       .populate("customerId", "firstName middleName lastName email contactNumber")
       .populate("customerIds", "firstName middleName lastName email contactNumber")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return json(policies);
   } catch (error) {

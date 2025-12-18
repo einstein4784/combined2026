@@ -89,11 +89,15 @@ export const Policy =
 
 stripCoverageTypeEnum(Policy);
 
-// Compound indexes for common query patterns (only add if model doesn't exist yet)
-if (!existingPolicyModel) {
-  PolicySchema.index({ status: 1, outstandingBalance: 1 });
-  PolicySchema.index({ status: 1, coverageEndDate: 1 });
-  PolicySchema.index({ customerId: 1, status: 1 });
-  PolicySchema.index({ createdAt: -1 });
-}
+// Compound indexes for common query patterns
+// Note: Indexes are idempotent - MongoDB won't create duplicates
+PolicySchema.index({ status: 1, outstandingBalance: 1 });
+PolicySchema.index({ status: 1, coverageEndDate: 1 });
+PolicySchema.index({ customerId: 1, status: 1 });
+PolicySchema.index({ createdAt: -1 });
+
+// Additional indexes for improved query performance
+PolicySchema.index({ policyIdNumber: 1, policyNumber: 1 }); // For prefix searches (SF-, VF-, etc)
+PolicySchema.index({ registrationNumber: 1 }); // For vehicle registration searches
+PolicySchema.index({ coverageEndDate: 1, status: 1 }); // For renewal queries
 

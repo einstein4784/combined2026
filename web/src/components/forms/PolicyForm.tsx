@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, memo } from "react";
 import { SearchableSelect } from "./SearchableSelect";
 import { InfoTooltip } from "../InfoTooltip";
 import { showSuccessToast } from "../GlobalSuccessToast";
@@ -12,7 +12,7 @@ type Props = {
   customers: CustomerOption[];
 };
 
-export function PolicyForm({ customers: initialCustomers }: Props) {
+export const PolicyForm = memo(function PolicyForm({ customers: initialCustomers }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -417,5 +417,5 @@ export function PolicyForm({ customers: initialCustomers }: Props) {
       </button>
     </form>
   );
-}
+});
 

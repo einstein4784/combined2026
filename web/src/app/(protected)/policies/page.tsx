@@ -36,7 +36,10 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
         { email: { $regex: q, $options: "i" } },
         { contactNumber: { $regex: q, $options: "i" } },
       ],
-    }).select("_id");
+    })
+    .select("_id")
+    .limit(100) // Limit search results to prevent large result sets
+    .lean();
     customerIds.push(...matches.map((m) => m._id.toString()));
   }
 
@@ -73,7 +76,11 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
       .skip((page - 1) * ITEMS_PER_PAGE)
       .limit(ITEMS_PER_PAGE)
       .lean(),
-    Customer.find().sort({ firstName: 1 }),
+    Customer.find()
+      .select("_id firstName middleName lastName")
+      .limit(1000) // Limit customer dropdown to 1000 most recent
+      .sort({ firstName: 1 })
+      .lean(),
   ]);
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);

@@ -36,5 +36,9 @@ const PaymentSchema = new Schema<PaymentDocument>(
 PaymentSchema.index({ policyId: 1, paymentDate: -1 });
 PaymentSchema.index({ paymentDate: -1, paymentMethod: 1 });
 
+// Additional indexes for duplicate detection and reports
+PaymentSchema.index({ policyId: 1, amount: 1, paymentDate: 1 }); // For duplicate detection
+PaymentSchema.index({ paymentDate: -1, policyId: 1, amount: 1 }); // For cash reports
+
 export const Payment = models.Payment || model<PaymentDocument>("Payment", PaymentSchema);
 

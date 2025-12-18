@@ -90,14 +90,19 @@ if (!cached) {
   cached = globalWithMongoose.mongooseConn = { conn: null, promise: null };
 }
 
-// Prefer a small, responsive pool to reduce connection churn while keeping latency low
+// Optimized connection pool for better performance and resource management
 async function tryConnect(uri: string, dbName: string) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   const options: mongoose.ConnectOptions = {
     serverSelectionTimeoutMS: 5_000,
     socketTimeoutMS: 20_000,
     waitQueueTimeoutMS: 5_000,
-    maxPoolSize: 10,
-    minPoolSize: 1,
+    // Larger pool in production for better concurrency
+    maxPoolSize: isProduction ? 25 : 10,
+    minPoolSize: isProduction ? 5 : 1,
+    // Close idle connections after 60 seconds to free resources
+    maxIdleTimeMS: 60_000,
     dbName: dbName, // Always set dbName explicitly to prevent namespace issues
   };
   
@@ -114,10 +119,20 @@ export async function connectDb() {
   if (!cached?.promise) {
     cached!.promise = (async () => {
       try {
-        // Debug logging
+        // Enable query logging in development for performance monitoring
         if (process.env.NODE_ENV === "development") {
           console.log("🔍 Connecting with URI (masked):", primaryConfig.uri.replace(/:[^:@]+@/, ":****@"));
           console.log("🔍 Database name:", primaryConfig.dbName);
+          
+          // Enable mongoose debug mode to log queries
+          mongoose.set('debug', (collectionName: string, method: string, query: any) => {
+            const queryStr = JSON.stringify(query);
+            if (queryStr.length > 200) {
+              console.log(`📊 ${collectionName}.${method}`, queryStr.substring(0, 200) + '...');
+            } else {
+              console.log(`📊 ${collectionName}.${method}`, queryStr);
+            }
+          });
         }
         const connection = await tryConnect(primaryConfig.uri, primaryConfig.dbName);
         // Verify connection

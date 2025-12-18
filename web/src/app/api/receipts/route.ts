@@ -14,7 +14,8 @@ export async function GET() {
     const receipts = await Receipt.find()
       .populate("customerId", "firstName lastName email")
       .populate("policyId", "policyNumber")
-      .sort({ generatedAt: -1 });
+      .sort({ generatedAt: -1 })
+      .lean();
 
     return json(receipts);
   } catch (error) {
