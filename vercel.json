@@ -2,6 +2,11 @@
   "buildCommand": "cd web && npm run build",
   "outputDirectory": "web/.next",
   "installCommand": "cd web && npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
 }
 
