@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { connectDb } from "@/lib/db";
 import { Customer } from "@/models/Customer";
 import { Policy } from "@/models/Policy";
 import { Payment } from "@/models/Payment";
 import { EditCustomerButton } from "@/components/EditCustomerButton";
+import { CustomerPoliciesView } from "@/components/CustomerPoliciesView";
 
 type PageParams = { params: { id: string } } | { params: Promise<{ id: string }> };
 
@@ -32,8 +32,38 @@ export default async function CustomerDetailPage(context: PageParams) {
       ? []
       : await Payment.find({ policyId: { $in: policyIds } })
           .sort({ paymentDate: -1 })
-          .populate("policyId", "policyNumber")
           .lean();
+
+  // Serialize policies and payments for client component
+  const safePolicies = policies.map((p) => ({
+    _id: p._id.toString(),
+    policyNumber: p.policyNumber,
+    policyIdNumber: p.policyIdNumber,
+    coverageType: p.coverageType,
+    status: p.status,
+    totalPremiumDue: Number(p.totalPremiumDue || 0),
+    amountPaid: Number(p.amountPaid || 0),
+    outstandingBalance: Number(p.outstandingBalance || 0),
+    registrationNumber: p.registrationNumber,
+    engineNumber: p.engineNumber,
+    chassisNumber: p.chassisNumber,
+    vehicleType: p.vehicleType,
+    coverageStartDate: p.coverageStartDate ? p.coverageStartDate.toISOString() : undefined,
+    coverageEndDate: p.coverageEndDate ? p.coverageEndDate.toISOString() : undefined,
+    notes: p.notes,
+    createdAt: p.createdAt.toISOString(),
+  }));
+
+  const safePayments = payments.map((pay) => ({
+    _id: pay._id.toString(),
+    policyId: pay.policyId.toString(),
+    amount: Number(pay.amount || 0),
+    refundAmount: Number(pay.refundAmount || 0),
+    paymentDate: pay.paymentDate.toISOString(),
+    paymentMethod: pay.paymentMethod,
+    receiptNumber: pay.receiptNumber,
+    notes: pay.notes || "",
+  }));
 
   const safeCustomer = {
     _id: customer._id.toString(),
@@ -63,93 +93,35 @@ export default async function CustomerDetailPage(context: PageParams) {
         <EditCustomerButton customer={safeCustomer} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="card space-y-3 lg:col-span-2">
-          <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Details</h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Detail label="Name" value={`${safeCustomer.firstName} ${safeCustomer.middleName} ${safeCustomer.lastName}`} />
-            <Detail label="Email" value={safeCustomer.email} />
-            <Detail label="Contact" value={safeCustomer.contactNumber} />
-            <Detail label="ID Number" value={safeCustomer.idNumber} />
-            <Detail label="Sex" value={safeCustomer.sex || "—"} />
-            <Detail label="Address" value={safeCustomer.address} />
-            <Detail
-              label="Created"
-              value={new Date(safeCustomer.createdAt).toLocaleDateString()}
-            />
-            <Detail
-              label="Arrears"
-              value={safeCustomer.hasArrears ? "Yes" : "No"}
-            />
-            <Detail
-              label="Arrears Override"
-              value={safeCustomer.arrearsOverride ? "Enabled" : "Disabled"}
-            />
-          </div>
-        </div>
-
-        <div className="card space-y-3">
-          <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Policies</h2>
-          {policies.length === 0 ? (
-            <p className="text-sm text-[var(--ic-gray-600)]">No policies yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {policies.map((p) => (
-                <li key={p._id.toString()} className="rounded-lg border border-[var(--ic-gray-200)] p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold text-[var(--ic-navy)]">{p.policyNumber}</div>
-                      <div className="text-sm text-[var(--ic-gray-600)]">{p.coverageType}</div>
-                    </div>
-                    <Link href={`/policies/${p._id.toString()}/notice`} className="text-sm text-[var(--ic-navy)] underline">
-                      View
-                    </Link>
-                  </div>
-                  <div className="mt-2 text-xs text-[var(--ic-gray-600)]">
-                    Status: {p.status} · Outstanding: ${Number(p.outstandingBalance || 0).toFixed(2)}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="card space-y-3">
+        <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Customer Details</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Detail label="Name" value={`${safeCustomer.firstName} ${safeCustomer.middleName} ${safeCustomer.lastName}`} />
+          <Detail label="Email" value={safeCustomer.email} />
+          <Detail label="Contact" value={safeCustomer.contactNumber} />
+          <Detail label="ID Number" value={safeCustomer.idNumber} />
+          <Detail label="Sex" value={safeCustomer.sex || "—"} />
+          <Detail label="Address" value={safeCustomer.address} />
+          <Detail
+            label="Created"
+            value={new Date(safeCustomer.createdAt).toLocaleDateString()}
+          />
+          <Detail
+            label="Arrears"
+            value={safeCustomer.hasArrears ? "Yes" : "No"}
+          />
+          <Detail
+            label="Arrears Override"
+            value={safeCustomer.arrearsOverride ? "Enabled" : "Disabled"}
+          />
         </div>
       </div>
 
-      <div className="card">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Payment History</h2>
-          <span className="badge success">{payments.length} total</span>
-        </div>
-        <table className="mt-4">
-          <thead>
-            <tr>
-              <th>Policy</th>
-              <th>Amount</th>
-              <th>Method</th>
-              <th>Date</th>
-              <th>Receipt</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payments.map((pay) => (
-              <tr key={pay._id.toString()}>
-                <td>{(pay as any).policyId?.policyNumber || "—"}</td>
-                <td>${Number(pay.amount).toFixed(2)}</td>
-                <td>{pay.paymentMethod}</td>
-                <td>{new Date(pay.paymentDate).toLocaleDateString()}</td>
-                <td>{pay.receiptNumber}</td>
-              </tr>
-            ))}
-            {!payments.length && (
-              <tr>
-                <td colSpan={5} className="py-4 text-center text-sm text-slate-500">
-                  No payments recorded.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <CustomerPoliciesView 
+        policies={safePolicies}
+        payments={safePayments}
+        customerId={id}
+      />
     </div>
   );
 }

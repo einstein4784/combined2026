@@ -7,13 +7,14 @@ import { Pagination } from "@/components/Pagination";
 import { SortableHeader } from "@/components/SortableHeader";
 import mongoose from "mongoose";
 import { DeletePolicyButton } from "@/components/DeletePolicyButton";
+import { PolicyRenewButton } from "@/components/PolicyRenewButton";
 
 export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const normalize = (val?: string | string[]) => (Array.isArray(val) ? val[0] ?? "" : val ?? "");
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 export default async function PoliciesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const canDeletePolicy = true; // allow all authenticated users to manage policies
@@ -120,6 +121,9 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
       .filter(Boolean)
       .join(", ");
 
+    // Get primary customer ID for renewals
+    const primaryCustomerId = p.customerId?._id?.toString() || p.customerId?.toString() || "";
+
     return {
       _id: p._id.toString(),
       policyNumber: p.policyNumber,
@@ -127,6 +131,8 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
       totalPremiumDue: p.totalPremiumDue,
       outstandingBalance: p.outstandingBalance,
       customerName,
+      coverageEndDate: p.coverageEndDate ? p.coverageEndDate.toISOString() : null,
+      customerId: primaryCustomerId,
     };
   });
 
@@ -244,6 +250,14 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
                     </td>
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
+                        <PolicyRenewButton
+                          policyId={p._id}
+                          policyNumber={p.policyNumber}
+                          coverageType={p.coverageType}
+                          totalPremiumDue={p.totalPremiumDue}
+                          coverageEndDate={p.coverageEndDate}
+                          customerId={p.customerId}
+                        />
                         <Link
                           href={`/policies/${p._id}`}
                           className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--ic-gray-200)] bg-white text-[var(--ic-navy)] shadow-sm hover:bg-[var(--ic-gray-50)]"
