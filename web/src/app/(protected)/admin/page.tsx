@@ -83,7 +83,25 @@ export default async function AdminPage() {
       <AssignVFPrefixButton />
       <AssignSFPrefixButton />
       <DeleteDuplicateCustomersButton />
-      <DeleteAllDataButton />
+      
+      {/* Data Wipe - New dedicated page */}
+      <div className="card space-y-3 border-red-200 bg-red-50">
+        <div>
+          <p className="section-heading text-red-700">Danger Zone</p>
+          <h3 className="text-lg font-semibold text-red-800">Clear Transactional Data</h3>
+          <p className="text-sm text-red-700">
+            Advanced data deletion with granular control. Delete customers, policies, payments, and receipts with preview and safety features.
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <Link
+            href="/admin/data-wipe"
+            className="btn border-red-300 bg-red-600 text-white hover:bg-red-700"
+          >
+            🗑️ Open Data Wipe Tool →
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
