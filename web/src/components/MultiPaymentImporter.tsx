@@ -85,7 +85,7 @@ export function MultiPaymentImporter() {
           Multi-Payment CSV Import
         </h2>
         <p className="text-sm text-[var(--ic-gray-600)] mt-1">
-          Import CSV files with multiple payments per policy. Each row should contain a policy number and up to 9 payment records (Rec Date 2-10, Rec Number 2-10, Rec Amt 2-10).
+          Import CSV files with multiple payments per policy. Each row should contain a policy number and up to 9 payment records (Rec Date 2-10, Rec Number 2-10, Rec Amt 2-10). Blank rows and blank payment columns are automatically skipped - the upload will continue processing all valid data.
         </p>
       </div>
 

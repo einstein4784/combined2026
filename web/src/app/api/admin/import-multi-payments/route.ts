@@ -121,17 +121,17 @@ export async function POST(req: NextRequest) {
       const row = rows[rowIdx];
       const rowNum = rowIdx + 2; // +2 for header and 0-index
       
-      if (row.length < headers.length) {
-        results.errors.push(`Row ${rowNum}: Incomplete row`);
-        continue;
+      // Skip completely empty rows (all cells blank)
+      if (row.length === 0 || row.every((cell) => !cell || cell.trim() === "")) {
+        continue; // Skip silently - empty rows are expected
       }
 
       const policyNumber = row[policyNumberIdx]?.trim();
       const accountNumber = row[accountNumberIdx]?.trim();
 
+      // Skip rows without policy number (but don't error - blanks are OK)
       if (!policyNumber) {
-        results.errors.push(`Row ${rowNum}: Missing policy number`);
-        continue;
+        continue; // Skip silently - blank policy numbers just mean skip this row
       }
 
       // Find the policy
