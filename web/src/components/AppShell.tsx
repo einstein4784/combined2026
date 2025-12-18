@@ -13,7 +13,6 @@ import { Avatar } from "./Avatar";
 import { BackButton } from "./BackButton";
 import type { FormEvent } from "react";
 import { DeleteApprovalTray } from "./DeleteApprovalTray";
-import { useTheme } from "@/contexts/ThemeContext";
 
 // Lazy load ChatWidget - only loads when needed, improves initial page load
 const ChatWidget = dynamic(() => import("./ChatWidget").then(mod => ({ default: mod.ChatWidget })), {
@@ -42,7 +41,6 @@ const navLinks = [
 export default function AppShell({ session, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
   const [isPending, startTransition] = useTransition();
   const [loggingOut, setLoggingOut] = useState(false);
   const [showRestrictedPrompt, setShowRestrictedPrompt] = useState(false);
@@ -284,21 +282,6 @@ export default function AppShell({ session, children }: Props) {
                 <span className="mx-2 h-4 w-px bg-[var(--ic-gray-200)]" />
                 <span className="text-sm font-semibold text-[var(--ic-navy)]">Combined Insurance</span>
                 <DateTimeBadge />
-                <button
-                  className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--ic-gray-200)] bg-white text-[var(--ic-navy)] shadow-sm hover:bg-[var(--ic-gray-50)] transition-colors"
-                  title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-                  onClick={toggleTheme}
-                >
-                  {theme === 'light' ? (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                  ) : (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                  )}
-                </button>
                 <button
                   className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--ic-gray-200)] bg-white text-[var(--ic-navy)] shadow-sm hover:bg-[var(--ic-gray-50)]"
                   title="Notifications"

@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { getSession } from "@/lib/auth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export default async function ProtectedLayout({
   children,
@@ -16,9 +15,7 @@ export default async function ProtectedLayout({
 
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <AppShell session={session}>{children}</AppShell>
-      </ThemeProvider>
+      <AppShell session={session}>{children}</AppShell>
     </ErrorBoundary>
   );
 }
