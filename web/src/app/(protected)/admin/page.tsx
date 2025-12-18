@@ -12,6 +12,7 @@ import { DeleteDuplicateCustomersButton } from "@/components/DeleteDuplicateCust
 import { AssignVFPrefixButton } from "@/components/AssignVFPrefixButton";
 import { AssignSFPrefixButton } from "@/components/AssignSFPrefixButton";
 import { MultiPaymentImporter } from "@/components/MultiPaymentImporter";
+import { DuplicatePaymentCleaner } from "@/components/DuplicatePaymentCleaner";
 
 export default async function AdminPage() {
   const auth = await guardPermission("manage_permissions");
@@ -73,6 +74,7 @@ export default async function AdminPage() {
       <BackupManager />
       <DataMigrationTool />
       <MultiPaymentImporter />
+      <DuplicatePaymentCleaner />
       <ResetCoverageTypesButton />
       <CoverageTypeManager />
       <StatementRecipientManager />
