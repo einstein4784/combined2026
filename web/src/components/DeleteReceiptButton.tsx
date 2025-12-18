@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { showSuccessToast } from "./GlobalSuccessToast";
+import { useModalScrollLock } from "@/hooks/useModalScrollLock";
 
 type Props = {
   receiptId: string;
@@ -14,6 +15,9 @@ export function DeleteReceiptButton({ receiptId, receiptNumber }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+
+  // Lock body scroll when modal is open to prevent layout shift
+  useModalScrollLock(confirming);
 
   const handleDelete = async () => {
     setLoading(true);

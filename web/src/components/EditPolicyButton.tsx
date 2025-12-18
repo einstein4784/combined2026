@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { InfoTooltip } from "./InfoTooltip";
+import { useModalScrollLock } from "@/hooks/useModalScrollLock";
 
 type PolicyEdit = {
   _id: string;
@@ -33,6 +34,9 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Lock body scroll when modal is open to prevent layout shift
+  useModalScrollLock(open);
   const [coverageOptions, setCoverageOptions] = useState<string[]>([
     "Third Party",
     "Fully Comprehensive",

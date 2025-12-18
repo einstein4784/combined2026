@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { showSuccessToast } from "./GlobalSuccessToast";
 import { showGlobalError } from "./GlobalErrorPopup";
+import { useModalScrollLock } from "@/hooks/useModalScrollLock";
 
 type Props = {
   policyId: string;
@@ -36,6 +37,9 @@ export function PolicyRenewButton({
   
   // Confirmation data
   const [newPolicyId, setNewPolicyId] = useState<string | null>(null);
+
+  // Lock body scroll when modals are open to prevent layout shift
+  useModalScrollLock(showRenewalModal || showConfirmModal);
 
   const handleRenewClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -260,4 +264,5 @@ export function PolicyRenewButton({
     </>
   );
 }
+
 

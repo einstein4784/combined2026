@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { showSuccessToast } from "./GlobalSuccessToast";
 import { showGlobalError } from "./GlobalErrorPopup";
 import { DeletePolicyButton } from "./DeletePolicyButton";
+import { useModalScrollLock } from "@/hooks/useModalScrollLock";
 
 type Policy = {
   _id: string;
@@ -41,6 +42,9 @@ export function PolicyRenewalActions({ policy, customerId }: Props) {
   
   // Confirmation data
   const [newPolicyId, setNewPolicyId] = useState<string | null>(null);
+
+  // Lock body scroll when modals are open to prevent layout shift
+  useModalScrollLock(showRenewalModal || showConfirmModal);
 
   const handleRenewClick = () => {
     // Pre-populate dates (1 year from current end date if available)

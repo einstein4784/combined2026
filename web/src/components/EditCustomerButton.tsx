@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useModalScrollLock } from "@/hooks/useModalScrollLock";
 
 type Props = {
   customer: {
@@ -34,6 +35,9 @@ export function EditCustomerButton({ customer }: Props) {
     sex: customer.sex || "Male",
     idNumber: customer.idNumber || "",
   });
+
+  // Lock body scroll when modal is open to prevent layout shift
+  useModalScrollLock(open);
 
   const update = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
