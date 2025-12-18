@@ -29,30 +29,28 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Enhanced Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#003d5c] via-[#1e3a5f] to-[#006b7d] p-8 shadow-xl">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30"></div>
-        
-        <div className="relative z-10 flex flex-wrap items-center gap-6">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 p-3 backdrop-blur-sm ring-2 ring-white/20">
+      <div className="relative overflow-hidden rounded-2xl bg-white border border-[var(--ic-gray-200)] p-8 shadow-lg">
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--ic-gray-50)] border border-[var(--ic-gray-200)] p-3">
             <img
               src="/IC-LOGO-NEW.png"
               alt="Combined Insurance Services"
               className="h-full w-full object-contain"
             />
           </div>
-          <div className="flex-1 space-y-2 rounded-lg bg-black/20 p-4 backdrop-blur-sm">
-            <p className="text-sm font-semibold uppercase tracking-wider text-white">Welcome Back</p>
-            <h1 className="text-3xl font-bold text-white lg:text-4xl">
+          <div className="flex-1 space-y-2">
+            <p className="text-sm font-semibold uppercase tracking-wider text-[var(--ic-gray-600)]">Welcome Back</p>
+            <h1 className="text-3xl font-bold text-[var(--ic-navy)] lg:text-4xl">
               Combined Insurance Services
             </h1>
-            <p className="text-base text-white">
+            <p className="text-base text-[var(--ic-gray-700)]">
               St. Lucia Ltd. • Your comprehensive management dashboard
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/policies"
-              className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm ring-1 ring-white/20 transition hover:bg-white/20"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--ic-gray-200)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ic-navy)] transition hover:bg-[var(--ic-gray-50)]"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -61,7 +59,7 @@ export default async function DashboardPage() {
             </Link>
             <Link
               href="/customers"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ic-navy)] transition hover:bg-white/90"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--ic-navy)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--ic-navy)]/90"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
