@@ -5,6 +5,7 @@ import { json, handleRouteError } from "@/lib/utils";
 import { Policy } from "@/models/Policy";
 import { Payment } from "@/models/Payment";
 import { Receipt } from "@/models/Receipt";
+import { Customer } from "@/models/Customer";
 import mongoose from "mongoose";
 
 export const dynamic = "force-dynamic";
