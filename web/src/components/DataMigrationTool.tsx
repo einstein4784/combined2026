@@ -19,6 +19,150 @@ type FieldDefinition = {
   options?: string[]; // for enum/select fields
 };
 
+// CSV format detection
+function detectCsvType(headers: string[]): "customers" | "policies" | "payments" | "unknown" {
+  const headerStr = headers.join(",").toLowerCase();
+  
+  // Detect customers CSV: has "First Name", "Last Name", "Policy Number", "Account Number"
+  if (
+    headerStr.includes("first name") && 
+    headerStr.includes("last name") && 
+    headerStr.includes("policy number") && 
+    headerStr.includes("account number")
+  ) {
+    return "customers";
+  }
+  
+  // Detect policies CSV: has "Policy Number", "Registration", "Commencement Date" or "Expiry Date"
+  if (
+    headerStr.includes("policy number") && 
+    headerStr.includes("registration") && 
+    (headerStr.includes("commencement date") || headerStr.includes("expiry date"))
+  ) {
+    return "policies";
+  }
+  
+  // Detect payments CSV: has "Policy Number", "Rec Date 1", "Rec Number 1", "Rec Amt 1"
+  if (
+    headerStr.includes("policy number") && 
+    (headerStr.includes("rec date 1") || headerStr.includes("rec date")) &&
+    (headerStr.includes("rec number 1") || headerStr.includes("rec number")) &&
+    (headerStr.includes("rec amt 1") || headerStr.includes("rec amt"))
+  ) {
+    return "payments";
+  }
+  
+  return "unknown";
+}
+
+// Enhanced auto-mapping for specific CSV formats
+function generateAutoMappings(
+  headers: string[],
+  collectionType: CollectionType
+): Record<string, string> {
+  const autoMappings: Record<string, string> = {};
+  const headerLower = headers.map(h => h.toLowerCase());
+  
+  if (collectionType === "customers") {
+    // Map for: First Name (1), Last Name (1), Address 4, Cell, Work, Policy Number, Account Number, Email Address
+    const firstNameIdx = headerLower.findIndex(h => h.includes("first name") || h.includes("firstname"));
+    const lastNameIdx = headerLower.findIndex(h => h.includes("last name") || h.includes("lastname"));
+    const addressIdx = headerLower.findIndex(h => h.includes("address"));
+    const cellIdx = headerLower.findIndex(h => h === "cell" || h.includes("cell"));
+    const workIdx = headerLower.findIndex(h => h === "work" || h.includes("work"));
+    const emailIdx = headerLower.findIndex(h => h.includes("email"));
+    const idNumberIdx = headerLower.findIndex(h => h.includes("id number") || h.includes("idnumber"));
+    
+    if (firstNameIdx >= 0) autoMappings["firstName"] = headers[firstNameIdx];
+    if (lastNameIdx >= 0) autoMappings["lastName"] = headers[lastNameIdx];
+    if (addressIdx >= 0) autoMappings["address"] = headers[addressIdx];
+    if (cellIdx >= 0) autoMappings["contactNumber"] = headers[cellIdx];
+    if (workIdx >= 0) autoMappings["contactNumber2"] = headers[workIdx];
+    if (emailIdx >= 0) autoMappings["email"] = headers[emailIdx];
+    if (idNumberIdx >= 0) autoMappings["idNumber"] = headers[idNumberIdx];
+  }
+  
+  else if (collectionType === "policies") {
+    // Map for: Registration, Policy Number, Account Number, Vehicle Type, Chassis Number, 
+    // Commencement Date, Expiry Date, Coverage, General Info, Engine Number, Total Received, Amount Due, Outstanding
+    const policyNumberIdx = headerLower.findIndex(h => h.includes("policy number"));
+    const accountNumberIdx = headerLower.findIndex(h => h.includes("account number"));
+    const registrationIdx = headerLower.findIndex(h => h === "registration" || h.includes("registration"));
+    const vehicleTypeIdx = headerLower.findIndex(h => h.includes("vehicle type"));
+    const chassisIdx = headerLower.findIndex(h => h.includes("chassis"));
+    const engineIdx = headerLower.findIndex(h => h.includes("engine"));
+    const startDateIdx = headerLower.findIndex(h => h.includes("commencement"));
+    const endDateIdx = headerLower.findIndex(h => h.includes("expiry"));
+    const coverageIdx = headerLower.findIndex(h => h === "coverage" || h.includes("coverage"));
+    const totalReceivedIdx = headerLower.findIndex(h => h.includes("total received"));
+    const amountDueIdx = headerLower.findIndex(h => h.includes("amount due"));
+    const outstandingIdx = headerLower.findIndex(h => h === "outstanding");
+    const generalInfoIdx = headerLower.findIndex(h => h.includes("general info"));
+    
+    if (policyNumberIdx >= 0) autoMappings["policyNumber"] = headers[policyNumberIdx];
+    if (accountNumberIdx >= 0) autoMappings["policyIdNumber"] = headers[accountNumberIdx];
+    if (registrationIdx >= 0) autoMappings["registrationNumber"] = headers[registrationIdx];
+    if (vehicleTypeIdx >= 0) autoMappings["vehicleType"] = headers[vehicleTypeIdx];
+    if (chassisIdx >= 0) autoMappings["chassisNumber"] = headers[chassisIdx];
+    if (engineIdx >= 0) autoMappings["engineNumber"] = headers[engineIdx];
+    if (startDateIdx >= 0) autoMappings["coverageStartDate"] = headers[startDateIdx];
+    if (endDateIdx >= 0) autoMappings["coverageEndDate"] = headers[endDateIdx];
+    if (coverageIdx >= 0) autoMappings["coverageType"] = headers[coverageIdx];
+    if (totalReceivedIdx >= 0) autoMappings["amountPaid"] = headers[totalReceivedIdx];
+    if (amountDueIdx >= 0) autoMappings["totalPremiumDue"] = headers[amountDueIdx];
+    if (outstandingIdx >= 0) autoMappings["outstandingBalance"] = headers[outstandingIdx];
+    if (generalInfoIdx >= 0) autoMappings["notes"] = headers[generalInfoIdx];
+  }
+  
+  else if (collectionType === "payments") {
+    // Check if this is multi-payment format (has Rec Date 1, Rec Date 2, etc.)
+    const hasMultiPaymentFormat = headerLower.some(h => 
+      h.includes("rec date 1") || h.includes("rec number 1") || h.includes("rec amt 1")
+    );
+    
+    if (hasMultiPaymentFormat) {
+      // Multi-payment format: Policy Number, Rec Date 1-10, Rec Number 1-10, Rec Amt 1-10, Payment Type
+      const policyNumberIdx = headerLower.findIndex(h => h.includes("policy number"));
+      const paymentTypeIdx = headerLower.findIndex(h => h.includes("payment type"));
+      
+      if (policyNumberIdx >= 0) autoMappings["policyId"] = headers[policyNumberIdx];
+      if (paymentTypeIdx >= 0) autoMappings["paymentMethod"] = headers[paymentTypeIdx];
+      
+      // Map ALL 10 payment fields (paymentDate1-10, receiptNumber1-10, amount1-10)
+      for (let i = 1; i <= 10; i++) {
+        const recDateIdx = headerLower.findIndex(h => 
+          h === `rec date ${i}` || h.includes(`rec date ${i}`)
+        );
+        const recNumberIdx = headerLower.findIndex(h => 
+          h === `rec number ${i}` || h.includes(`rec number ${i}`)
+        );
+        const recAmtIdx = headerLower.findIndex(h => 
+          h === `rec amt ${i}` || h.includes(`rec amt ${i}`)
+        );
+        
+        if (recDateIdx >= 0) autoMappings[`paymentDate${i}`] = headers[recDateIdx];
+        if (recNumberIdx >= 0) autoMappings[`receiptNumber${i}`] = headers[recNumberIdx];
+        if (recAmtIdx >= 0) autoMappings[`amount${i}`] = headers[recAmtIdx];
+      }
+    } else {
+      // Single payment per row format - use existing logic
+      const policyNumberIdx = headerLower.findIndex(h => h.includes("policy number"));
+      const paymentDateIdx = headerLower.findIndex(h => h.includes("payment date") || h.includes("date"));
+      const receiptNumberIdx = headerLower.findIndex(h => h.includes("receipt number") || h.includes("receipt"));
+      const amountIdx = headerLower.findIndex(h => h.includes("amount") || h.includes("amt"));
+      const paymentMethodIdx = headerLower.findIndex(h => h.includes("payment method") || h.includes("method"));
+      
+      if (policyNumberIdx >= 0) autoMappings["policyId"] = headers[policyNumberIdx];
+      if (paymentDateIdx >= 0) autoMappings["paymentDate"] = headers[paymentDateIdx];
+      if (receiptNumberIdx >= 0) autoMappings["receiptNumber"] = headers[receiptNumberIdx];
+      if (amountIdx >= 0) autoMappings["amount"] = headers[amountIdx];
+      if (paymentMethodIdx >= 0) autoMappings["paymentMethod"] = headers[paymentMethodIdx];
+    }
+  }
+  
+  return autoMappings;
+}
+
 const FIELD_DEFINITIONS: Record<CollectionType, FieldDefinition[]> = {
   customers: [
     { name: "firstName", label: "First Name", required: true, type: "string" },
@@ -49,12 +193,12 @@ const FIELD_DEFINITIONS: Record<CollectionType, FieldDefinition[]> = {
     { name: "notes", label: "Notes", required: false, type: "string" },
   ],
   payments: [
-    { name: "policyId", label: "Policy ID (or policyNumber to lookup) - Optional", required: false, type: "string" },
-    { name: "amount", label: "Amount", required: false, type: "number" },
+    { name: "policyId", label: "Policy Number (or Policy ID to lookup)", required: true, type: "string" },
+    { name: "paymentMethod", label: "Payment Type (Cash/Cheque/etc.)", required: false, type: "string" },
+    { name: "amount", label: "Amount (for single payment format only)", required: false, type: "number" },
+    { name: "paymentDate", label: "Payment Date (for single payment format only)", required: false, type: "date" },
+    { name: "receiptNumber", label: "Receipt Number (for single payment format only)", required: false, type: "string" },
     { name: "refundAmount", label: "Refund Amount", required: false, type: "number" },
-    { name: "paymentDate", label: "Payment Date", required: false, type: "date" },
-    { name: "paymentMethod", label: "Payment Method", required: false, type: "string" },
-    { name: "receiptNumber", label: "Receipt Number", required: false, type: "string" },
     { name: "arrearsOverrideUsed", label: "Arrears Override Used", required: false, type: "boolean" },
     { name: "notes", label: "Notes", required: false, type: "string" },
   ],
@@ -122,6 +266,8 @@ export function DataMigrationTool() {
   const [csvContent, setCsvContent] = useState<string | null>(null);
   const [csvData, setCsvData] = useState<{ headers: string[]; rows: string[][] } | null>(null);
   const [collectionType, setCollectionType] = useState<CollectionType>("customers");
+  const [detectedType, setDetectedType] = useState<"customers" | "policies" | "payments" | "unknown">("unknown");
+  const [isMultiPaymentFormat, setIsMultiPaymentFormat] = useState(false);
   const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +281,35 @@ export function DataMigrationTool() {
     errors: number;
   } | null>(null);
 
-  const fieldDefinitions = FIELD_DEFINITIONS[collectionType];
+  // Dynamically generate field definitions for payments based on format
+  const getFieldDefinitions = (): FieldDefinition[] => {
+    if (collectionType === "payments" && isMultiPaymentFormat) {
+      // Multi-payment format: show all 10 payment fields
+      const fields: FieldDefinition[] = [
+        { name: "policyId", label: "Policy Number (or Policy ID to lookup)", required: true, type: "string" },
+        { name: "paymentMethod", label: "Payment Type (Cash/Cheque/etc.)", required: false, type: "string" },
+      ];
+      
+      // Add all 10 payment fields
+      for (let i = 1; i <= 10; i++) {
+        fields.push(
+          { name: `paymentDate${i}`, label: `Payment Date ${i} (Rec Date ${i})`, required: false, type: "date" },
+          { name: `receiptNumber${i}`, label: `Receipt Number ${i} (Rec Number ${i})`, required: false, type: "string" },
+          { name: `amount${i}`, label: `Amount ${i} (Rec Amt ${i})`, required: false, type: "number" }
+        );
+      }
+      
+      fields.push(
+        { name: "notes", label: "Notes", required: false, type: "string" }
+      );
+      
+      return fields;
+    }
+    
+    return FIELD_DEFINITIONS[collectionType];
+  };
+  
+  const fieldDefinitions = getFieldDefinitions();
 
   const handleFileSelect = (file: File | null) => {
     if (!file) {
@@ -143,6 +317,8 @@ export function DataMigrationTool() {
       setCsvContent(null);
       setCsvData(null);
       setFieldMappings({});
+      setDetectedType("unknown");
+      setIsMultiPaymentFormat(false);
       return;
     }
 
@@ -154,18 +330,26 @@ export function DataMigrationTool() {
       try {
         const parsed = parseCsv(content);
         setCsvData(parsed);
-        // Simple auto-mapping: only exact matches or contains
-        const autoMappings: Record<string, string> = {};
-        fieldDefinitions.forEach((field) => {
-          const lowerField = field.name.toLowerCase();
-          const matchedHeader = parsed.headers.find((header) => {
-            const lowerHeader = header.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return lowerHeader === lowerField || lowerHeader.includes(lowerField);
-          });
-          if (matchedHeader) {
-            autoMappings[field.name] = matchedHeader;
-          }
-        });
+        
+        // Auto-detect CSV type
+        const detected = detectCsvType(parsed.headers);
+        setDetectedType(detected);
+        
+        // Check for multi-payment format
+        const headerLower = parsed.headers.map(h => h.toLowerCase());
+        const hasMultiPayment = headerLower.some(h => 
+          h.includes("rec date 1") || h.includes("rec number 1") || h.includes("rec amt 1")
+        );
+        setIsMultiPaymentFormat(hasMultiPayment);
+        
+        // Auto-select collection type if detected
+        if (detected !== "unknown") {
+          setCollectionType(detected);
+        }
+        
+        // Generate enhanced auto-mappings based on detected type
+        const targetType = detected !== "unknown" ? detected : collectionType;
+        const autoMappings = generateAutoMappings(parsed.headers, targetType);
         setFieldMappings(autoMappings);
       } catch (err) {
         setError("Failed to parse CSV file");
@@ -340,9 +524,22 @@ export function DataMigrationTool() {
         <p className="section-heading">Data Migration</p>
         <h3 className="text-lg font-semibold text-[var(--ic-navy)]">Import CSV Data</h3>
         <p className="text-sm text-[var(--ic-gray-700)]">
-          Upload a CSV file and map its columns to database fields for importing data. Blank fields and rows are allowed - they will be skipped or filled with default values automatically.
+          Upload a CSV file and map its columns to database fields. The system will auto-detect the format and suggest mappings, but you can adjust them manually. Blank fields and rows are allowed - they will be skipped or filled with default values automatically.
         </p>
       </div>
+
+      {/* Show detected type */}
+      {detectedType !== "unknown" && (
+        <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm">
+          <span className="font-semibold text-blue-900">✓ Detected format: </span>
+          <span className="text-blue-700 capitalize">{detectedType}</span>
+          {isMultiPaymentFormat && (
+            <span className="block mt-1 text-xs text-blue-600">
+              Note: This file contains multiple payments per row (Rec Date 1-10, Rec Number 1-10, Rec Amt 1-10). Each row will be expanded into up to 10 payment records automatically.
+            </span>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -453,87 +650,24 @@ export function DataMigrationTool() {
             onChange={(e) => {
               const newCollectionType = e.target.value as CollectionType;
               setCollectionType(newCollectionType);
-              // Re-run auto-mapping if CSV data is already loaded
+              // Re-generate mappings when collection type changes
               if (csvData && csvData.headers.length > 0) {
-                const newFieldDefinitions = FIELD_DEFINITIONS[newCollectionType];
-                const autoMappings: Record<string, string> = {};
-                csvData.headers.forEach((header) => {
-                  const lowerHeader = header.toLowerCase().replace(/[^a-z0-9]/g, "");
-                  newFieldDefinitions.forEach((field) => {
-                    const lowerField = field.name.toLowerCase();
-                    
-                    // Enhanced matching logic for better CSV column recognition
-                    let matched = false;
-                    
-                    // Exact match
-                    if (lowerHeader === lowerField) {
-                      matched = true;
-                    }
-                    // Contains match
-                    else if (lowerHeader.includes(lowerField) || lowerField.includes(lowerHeader)) {
-                      matched = true;
-                    }
-                    // Special mappings for common CSV column variations
-                    else if (field.name === "firstName" && (lowerHeader.includes("first") || lowerHeader.includes("fname"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "lastName" && (lowerHeader.includes("last") || lowerHeader.includes("lname"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "contactNumber" && (lowerHeader.includes("cell") || lowerHeader.includes("phone") || lowerHeader.includes("mobile"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "contactNumber2" && (lowerHeader.includes("work") || lowerHeader.includes("secondary"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "policyIdNumber" && (lowerHeader.includes("account") || lowerHeader.includes("policyid") || lowerHeader.includes("idnumber"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "coverageStartDate" && (lowerHeader.includes("commencement") || lowerHeader.includes("start") || lowerHeader.includes("begin"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "coverageEndDate" && (lowerHeader.includes("expiry") || lowerHeader.includes("end") || lowerHeader.includes("expire"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "totalPremiumDue" && (lowerHeader.includes("amountdue") || lowerHeader.includes("premium") || lowerHeader.includes("due"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "amountPaid" && (lowerHeader.includes("totalreceived") || lowerHeader.includes("paid") || lowerHeader.includes("received"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "engineNumber" && (lowerHeader.includes("engine") || lowerHeader.includes("engineno"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "chassisNumber" && (lowerHeader.includes("chassis") || lowerHeader.includes("chassisno"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "vehicleType" && (lowerHeader.includes("vehicle") || lowerHeader.includes("vehtype"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "registrationNumber" && (lowerHeader.includes("registration") || lowerHeader.includes("reg") || lowerHeader.includes("plate"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "coverageType" && (lowerHeader.includes("coverage") || lowerHeader.includes("type"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "paymentDate" && (lowerHeader.includes("recdate") || lowerHeader.includes("paymentdate") || lowerHeader.includes("date"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "receiptNumber" && (lowerHeader.includes("recnumber") || lowerHeader.includes("receipt"))) {
-                      matched = true;
-                    }
-                    else if (field.name === "amount" && (lowerHeader.includes("recamt") || lowerHeader.includes("amount") || lowerHeader.includes("amt"))) {
-                      matched = true;
-                    }
-                    
-                    if (matched && !autoMappings[field.name]) {
-                      autoMappings[field.name] = header;
-                    }
-                  });
-                });
+                // Check for multi-payment format if switching to payments
+                if (newCollectionType === "payments") {
+                  const headerLower = csvData.headers.map(h => h.toLowerCase());
+                  const hasMultiPayment = headerLower.some(h => 
+                    h.includes("rec date 1") || h.includes("rec number 1") || h.includes("rec amt 1")
+                  );
+                  setIsMultiPaymentFormat(hasMultiPayment);
+                } else {
+                  setIsMultiPaymentFormat(false);
+                }
+                
+                const autoMappings = generateAutoMappings(csvData.headers, newCollectionType);
                 setFieldMappings(autoMappings);
               } else {
                 setFieldMappings({});
+                setIsMultiPaymentFormat(false);
               }
             }}
             disabled={busy}
@@ -543,6 +677,11 @@ export function DataMigrationTool() {
             <option value="payments">Payments</option>
             <option value="receipts">Receipts</option>
           </select>
+          {detectedType !== "unknown" && detectedType !== collectionType && (
+            <p className="mt-1 text-xs text-amber-600">
+              ⚠️ Detected format is "{detectedType}" but you selected "{collectionType}". Make sure this is correct.
+            </p>
+          )}
         </div>
 
         <div>
@@ -566,7 +705,17 @@ export function DataMigrationTool() {
             <div>
               <label className="block text-sm font-semibold text-[var(--ic-gray-700)] mb-2">
                 Field Mapping
+                <span className="text-xs font-normal text-[var(--ic-gray-500)] ml-2">
+                  (Auto-mapped fields are highlighted in green. You can change any mapping.)
+                </span>
               </label>
+              {collectionType === "payments" && isMultiPaymentFormat && (
+                <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                  <strong>Multi-Payment Format Detected:</strong> This CSV contains multiple payments per row. 
+                  You can map all payment fields below (Payment Date 1-10, Receipt Number 1-10, Amount 1-10), or leave them unmapped to use auto-detection. 
+                  The system will automatically expand each row into up to 10 payment records.
+                </div>
+              )}
               <div className="rounded-md border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)] overflow-hidden">
                 <div className="max-h-96 overflow-y-auto p-3">
                   <div className="space-y-2">

@@ -9,8 +9,6 @@ import { StatementRecipientManager } from "@/components/StatementRecipientManage
 import { DeleteAllDataButton } from "@/components/DeleteAllDataButton";
 import { DataMigrationTool } from "@/components/DataMigrationTool";
 import { DeleteDuplicateCustomersButton } from "@/components/DeleteDuplicateCustomersButton";
-import { MultiPaymentImporter } from "@/components/MultiPaymentImporter";
-import { MultiReceiptImporter } from "@/components/MultiReceiptImporter";
 import { DuplicatePaymentCleaner } from "@/components/DuplicatePaymentCleaner";
 
 export default async function AdminPage() {
@@ -90,8 +88,6 @@ export default async function AdminPage() {
       <RolePermissionManager />
       <BackupManager />
       <DataMigrationTool />
-      <MultiPaymentImporter />
-      <MultiReceiptImporter />
       <DuplicatePaymentCleaner />
       <ResetCoverageTypesButton />
       <CoverageTypeManager />

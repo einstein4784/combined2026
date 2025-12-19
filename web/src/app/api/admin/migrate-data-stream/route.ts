@@ -248,17 +248,50 @@ function createProgressStream(
                 if (!record.lastName || record.lastName === null) record.lastName = "Customer";
                 if (!record.address || record.address === null) record.address = "Not provided";
                 if (!record.contactNumber || record.contactNumber === null) record.contactNumber = "000-0000";
+                
+                // Generate idNumber if not provided
                 if (!record.idNumber || record.idNumber === null) {
-                  record.idNumber = `TEMP-${Date.now()}-${rowIdx}`;
+                  // Try to generate from name + email
+                  const namePart = `${record.firstName}${record.lastName}`.replace(/\s+/g, "").substring(0, 15);
+                  const emailPart = record.email ? record.email.split("@")[0].substring(0, 10) : "";
+                  record.idNumber = `${namePart}${emailPart}${Date.now()}`.substring(0, 20) || `TEMP-${Date.now()}-${rowIdx}`;
                 }
-                if (!record.email || record.email === null) {
+                
+                if (!record.email || record.email === null || record.email === "") {
                   record.email = "na@none.com";
+                }
+                
+                // Check if customer already exists (by email or idNumber or name+email combination)
+                let existingCustomer = null;
+                if (record.email && record.email !== "na@none.com") {
+                  existingCustomer = await Customer.findOne({ email: record.email }).lean();
+                }
+                if (!existingCustomer && record.idNumber) {
+                  existingCustomer = await Customer.findOne({ idNumber: record.idNumber }).lean();
+                }
+                if (!existingCustomer && record.firstName && record.lastName && record.email && record.email !== "na@none.com") {
+                  existingCustomer = await Customer.findOne({
+                    firstName: record.firstName,
+                    lastName: record.lastName,
+                    email: record.email,
+                  }).lean();
+                }
+                
+                if (existingCustomer) {
+                  // Customer already exists - skip (or could update, but for now we skip)
+                  // Send progress update
+                  controller.enqueue(
+                    new TextEncoder().encode(
+                      `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                    ),
+                  );
+                  continue;
                 }
                 
                 // Handle duplicate idNumber - append suffix if duplicate exists
                 if (record.idNumber) {
-                  const existingCustomer = await Customer.findOne({ idNumber: record.idNumber }).lean();
-                  if (existingCustomer) {
+                  const duplicateCheck = await Customer.findOne({ idNumber: record.idNumber }).lean();
+                  if (duplicateCheck) {
                     // Duplicate found - append suffix to make it unique
                     record.idNumber = `${record.idNumber}-${Date.now()}-${rowIdx}`;
                   }
@@ -293,15 +326,55 @@ function createProgressStream(
                 );
               } else if (collectionType === "policies") {
                 // Handle policies import
+                let customerId: string | null = null;
+                
+                // First, try to find customer using the mapped customerId field
                 if (record.customerId && record.customerId !== null && record.customerId !== "") {
-                  const customerId = await findCustomerByIdentifier(record.customerId);
-                  if (!customerId) {
-                    const error = `Row ${rowIdx + 2}: Customer not found: ${record.customerId}`;
+                  customerId = await findCustomerByIdentifier(record.customerId);
+                }
+                
+                // If not found and we have a policy number, try to find customer by policy number
+                // (This handles the case where customers CSV was imported first with policy numbers)
+                if (!customerId && record.policyNumber) {
+                  // Find any policy with this number and get its customer
+                  const existingPolicy = await Policy.findOne({ policyNumber: record.policyNumber })
+                    .populate("customerIds")
+                    .lean();
+                  if (existingPolicy && (existingPolicy.customerIds as any)?.[0]) {
+                    customerId = (existingPolicy.customerIds as any)[0].toString();
+                  } else {
+                    // Try to find customer by searching for policies with this policy number in customers
+                    // (This is a fallback - in practice, customers should be imported first)
+                    const customerByPolicy = await Customer.findOne({
+                      $or: [
+                        { idNumber: record.policyNumber },
+                        { email: record.policyNumber }
+                      ]
+                    }).lean();
+                    if (customerByPolicy) {
+                      customerId = customerByPolicy._id.toString();
+                    }
+                  }
+                }
+                
+                // If still no customer found, create a placeholder customer
+                if (!customerId) {
+                  try {
+                    const placeholderCustomer = await Customer.create({
+                      firstName: "Unknown",
+                      lastName: "Customer",
+                      address: "Not provided",
+                      contactNumber: "000-0000",
+                      email: `placeholder-${record.policyNumber || Date.now()}@none.com`,
+                      idNumber: `PLACEHOLDER-${Date.now()}-${rowIdx}`,
+                    });
+                    customerId = placeholderCustomer._id.toString();
+                  } catch (err: any) {
+                    const error = `Row ${rowIdx + 2}: Failed to create placeholder customer: ${err?.message || "Unknown error"}`;
                     errors.push(error);
                     controller.enqueue(
                       new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
                     );
-                    // Send progress update even on error
                     controller.enqueue(
                       new TextEncoder().encode(
                         `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
@@ -309,16 +382,11 @@ function createProgressStream(
                     );
                     continue;
                   }
-                  record.customerId = customerId;
-                } else {
-                  // Send progress update even when skipping
-                  controller.enqueue(
-                    new TextEncoder().encode(
-                      `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
-                    ),
-                  );
-                  continue;
                 }
+                
+                // Set customerIds array (policies support multiple customers, but we'll use single for now)
+                record.customerIds = [customerId];
+                delete record.customerId; // Remove old single customerId field
                 // Allow duplicate policy numbers - no checking needed
                 if (!record.policyNumber || record.policyNumber === null) {
                   record.policyNumber = `POL-${Date.now()}-${rowIdx}`;
@@ -423,16 +491,30 @@ function createProgressStream(
               } else if (collectionType === "payments") {
                 const rowData = row.slice(0, Math.min(10, row.length)).join(" | ");
                 
-                // Policy ID is now optional - only lookup if provided
-                if (record.policyId && record.policyId !== null && record.policyId !== "") {
-                  const policyId = await findPolicyByIdentifier(record.policyId);
-                  if (!policyId) {
-                    const error = `Row ${rowIdx + 2}: Policy not found: "${record.policyId}". Record preview: ${rowData.substring(0, 100)}...`;
+                // Check if this is multi-payment format (has Rec Date 1, Rec Number 1, Rec Amt 1 columns)
+                const headerLower = parsed.headers.map(h => h.toLowerCase());
+                const hasMultiPaymentFormat = headerLower.some(h => 
+                  h.includes("rec date 1") || h.includes("rec number 1") || h.includes("rec amt 1")
+                );
+                
+                if (hasMultiPaymentFormat) {
+                  // MULTI-PAYMENT FORMAT: Expand 1 row into up to 10 payment records
+                  // Find policy number column using field mappings or auto-detect
+                  let policyNumberIdx = -1;
+                  const policyNumberMapping = fieldMappings["policyId"] || fieldMappings["policyNumber"];
+                  if (policyNumberMapping) {
+                    policyNumberIdx = columnIndexMap[policyNumberMapping];
+                  } else {
+                    // Fallback: find "Policy Number" column
+                    policyNumberIdx = parsed.headers.findIndex(h => h.toLowerCase().includes("policy number"));
+                  }
+                  
+                  if (policyNumberIdx === undefined || policyNumberIdx < 0 || policyNumberIdx >= row.length) {
+                    const error = `Row ${rowIdx + 2}: Policy Number column not found or not mapped.`;
                     errors.push(error);
                     controller.enqueue(
                       new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
                     );
-                    // Send progress update even on error
                     controller.enqueue(
                       new TextEncoder().encode(
                         `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
@@ -440,23 +522,26 @@ function createProgressStream(
                     );
                     continue;
                   }
-                  record.policyId = policyId;
-                } else {
-                  // Allow blank policy ID - set to null
-                  record.policyId = null;
-                }
-
-                // Only fetch and update policy if policyId exists
-                let policy = null;
-                if (record.policyId) {
-                  policy = await Policy.findById(record.policyId);
+                  
+                  const policyNumber = row[policyNumberIdx]?.trim();
+                  if (!policyNumber) {
+                    // Skip rows without policy number
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                      ),
+                    );
+                    continue;
+                  }
+                  
+                  // Find policy
+                  const policy = await Policy.findOne({ policyNumber }).lean();
                   if (!policy) {
-                    const error = `Row ${rowIdx + 2}: Policy with ID "${record.policyId}" not found in database.`;
+                    const error = `Row ${rowIdx + 2}: Policy "${policyNumber}" not found.`;
                     errors.push(error);
                     controller.enqueue(
                       new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
                     );
-                    // Send progress update even on error
                     controller.enqueue(
                       new TextEncoder().encode(
                         `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
@@ -464,108 +549,314 @@ function createProgressStream(
                     );
                     continue;
                   }
-                }
-
-                let amount = 0;
-                if (record.amount !== null && record.amount !== undefined && record.amount !== "") {
-                  const amountNum = typeof record.amount === "number" ? record.amount : Number(record.amount);
-                  if (!isNaN(amountNum) && amountNum >= 0) {
-                    amount = amountNum;
+                  
+                  // Get payment method (default to Cash)
+                  let paymentMethod = "Cash";
+                  const paymentTypeMapping = fieldMappings["paymentMethod"];
+                  if (paymentTypeMapping) {
+                    const paymentTypeIdx = columnIndexMap[paymentTypeMapping];
+                    if (paymentTypeIdx !== undefined && paymentTypeIdx >= 0 && paymentTypeIdx < row.length) {
+                      paymentMethod = row[paymentTypeIdx]?.trim() || "Cash";
+                    }
+                  } else {
+                    // Fallback: find "Payment Type" column
+                    const paymentTypeIdx = parsed.headers.findIndex(h => h.toLowerCase().includes("payment type"));
+                    if (paymentTypeIdx >= 0 && paymentTypeIdx < row.length) {
+                      paymentMethod = row[paymentTypeIdx]?.trim() || "Cash";
+                    }
                   }
-                }
-
-                let refundAmount = 0;
-                if (record.refundAmount !== null && record.refundAmount !== undefined && record.refundAmount !== "") {
-                  const refundNum = typeof record.refundAmount === "number" ? record.refundAmount : Number(record.refundAmount);
-                  if (!isNaN(refundNum) && refundNum >= 0) {
-                    refundAmount = refundNum;
+                  
+                  // Process up to 10 payments (Rec Date 1-10, Rec Number 1-10, Rec Amt 1-10)
+                  let paymentsCreatedFromRow = 0;
+                  for (let paymentNum = 1; paymentNum <= 10; paymentNum++) {
+                    // First, try to use field mappings if available
+                    let dateIdx: number | undefined = undefined;
+                    let numberIdx: number | undefined = undefined;
+                    let amountIdx: number | undefined = undefined;
+                    
+                    const dateMapping = fieldMappings[`paymentDate${paymentNum}`];
+                    const numberMapping = fieldMappings[`receiptNumber${paymentNum}`];
+                    const amountMapping = fieldMappings[`amount${paymentNum}`];
+                    
+                    if (dateMapping) dateIdx = columnIndexMap[dateMapping];
+                    if (numberMapping) numberIdx = columnIndexMap[numberMapping];
+                    if (amountMapping) amountIdx = columnIndexMap[amountMapping];
+                    
+                    // If mappings not found, try to find columns by exact header names
+                    if (dateIdx === undefined) {
+                      const dateColName = `Rec Date ${paymentNum}`;
+                      dateIdx = parsed.headers.findIndex(h => h === dateColName);
+                      if (dateIdx === -1) {
+                        dateIdx = parsed.headers.findIndex(h => h.toLowerCase() === dateColName.toLowerCase());
+                      }
+                    }
+                    
+                    if (numberIdx === undefined) {
+                      const numberColName = `Rec Number ${paymentNum}`;
+                      numberIdx = parsed.headers.findIndex(h => h === numberColName);
+                      if (numberIdx === -1) {
+                        numberIdx = parsed.headers.findIndex(h => h.toLowerCase() === numberColName.toLowerCase());
+                      }
+                    }
+                    
+                    if (amountIdx === undefined) {
+                      const amountColName = `Rec Amt ${paymentNum}`;
+                      amountIdx = parsed.headers.findIndex(h => h === amountColName);
+                      if (amountIdx === -1) {
+                        amountIdx = parsed.headers.findIndex(h => h.toLowerCase() === amountColName.toLowerCase());
+                      }
+                    }
+                    
+                    // Skip if columns don't exist
+                    if (dateIdx === -1 || numberIdx === -1 || amountIdx === -1) continue;
+                    if (dateIdx >= row.length || numberIdx >= row.length || amountIdx >= row.length) continue;
+                    
+                    const dateStr = row[dateIdx]?.trim();
+                    const receiptNumber = row[numberIdx]?.trim();
+                    const amountStr = row[amountIdx]?.trim();
+                    
+                    // Skip if no date (means no payment for this column)
+                    if (!dateStr || dateStr === "") continue;
+                    
+                    // Parse date (M/D/YYYY format)
+                    const mdyMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                    let paymentDate: Date | null = null;
+                    if (mdyMatch) {
+                      const [, month, day, year] = mdyMatch;
+                      paymentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                      if (isNaN(paymentDate.getTime())) paymentDate = null;
+                    } else {
+                      paymentDate = new Date(dateStr);
+                      if (isNaN(paymentDate.getTime())) paymentDate = null;
+                    }
+                    
+                    if (!paymentDate) {
+                      errors.push(`Row ${rowIdx + 2}, Payment ${paymentNum}: Invalid date '${dateStr}'`);
+                      continue;
+                    }
+                    
+                    // Parse amount
+                    const cleanedAmount = amountStr.replace(/[^\d.-]/g, "");
+                    const amount = parseFloat(cleanedAmount) || 0;
+                    
+                    if (amount <= 0) continue; // Skip zero or invalid amounts
+                    
+                    // Generate receipt number if missing
+                    let finalReceiptNumber = receiptNumber;
+                    if (!finalReceiptNumber || finalReceiptNumber === "") {
+                      finalReceiptNumber = `AUTO-${Date.now()}-${rowIdx}-${paymentNum}`;
+                    }
+                    
+                    // Check for duplicate payment
+                    const startOfDay = new Date(paymentDate);
+                    startOfDay.setHours(0, 0, 0, 0);
+                    const endOfDay = new Date(paymentDate);
+                    endOfDay.setHours(23, 59, 59, 999);
+                    
+                    const existingPayment = await Payment.findOne({
+                      policyId: policy._id,
+                      amount: amount,
+                      paymentDate: { $gte: startOfDay, $lte: endOfDay },
+                    }).lean();
+                    
+                    if (existingPayment) {
+                      // Skip duplicate
+                      continue;
+                    }
+                    
+                    // Create payment
+                    try {
+                      const payment = await Payment.create({
+                        policyId: policy._id,
+                        amount: amount,
+                        paymentDate: paymentDate,
+                        paymentMethod: paymentMethod,
+                        receiptNumber: finalReceiptNumber,
+                        receivedBy: adminUser.id,
+                        arrearsOverrideUsed: false,
+                      });
+                      
+                      // Update policy balance
+                      const totalPremiumDue = Number(policy.totalPremiumDue ?? 0);
+                      const amountPaidSoFar = Number((policy as any).amountPaid ?? 0);
+                      const newAmountPaid = Math.max(amountPaidSoFar + amount, 0);
+                      
+                      await Policy.findByIdAndUpdate(policy._id, {
+                        amountPaid: newAmountPaid,
+                        outstandingBalance: Math.max(totalPremiumDue - newAmountPaid, 0),
+                      });
+                      
+                      // Create receipt
+                      await Receipt.create({
+                        receiptNumber: finalReceiptNumber,
+                        paymentId: payment._id,
+                        policyId: policy._id,
+                        customerId: (policy.customerIds as any)?.[0] || policy.customerId,
+                        amount: amount,
+                        paymentDate: paymentDate,
+                        paymentMethod: paymentMethod,
+                        generatedBy: adminUser.id,
+                      });
+                      
+                      imported++;
+                      paymentsCreatedFromRow++;
+                    } catch (err: any) {
+                      errors.push(`Row ${rowIdx + 2}, Payment ${paymentNum}: ${err?.message || "Failed to create payment"}`);
+                    }
                   }
-                }
-
-                let receiptNumber = "";
-                if (!record.receiptNumber || record.receiptNumber === null || record.receiptNumber === "") {
-                  receiptNumber = `RCP-${Date.now()}-${rowIdx}-${Math.random().toString(36).substring(2, 8)}`;
+                  
+                  // Send progress update after processing all payments in this row
+                  controller.enqueue(
+                    new TextEncoder().encode(
+                      `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                    ),
+                  );
                 } else {
-                  receiptNumber = String(record.receiptNumber);
-                }
+                  // SINGLE PAYMENT PER ROW FORMAT: Process normally
+                  // Policy ID is now optional - only lookup if provided
+                  if (record.policyId && record.policyId !== null && record.policyId !== "") {
+                    const policyId = await findPolicyByIdentifier(record.policyId);
+                    if (!policyId) {
+                      const error = `Row ${rowIdx + 2}: Policy not found: "${record.policyId}". Record preview: ${rowData.substring(0, 100)}...`;
+                      errors.push(error);
+                      controller.enqueue(
+                        new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
+                      );
+                      // Send progress update even on error
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                        ),
+                      );
+                      continue;
+                    }
+                    record.policyId = policyId;
+                  } else {
+                    // Allow blank policy ID - set to null
+                    record.policyId = null;
+                  }
 
-                // Check for duplicate payments (same policy, amount, and date)
-                // This prevents re-uploading payments from a failed upload
-                if (record.policyId && (amount > 0 || refundAmount > 0)) {
-                  const paymentDateParsed = record.paymentDate || new Date();
-                  // Check if this exact payment already exists (same policy, amount, refund, and date within same day)
-                  const startOfDay = new Date(paymentDateParsed);
-                  startOfDay.setHours(0, 0, 0, 0);
-                  const endOfDay = new Date(paymentDateParsed);
-                  endOfDay.setHours(23, 59, 59, 999);
-                  
-                  const duplicatePayment = await Payment.findOne({
-                    policyId: record.policyId,
-                    amount: amount,
-                    refundAmount: refundAmount,
-                    paymentDate: { $gte: startOfDay, $lte: endOfDay },
-                  }).lean();
-                  
-                  if (duplicatePayment) {
-                    // Duplicate payment found - skip this row and report it
-                    const error = `Row ${rowIdx + 2}: Duplicate payment detected (Policy: "${record.policyId}", Amount: $${amount.toFixed(2)}, Date: ${paymentDateParsed.toLocaleDateString()}). Skipping to prevent duplicate.`;
+                  // Only fetch and update policy if policyId exists
+                  let policy = null;
+                  if (record.policyId) {
+                    policy = await Policy.findById(record.policyId);
+                    if (!policy) {
+                      const error = `Row ${rowIdx + 2}: Policy with ID "${record.policyId}" not found in database.`;
+                      errors.push(error);
+                      controller.enqueue(
+                        new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
+                      );
+                      // Send progress update even on error
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                        ),
+                      );
+                      continue;
+                    }
+                  }
+
+                  let amount = 0;
+                  if (record.amount !== null && record.amount !== undefined && record.amount !== "") {
+                    const amountNum = typeof record.amount === "number" ? record.amount : Number(record.amount);
+                    if (!isNaN(amountNum) && amountNum >= 0) {
+                      amount = amountNum;
+                    }
+                  }
+
+                  let refundAmount = 0;
+                  if (record.refundAmount !== null && record.refundAmount !== undefined && record.refundAmount !== "") {
+                    const refundNum = typeof record.refundAmount === "number" ? record.refundAmount : Number(record.refundAmount);
+                    if (!isNaN(refundNum) && refundNum >= 0) {
+                      refundAmount = refundNum;
+                    }
+                  }
+
+                  let receiptNumber = "";
+                  if (!record.receiptNumber || record.receiptNumber === null || record.receiptNumber === "") {
+                    receiptNumber = `RCP-${Date.now()}-${rowIdx}-${Math.random().toString(36).substring(2, 8)}`;
+                  } else {
+                    receiptNumber = String(record.receiptNumber);
+                  }
+
+                  // Check for duplicate payments (same policy, amount, and date)
+                  // This prevents re-uploading payments from a failed upload
+                  if (record.policyId && (amount > 0 || refundAmount > 0)) {
+                    const paymentDateParsed = record.paymentDate || new Date();
+                    // Check if this exact payment already exists (same policy, amount, refund, and date within same day)
+                    const startOfDay = new Date(paymentDateParsed);
+                    startOfDay.setHours(0, 0, 0, 0);
+                    const endOfDay = new Date(paymentDateParsed);
+                    endOfDay.setHours(23, 59, 59, 999);
+                    
+                    const duplicatePayment = await Payment.findOne({
+                      policyId: record.policyId,
+                      amount: amount,
+                      refundAmount: refundAmount,
+                      paymentDate: { $gte: startOfDay, $lte: endOfDay },
+                    }).lean();
+                    
+                    if (duplicatePayment) {
+                      // Duplicate payment found - skip this row and report it
+                      const error = `Row ${rowIdx + 2}: Duplicate payment detected (Policy: "${record.policyId}", Amount: $${amount.toFixed(2)}, Date: ${paymentDateParsed.toLocaleDateString()}). Skipping to prevent duplicate.`;
+                      errors.push(error);
+                      controller.enqueue(
+                        new TextEncoder().encode(`data: ${JSON.stringify({ type: "warning", error, row: rowIdx + 2 })}\n\n`),
+                      );
+                      // Send progress update
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                        ),
+                      );
+                      continue;
+                    }
+                  }
+
+                  // Note: Duplicate receipt numbers are now allowed
+                  record.receiptNumber = receiptNumber;
+
+                  // Only update policy balances if policy exists
+                  if (policy && (amount > 0 || refundAmount > 0)) {
+                    const totalPremiumDue = Number(policy.totalPremiumDue ?? 0);
+                    const amountPaidSoFar = Number((policy as any).amountPaid ?? 0);
+                    const appliedToOutstanding = amount + refundAmount;
+
+                    // Allow payments to exceed outstanding balance - no validation needed
+                    const newAmountPaid = Math.max(amountPaidSoFar + appliedToOutstanding, 0);
+                    policy.amountPaid = newAmountPaid;
+                    policy.outstandingBalance = Math.max(totalPremiumDue - newAmountPaid, 0);
+                    await policy.save();
+                  }
+
+                  if (!record.paymentDate || record.paymentDate === null) record.paymentDate = new Date();
+                  if (!record.paymentMethod || record.paymentMethod === null) record.paymentMethod = "Cash";
+                  if (record.arrearsOverrideUsed === undefined || record.arrearsOverrideUsed === null) {
+                    record.arrearsOverrideUsed = false;
+                  }
+
+                  record.receivedBy = adminUser.id;
+                  record.amount = amount;
+                  record.refundAmount = refundAmount;
+
+                  try {
+                    await Payment.create(record);
+                    imported++;
+                  } catch (err: any) {
+                    const error = `Row ${rowIdx + 2}: Failed to create payment - ${err?.message || "Unknown error"}. Policy: "${record.policyId}", Amount: $${amount.toFixed(2)}, Receipt: "${receiptNumber}".`;
                     errors.push(error);
                     controller.enqueue(
-                      new TextEncoder().encode(`data: ${JSON.stringify({ type: "warning", error, row: rowIdx + 2 })}\n\n`),
+                      new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
                     );
-                    // Send progress update
-                    controller.enqueue(
-                      new TextEncoder().encode(
-                        `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
-                      ),
-                    );
-                    continue;
                   }
-                }
-
-                // Note: Duplicate receipt numbers are now allowed
-                record.receiptNumber = receiptNumber;
-
-                // Only update policy balances if policy exists
-                if (policy && (amount > 0 || refundAmount > 0)) {
-                  const totalPremiumDue = Number(policy.totalPremiumDue ?? 0);
-                  const amountPaidSoFar = Number((policy as any).amountPaid ?? 0);
-                  const appliedToOutstanding = amount + refundAmount;
-
-                  // Allow payments to exceed outstanding balance - no validation needed
-                  const newAmountPaid = Math.max(amountPaidSoFar + appliedToOutstanding, 0);
-                  policy.amountPaid = newAmountPaid;
-                  policy.outstandingBalance = Math.max(totalPremiumDue - newAmountPaid, 0);
-                  await policy.save();
-                }
-
-                if (!record.paymentDate || record.paymentDate === null) record.paymentDate = new Date();
-                if (!record.paymentMethod || record.paymentMethod === null) record.paymentMethod = "Cash";
-                if (record.arrearsOverrideUsed === undefined || record.arrearsOverrideUsed === null) {
-                  record.arrearsOverrideUsed = false;
-                }
-
-                record.receivedBy = adminUser.id;
-                record.amount = amount;
-                record.refundAmount = refundAmount;
-
-                try {
-                  await Payment.create(record);
-                  imported++;
-                } catch (err: any) {
-                  const error = `Row ${rowIdx + 2}: Failed to create payment - ${err?.message || "Unknown error"}. Policy: "${record.policyId}", Amount: $${amount.toFixed(2)}, Receipt: "${receiptNumber}".`;
-                  errors.push(error);
+                  
+                  // Send progress update after each payment row
                   controller.enqueue(
-                    new TextEncoder().encode(`data: ${JSON.stringify({ type: "error", error, row: rowIdx + 2 })}\n\n`),
+                    new TextEncoder().encode(
+                      `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
+                    ),
                   );
                 }
-                
-                // Send progress update after each payment row
-                controller.enqueue(
-                  new TextEncoder().encode(
-                    `data: ${JSON.stringify({ type: "progress", current: currentRow, total: totalRows, imported, errors: errors.length })}\n\n`,
-                  ),
-                );
               } else if (collectionType === "receipts") {
                 // Resolve paymentId
                 const rowData = row.slice(0, Math.min(10, row.length)).join(" | ");
