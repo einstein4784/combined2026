@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { connectDb } from "@/lib/db";
 import { guardPermission, guardSession } from "@/lib/api-auth";
 import { json, handleRouteError } from "@/lib/utils";
@@ -9,24 +10,60 @@ import "@/models/Customer";
 import { generateReceiptNumber } from "@/lib/ids";
 import { logAuditAction } from "@/lib/audit";
 import { User } from "@/models/User";
+import { rateLimitMiddleware } from "@/lib/rate-limit";
+import { parsePaginationParams, createPaginatedResponse } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
+import { rateLimitMiddleware } from "@/lib/rate-limit";
+import { parsePaginationParams, createPaginatedResponse } from "@/lib/pagination";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const auth = await guardPermission("generate_cash_statements");
     if ("response" in auth) return auth.response;
 
-    await connectDb();
-    const payments = await Payment.find()
-      .populate({
-        path: "policyId",
-        select: "policyNumber customerId",
-        populate: { path: "customerId", select: "firstName lastName email" },
-      })
-      .sort({ paymentDate: -1 });
+    // Rate limiting
+    const rateLimitResponse = rateLimitMiddleware(req, auth.session.id);
+    if (rateLimitResponse) return rateLimitResponse;
 
-    return json(payments);
+    await connectDb();
+
+    // Parse pagination params (backward compatible)
+    const { searchParams } = new URL(req.url);
+    const usePagination = searchParams.get('paginated') === 'true';
+    const { page, limit, skip } = parsePaginationParams(searchParams);
+
+    if (usePagination) {
+      // New paginated format
+      const [payments, total] = await Promise.all([
+        Payment.find()
+          .populate({
+            path: "policyId",
+            select: "policyNumber customerId",
+            populate: { path: "customerId", select: "firstName lastName email" },
+          })
+          .sort({ paymentDate: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Payment.countDocuments(),
+      ]);
+
+      return json(createPaginatedResponse(payments, total, page, limit));
+    } else {
+      // Old format (backward compatible) - but add safety limit and .lean()
+      const payments = await Payment.find()
+        .populate({
+          path: "policyId",
+          select: "policyNumber customerId",
+          populate: { path: "customerId", select: "firstName lastName email" },
+        })
+        .sort({ paymentDate: -1 })
+        .limit(1000) // Safety limit
+        .lean();
+
+      return json(payments);
+    }
   } catch (error) {
     return handleRouteError(error);
   }

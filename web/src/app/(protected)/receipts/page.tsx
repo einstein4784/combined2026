@@ -14,6 +14,8 @@ export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+import { escapeRegex } from "@/lib/regex-utils";
+
 const normalize = (val?: string | string[]) => (Array.isArray(val) ? val[0] ?? "" : val ?? "");
 const ITEMS_PER_PAGE = 20;
 
@@ -33,17 +35,18 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
   await connectDb();
   const num = q ? Number(q) : NaN;
 
+  const escapedQuery = q.length > 0 ? escapeRegex(q) : "";
   const filter =
     q.length === 0
       ? {}
       : {
           $or: [
-            { receiptNumber: { $regex: q, $options: "i" } },
-            { policyIdNumber: { $regex: q, $options: "i" } },
-            { policyNumberSnapshot: { $regex: q, $options: "i" } },
-            { customerNameSnapshot: { $regex: q, $options: "i" } },
-            { customerEmailSnapshot: { $regex: q, $options: "i" } },
-            { registrationNumber: { $regex: q, $options: "i" } },
+            { receiptNumber: { $regex: escapedQuery, $options: "i" } },
+            { policyIdNumber: { $regex: escapedQuery, $options: "i" } },
+            { policyNumberSnapshot: { $regex: escapedQuery, $options: "i" } },
+            { customerNameSnapshot: { $regex: escapedQuery, $options: "i" } },
+            { customerEmailSnapshot: { $regex: escapedQuery, $options: "i" } },
+            { registrationNumber: { $regex: escapedQuery, $options: "i" } },
             ...(Number.isFinite(num) ? [{ amount: num }] : []),
           ],
         };

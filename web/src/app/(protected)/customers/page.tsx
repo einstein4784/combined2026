@@ -9,6 +9,8 @@ import Link from "next/link";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+import { escapeRegex } from "@/lib/regex-utils";
+
 const normalize = (val?: string | string[]) => (Array.isArray(val) ? val[0] ?? "" : val ?? "");
 const ITEMS_PER_PAGE = 20;
 
@@ -27,13 +29,13 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       ? {}
       : {
           $or: [
-            { firstName: { $regex: q, $options: "i" } },
-            { middleName: { $regex: q, $options: "i" } },
-            { lastName: { $regex: q, $options: "i" } },
-            { email: { $regex: q, $options: "i" } },
-            { contactNumber: { $regex: q, $options: "i" } },
-            { idNumber: { $regex: q, $options: "i" } },
-            { address: { $regex: q, $options: "i" } },
+            { firstName: { $regex: escapeRegex(q), $options: "i" } },
+            { middleName: { $regex: escapeRegex(q), $options: "i" } },
+            { lastName: { $regex: escapeRegex(q), $options: "i" } },
+            { email: { $regex: escapeRegex(q), $options: "i" } },
+            { contactNumber: { $regex: escapeRegex(q), $options: "i" } },
+            { idNumber: { $regex: escapeRegex(q), $options: "i" } },
+            { address: { $regex: escapeRegex(q), $options: "i" } },
           ],
         };
 

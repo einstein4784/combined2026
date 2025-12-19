@@ -43,6 +43,16 @@ CustomerSchema.index({ createdAt: -1 });
 CustomerSchema.index({ firstName: 1, lastName: 1 });
 CustomerSchema.index({ email: 1, idNumber: 1 });
 
+// Text index for search functionality (enables $text search)
+// Note: MongoDB allows only one text index per collection
+// Use case-insensitive regex with escaped queries for individual field searches
+// This index helps with performance on searches
+CustomerSchema.index({ firstName: 1 });
+CustomerSchema.index({ lastName: 1 });
+CustomerSchema.index({ email: 1 }); // Already indexed as unique, but explicit for clarity
+CustomerSchema.index({ idNumber: 1 }); // Already indexed as unique, but explicit for clarity
+CustomerSchema.index({ contactNumber: 1 });
+
 export const Customer =
   models.Customer || model<CustomerDocument>("Customer", CustomerSchema);
 

@@ -13,6 +13,8 @@ export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+import { escapeRegex } from "@/lib/regex-utils";
+
 const normalize = (val?: string | string[]) => (Array.isArray(val) ? val[0] ?? "" : val ?? "");
 const ITEMS_PER_PAGE = 10;
 
@@ -29,13 +31,14 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
 
   const customerIds: string[] = [];
   if (q) {
+    const escapedQuery = escapeRegex(q);
     const matches = await Customer.find({
       $or: [
-        { firstName: { $regex: q, $options: "i" } },
-        { middleName: { $regex: q, $options: "i" } },
-        { lastName: { $regex: q, $options: "i" } },
-        { email: { $regex: q, $options: "i" } },
-        { contactNumber: { $regex: q, $options: "i" } },
+        { firstName: { $regex: escapedQuery, $options: "i" } },
+        { middleName: { $regex: escapedQuery, $options: "i" } },
+        { lastName: { $regex: escapedQuery, $options: "i" } },
+        { email: { $regex: escapedQuery, $options: "i" } },
+        { contactNumber: { $regex: escapedQuery, $options: "i" } },
       ],
     })
     .select("_id")
@@ -49,8 +52,8 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
       ? {}
       : {
           $or: [
-            { policyNumber: { $regex: q, $options: "i" } },
-            { coverageType: { $regex: q, $options: "i" } },
+            { policyNumber: { $regex: escapeRegex(q), $options: "i" } },
+            { coverageType: { $regex: escapeRegex(q), $options: "i" } },
             ...(mongoose.Types.ObjectId.isValid(q) ? [{ _id: new mongoose.Types.ObjectId(q) }] : []),
             ...(customerIds.length ? [{ customerId: { $in: customerIds } }] : []),
           ],

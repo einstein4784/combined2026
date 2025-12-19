@@ -5,14 +5,19 @@ export function json<T>(data: T, init?: number | ResponseInit) {
   return NextResponse.json(data, responseInit);
 }
 
-export function handleRouteError(error: unknown) {
-  console.error("[Route Error]", error);
-  
-  // In production, include error details for debugging
+export function handleRouteError(error: unknown, context?: { route?: string; userId?: string; operation?: string }) {
   const errorMessage = error instanceof Error ? error.message : "Internal server error";
   const errorDetails = error instanceof Error ? error.stack : undefined;
   
-  // Log full error details
+  // Enhanced error logging with context
+  console.error("[Route Error]", {
+    message: errorMessage,
+    stack: errorDetails,
+    context,
+    timestamp: new Date().toISOString(),
+  });
+  
+  // Log full error details separately for easier parsing
   if (errorDetails) {
     console.error("[Error Stack]", errorDetails);
   }

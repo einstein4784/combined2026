@@ -1,20 +1,51 @@
+import { NextRequest } from "next/server";
 import { connectDb } from "@/lib/db";
 import { guardPermission } from "@/lib/api-auth";
 import { json, handleRouteError } from "@/lib/utils";
 import { customerSchema } from "@/lib/validators";
 import { Customer } from "@/models/Customer";
 import { logAuditAction } from "@/lib/audit";
+import { rateLimitMiddleware } from "@/lib/rate-limit";
+import { parsePaginationParams, createPaginatedResponse } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const auth = await guardPermission("view_dashboard");
     if ("response" in auth) return auth.response;
 
+    // Rate limiting
+    const rateLimitResponse = rateLimitMiddleware(req, auth.session.id);
+    if (rateLimitResponse) return rateLimitResponse;
+
     await connectDb();
-    const customers = await Customer.find().sort({ createdAt: -1 });
-    return json(customers);
+
+    // Parse pagination params (backward compatible - if no pagination params, return all with limit)
+    const { searchParams } = new URL(req.url);
+    const usePagination = searchParams.get('paginated') === 'true';
+    const { page, limit, skip } = parsePaginationParams(searchParams);
+
+    if (usePagination) {
+      // New paginated format
+      const [customers, total] = await Promise.all([
+        Customer.find()
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Customer.countDocuments(),
+      ]);
+
+      return json(createPaginatedResponse(customers, total, page, limit));
+    } else {
+      // Old format (backward compatible) - but add safety limit
+      const customers = await Customer.find()
+        .sort({ createdAt: -1 })
+        .limit(1000) // Safety limit to prevent loading too much data
+        .lean();
+      return json(customers);
+    }
   } catch (error) {
     return handleRouteError(error);
   }

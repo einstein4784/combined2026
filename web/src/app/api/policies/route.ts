@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { connectDb } from "@/lib/db";
 import { guardPermission } from "@/lib/api-auth";
 import { json, handleRouteError } from "@/lib/utils";
@@ -6,6 +7,8 @@ import { Policy } from "@/models/Policy";
 import { generatePolicyNumber } from "@/lib/ids";
 import { logAuditAction } from "@/lib/audit";
 import mongoose from "mongoose";
+import { rateLimitMiddleware } from "@/lib/rate-limit";
+import { parsePaginationParams, createPaginatedResponse } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -17,19 +20,47 @@ const parseDateOnly = (value?: string) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const auth = await guardPermission("view_dashboard");
     if ("response" in auth) return auth.response;
 
-    await connectDb();
-    const policies = await Policy.find()
-      .populate("customerId", "firstName middleName lastName email contactNumber")
-      .populate("customerIds", "firstName middleName lastName email contactNumber")
-      .sort({ createdAt: -1 })
-      .lean();
+    // Rate limiting
+    const rateLimitResponse = rateLimitMiddleware(req, auth.session.id);
+    if (rateLimitResponse) return rateLimitResponse;
 
-    return json(policies);
+    await connectDb();
+
+    // Parse pagination params (backward compatible)
+    const { searchParams } = new URL(req.url);
+    const usePagination = searchParams.get('paginated') === 'true';
+    const { page, limit, skip } = parsePaginationParams(searchParams);
+
+    if (usePagination) {
+      // New paginated format
+      const [policies, total] = await Promise.all([
+        Policy.find()
+          .populate("customerId", "firstName middleName lastName email contactNumber")
+          .populate("customerIds", "firstName middleName lastName email contactNumber")
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Policy.countDocuments(),
+      ]);
+
+      return json(createPaginatedResponse(policies, total, page, limit));
+    } else {
+      // Old format (backward compatible) - but add safety limit
+      const policies = await Policy.find()
+        .populate("customerId", "firstName middleName lastName email contactNumber")
+        .populate("customerIds", "firstName middleName lastName email contactNumber")
+        .sort({ createdAt: -1 })
+        .limit(1000) // Safety limit
+        .lean();
+
+      return json(policies);
+    }
   } catch (error) {
     return handleRouteError(error);
   }

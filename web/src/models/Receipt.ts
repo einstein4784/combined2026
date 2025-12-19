@@ -55,5 +55,13 @@ ReceiptSchema.index({ generatedAt: -1, status: 1 });
 ReceiptSchema.index({ paymentDate: -1, status: 1 });
 ReceiptSchema.index({ customerId: 1, generatedAt: -1 });
 
+// Indexes for search functionality
+ReceiptSchema.index({ receiptNumber: 1 }); // Already indexed in field definition, but explicit for clarity
+ReceiptSchema.index({ policyNumberSnapshot: 1 }); // For policy number searches
+ReceiptSchema.index({ policyIdNumberSnapshot: 1 }); // For policy ID searches
+ReceiptSchema.index({ customerNameSnapshot: 1 }); // For customer name searches
+ReceiptSchema.index({ customerEmailSnapshot: 1 }); // For customer email searches
+ReceiptSchema.index({ registrationNumber: 1 }); // For vehicle registration searches
+
 export const Receipt = models.Receipt || model<ReceiptDocument>("Receipt", ReceiptSchema);
 
