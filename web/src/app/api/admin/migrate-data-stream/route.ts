@@ -686,14 +686,15 @@ function createProgressStream(
                         outstandingBalance: Math.max(totalPremiumDue - newAmountPaid, 0),
                       });
                       
-                      // Create receipt
+                      // Create receipt - use system time when payment was received (imported now)
+                      const receiptDate = new Date();
                       await Receipt.create({
                         receiptNumber: finalReceiptNumber,
                         paymentId: payment._id,
                         policyId: policy._id,
                         customerId: (policy.customerIds as any)?.[0] || policy.customerId,
                         amount: amount,
-                        paymentDate: paymentDate,
+                        paymentDate: receiptDate, // Use system time when payment was received
                         paymentMethod: paymentMethod,
                         generatedBy: adminUser.id,
                       });

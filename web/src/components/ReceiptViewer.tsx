@@ -38,10 +38,23 @@ export function ReceiptViewer({ receipt, backHref }: Props) {
   const [epsonCopies, setEpsonCopies] = useState<1 | 2 | 3>(1);
   const [dotCopies, setDotCopies] = useState<1 | 2 | 3>(1);
 
-  const formattedDate = useMemo(
-    () => new Date(receipt.paymentDate).toLocaleString(),
-    [receipt.paymentDate],
-  );
+  const formattedDate = useMemo(() => {
+    const date = new Date(receipt.paymentDate);
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    const timeOptions: Intl.DateTimeFormatOptions = {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    };
+    const dateStr = date.toLocaleDateString("en-US", dateOptions);
+    const timeStr = date.toLocaleTimeString("en-US", timeOptions);
+    return `${dateStr} at ${timeStr}`;
+  }, [receipt.paymentDate]);
 
   const handlePrint = () => {
     window.print();

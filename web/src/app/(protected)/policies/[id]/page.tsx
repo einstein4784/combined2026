@@ -36,7 +36,7 @@ export default async function PolicyDetailPage(context: PageParams) {
           .lean()
       : [],
     Payment.find({ policyId: id }).sort({ paymentDate: -1 }).lean(),
-    Receipt.find({ policyId: id }).sort({ generatedAt: -1 }).lean(),
+    Receipt.find({ policyId: id }).sort({ paymentDate: -1 }).lean(),
   ]);
 
   const safePolicy = {
@@ -99,6 +99,9 @@ export default async function PolicyDetailPage(context: PageParams) {
               policyIdNumber: safePolicy.policyIdNumber,
               coverageType: safePolicy.coverageType,
               registrationNumber: safePolicy.registrationNumber,
+              engineNumber: safePolicy.engineNumber,
+              chassisNumber: safePolicy.chassisNumber,
+              vehicleType: safePolicy.vehicleType,
               coverageStartDate: safePolicy.coverageStartDate?.toISOString?.(),
               coverageEndDate: safePolicy.coverageEndDate?.toISOString?.(),
               totalPremiumDue: safePolicy.totalPremiumDue,
@@ -305,7 +308,7 @@ export default async function PolicyDetailPage(context: PageParams) {
               {receipts.map((receipt) => (
                 <tr key={receipt._id.toString()}>
                   <td className="font-mono text-sm">{(receipt as any).receiptNumber || "—"}</td>
-                  <td>{new Date((receipt as any).generatedAt || receipt.createdAt).toLocaleDateString()}</td>
+                  <td>{new Date((receipt as any).paymentDate || receipt.paymentDate).toLocaleDateString()}</td>
                   <td>${Number((receipt as any).totalAmount || 0).toFixed(2)}</td>
                   <td>
                     <span className={`badge ${(receipt as any).status === "Voided" ? "danger" : "success"}`}>

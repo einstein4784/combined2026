@@ -133,13 +133,16 @@ export async function POST(request: Request) {
       receiptLocation = "Vieux Fort";
     }
 
+    // Use current system time for receipt date (when payment was received)
+    const receiptDate = new Date();
+    
     const receipt = await Receipt.create({
       receiptNumber,
       paymentId: payment._id,
       policyId: policy._id,
       customerId: policy.customerId,
       amount: amount, // cash received
-      paymentDate: payment.paymentDate,
+      paymentDate: receiptDate, // Use system time when payment was received
       generatedBy: auth.session.id,
       generatedByName: receivedByName,
       paymentMethod: parsed.data.paymentMethod || "Cash",

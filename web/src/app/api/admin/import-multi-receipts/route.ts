@@ -321,7 +321,8 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Create the receipt
+        // Create the receipt - use system time when payment was received
+        const receiptDate = new Date();
         try {
           await Receipt.create({
             receiptNumber: receiptNumber,
@@ -329,12 +330,12 @@ export async function POST(req: NextRequest) {
             policyId: policy._id,
             customerId: customerIdValue,
             amount: amount,
-            paymentDate: paymentDate,
+            paymentDate: receiptDate, // Use system time when payment was received
             paymentMethod: "Cash",
             policyNumberSnapshot: policyNumber,
             policyIdNumberSnapshot: policy.policyIdNumber || "",
             customerNameSnapshot: customerName,
-            generatedAt: paymentDate,
+            generatedAt: receiptDate,
             status: "active",
           });
 

@@ -30,7 +30,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
   const qRaw = normalize(params.q);
   const q = qRaw.trim();
   const page = Math.max(1, parseInt(normalize(params.page)) || 1);
-  const sortBy = normalize(params.sortBy) || "generatedAt";
+  const sortBy = normalize(params.sortBy) || "paymentDate";
   const sortOrder = normalize(params.sortOrder) === "asc" ? 1 : -1;
 
   await connectDb();

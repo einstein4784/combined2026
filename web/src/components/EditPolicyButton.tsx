@@ -38,26 +38,43 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
     "Fully Comprehensive",
   ]);
 
-  const idParts = useMemo(() => splitPrefix(policy.policyIdNumber), [policy.policyIdNumber]);
-  const numberParts = useMemo(() => splitPrefix(policy.policyNumber), [policy.policyNumber]);
+  // Initialize form with all policy data
+  const initializeForm = useMemo(() => {
+    const idParts = splitPrefix(policy.policyIdNumber);
+    const numberParts = splitPrefix(policy.policyNumber);
+    return {
+      policyPrefix: idParts.prefix,
+      policyNumberSuffix: numberParts.suffix,
+      policyIdSuffix: idParts.suffix,
+      coverageType: policy.coverageType || "",
+      registrationNumber: policy.registrationNumber || "",
+      engineNumber: policy.engineNumber || "",
+      chassisNumber: policy.chassisNumber || "",
+      vehicleType: policy.vehicleType || "",
+      coverageStartDate: policy.coverageStartDate
+        ? (typeof policy.coverageStartDate === "string" 
+          ? policy.coverageStartDate.slice(0, 10) 
+          : new Date(policy.coverageStartDate).toISOString().slice(0, 10))
+        : "",
+      coverageEndDate: policy.coverageEndDate
+        ? (typeof policy.coverageEndDate === "string"
+          ? policy.coverageEndDate.slice(0, 10)
+          : new Date(policy.coverageEndDate).toISOString().slice(0, 10))
+        : "",
+      totalPremiumDue: policy.totalPremiumDue?.toString() || "0",
+      status: policy.status || "Active",
+      notes: policy.notes || "",
+    };
+  }, [policy.policyIdNumber, policy.policyNumber, policy.coverageType, policy.registrationNumber, policy.engineNumber, policy.chassisNumber, policy.vehicleType, policy.coverageStartDate, policy.coverageEndDate, policy.totalPremiumDue, policy.status, policy.notes]);
 
-  const [form, setForm] = useState({
-    policyPrefix: idParts.prefix,
-    policyNumberSuffix: numberParts.suffix,
-    policyIdSuffix: idParts.suffix,
-    coverageType: policy.coverageType,
-    registrationNumber: policy.registrationNumber || "",
-    engineNumber: policy.engineNumber || "",
-    chassisNumber: policy.chassisNumber || "",
-    vehicleType: policy.vehicleType || "",
-    coverageStartDate: policy.coverageStartDate
-      ? policy.coverageStartDate.slice(0, 10)
-      : "",
-    coverageEndDate: policy.coverageEndDate ? policy.coverageEndDate.slice(0, 10) : "",
-    totalPremiumDue: policy.totalPremiumDue.toString(),
-    status: policy.status || "Active",
-    notes: policy.notes || "",
-  });
+  const [form, setForm] = useState(initializeForm);
+
+  // Reset form when modal opens to ensure latest policy data is shown
+  useEffect(() => {
+    if (open) {
+      setForm(initializeForm);
+    }
+  }, [open, initializeForm]);
 
   useEffect(() => {
     const loadCoverageTypes = async () => {
@@ -103,17 +120,16 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
     setLoading(true);
     setError(null);
 
-    const policyNumber = form.policyNumberSuffix
-      ? `${form.policyPrefix}-${form.policyNumberSuffix}`
-      : `${form.policyPrefix}`;
-    const policyIdNumber = `${form.policyPrefix}-${form.policyIdSuffix}`.trim();
+    // Policy number and Account number are read-only, keep the original values
+    const policyNumber = policy.policyNumber || "";
+    const policyIdNumber = policy.policyIdNumber || "";
 
     const res = await fetch(`/api/policies/${policy._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        policyNumber,
-        policyIdNumber,
+        policyNumber, // Keep original policy number (read-only)
+        policyIdNumber, // Keep original account number (read-only)
         coverageType: form.coverageType,
         registrationNumber: form.registrationNumber || undefined,
         engineNumber: form.engineNumber || undefined,
@@ -167,37 +183,27 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="flex items-center gap-2">
-                    Policy prefix <InfoTooltip content="Prefix applied before policy numbers and IDs." />
+                    Policy Number <InfoTooltip content="The policy number cannot be edited." />
                   </label>
-                  <select
-                    className="mt-1 w-full"
-                    value={form.policyPrefix}
-                    onChange={(e) => update("policyPrefix", e.target.value)}
-                  >
-                    {PREFIXES.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
+                  <input
+                    className="mt-1 bg-[var(--ic-gray-50)] cursor-not-allowed"
+                    value={policy.policyNumber || `${form.policyPrefix}${form.policyNumberSuffix ? `-${form.policyNumberSuffix}` : ""}`}
+                    readOnly
+                    disabled
+                  />
+                  <p className="mt-1 text-xs text-[var(--ic-gray-500)]">Policy number cannot be changed</p>
                 </div>
                 <div>
-                  <label>Policy number suffix</label>
+                  <label className="flex items-center gap-2">
+                    Account Number <InfoTooltip content="The account number cannot be edited." />
+                  </label>
                   <input
-                    className="mt-1"
-                    value={form.policyNumberSuffix}
-                    onChange={(e) => update("policyNumberSuffix", e.target.value)}
-                    placeholder="12345"
+                    className="mt-1 bg-[var(--ic-gray-50)] cursor-not-allowed"
+                    value={policy.policyIdNumber || `${form.policyPrefix}-${form.policyIdSuffix}`}
+                    readOnly
+                    disabled
                   />
-                </div>
-                <div>
-                  <label>Policy ID suffix</label>
-                  <input
-                    className="mt-1"
-                    value={form.policyIdSuffix}
-                    onChange={(e) => update("policyIdSuffix", e.target.value)}
-                    required
-                  />
+                  <p className="mt-1 text-xs text-[var(--ic-gray-500)]">Account number cannot be changed</p>
                 </div>
                 <div>
                   <label>Registration Number</label>
