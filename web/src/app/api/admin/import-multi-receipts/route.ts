@@ -68,9 +68,15 @@ export async function POST(req: NextRequest) {
     
     await connectDb();
 
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (err) {
+      return json({ error: "Invalid JSON in request body" }, 400);
+    }
+
     const { csvText, fieldMappings } = body as {
-      csvText: string;
+      csvText?: string;
       fieldMappings?: Record<string, string>;
     };
 
@@ -186,15 +192,28 @@ export async function POST(req: NextRequest) {
 
     // Process each row
     for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
-      const row = rows[rowIdx];
-      const rowNum = rowIdx + 2; // +2 for header and 0-index
-      
-      // Skip completely empty rows (all cells blank)
-      if (row.length === 0 || row.every((cell) => !cell || cell.trim() === "")) {
-        continue; // Skip silently - empty rows are expected
-      }
+      try {
+        const row = rows[rowIdx];
+        const rowNum = rowIdx + 2; // +2 for header and 0-index
+        
+        // Validate row has enough columns
+        if (!row || !Array.isArray(row)) {
+          results.errors.push(`Row ${rowNum}: Invalid row format`);
+          continue;
+        }
+        
+        // Skip completely empty rows (all cells blank)
+        if (row.length === 0 || row.every((cell) => !cell || cell.trim() === "")) {
+          continue; // Skip silently - empty rows are expected
+        }
 
-      const policyNumber = row[policyNumberIdx]?.trim();
+        // Validate policy number index
+        if (policyNumberIdx < 0 || policyNumberIdx >= row.length) {
+          results.errors.push(`Row ${rowNum}: Policy number column index out of bounds`);
+          continue;
+        }
+
+        const policyNumber = row[policyNumberIdx]?.trim();
 
       // Skip rows without policy number (but don't error - blanks are OK)
       if (!policyNumber) {
@@ -213,6 +232,13 @@ export async function POST(req: NextRequest) {
 
       // Process each receipt for this policy
       for (const receiptCol of receiptColumns) {
+        // Validate indices are within row bounds
+        if (receiptCol.dateIdx < 0 || receiptCol.dateIdx >= row.length ||
+            receiptCol.numberIdx < 0 || receiptCol.numberIdx >= row.length ||
+            receiptCol.amountIdx < 0 || receiptCol.amountIdx >= row.length) {
+          continue; // Skip if indices are invalid
+        }
+
         const dateStr = row[receiptCol.dateIdx]?.trim();
         let receiptNumber = row[receiptCol.numberIdx]?.trim();
         const amountStr = row[receiptCol.amountIdx]?.trim();
@@ -283,6 +309,19 @@ export async function POST(req: NextRequest) {
 
         // Get customer info
         const customerId = policy.customerId;
+        let customerIdValue: any;
+        
+        if (typeof customerId === 'object' && customerId !== null) {
+          customerIdValue = (customerId as any)._id || customerId;
+        } else {
+          customerIdValue = customerId;
+        }
+
+        if (!customerIdValue) {
+          results.errors.push(`Row ${rowNum}: Policy ${policyNumber} has no customer ID`);
+          continue;
+        }
+
         const customerName = (policy.customerId as any)?.firstName && (policy.customerId as any)?.lastName
           ? `${(policy.customerId as any).firstName} ${(policy.customerId as any).lastName}`
           : "Unknown";
@@ -293,12 +332,12 @@ export async function POST(req: NextRequest) {
             receiptNumber: receiptNumber,
             paymentId: paymentId,
             policyId: policy._id,
-            customerId: typeof customerId === 'object' ? (customerId as any)._id : customerId,
+            customerId: customerIdValue,
             amount: amount,
             paymentDate: paymentDate,
             paymentMethod: "Cash",
             policyNumberSnapshot: policyNumber,
-            policyIdNumberSnapshot: policy.policyIdNumber,
+            policyIdNumberSnapshot: policy.policyIdNumber || "",
             customerNameSnapshot: customerName,
             generatedAt: paymentDate,
             status: "active",
@@ -311,6 +350,12 @@ export async function POST(req: NextRequest) {
           );
         }
       }
+    } catch (rowErr: any) {
+      results.errors.push(
+        `Row ${rowIdx + 2}: Unexpected error - ${rowErr?.message || String(rowErr)}`
+      );
+      continue;
+    }
     }
 
     return json({
