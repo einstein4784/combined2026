@@ -6,6 +6,7 @@ import { Policy } from "@/models/Policy";
 import { Payment } from "@/models/Payment";
 import { Receipt } from "@/models/Receipt";
 import { Customer } from "@/models/Customer";
+import { getCurrentTimeInUTC4 } from "@/lib/timezone";
 import mongoose from "mongoose";
 
 export const dynamic = "force-dynamic";
@@ -321,8 +322,9 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Create the receipt - use system time when payment was received
-        const receiptDate = new Date();
+        // Create the receipt - use system time in UTC-4 when payment was received
+        const receiptDate = getCurrentTimeInUTC4();
+        const generatedAt = getCurrentTimeInUTC4();
         try {
           await Receipt.create({
             receiptNumber: receiptNumber,
@@ -330,12 +332,12 @@ export async function POST(req: NextRequest) {
             policyId: policy._id,
             customerId: customerIdValue,
             amount: amount,
-            paymentDate: receiptDate, // Use system time when payment was received
+            paymentDate: receiptDate, // Use system time in UTC-4 when payment was received
             paymentMethod: "Cash",
             policyNumberSnapshot: policyNumber,
             policyIdNumberSnapshot: policy.policyIdNumber || "",
             customerNameSnapshot: customerName,
-            generatedAt: receiptDate,
+            generatedAt: generatedAt, // Use system time in UTC-4 when receipt was generated
             status: "active",
           });
 

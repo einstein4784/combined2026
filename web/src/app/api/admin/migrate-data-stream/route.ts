@@ -6,6 +6,7 @@ import { Policy } from "@/models/Policy";
 import { Payment } from "@/models/Payment";
 import { Receipt } from "@/models/Receipt";
 import { CoverageType } from "@/models/CoverageType";
+import { getCurrentTimeInUTC4 } from "@/lib/timezone";
 import mongoose from "mongoose";
 
 export const dynamic = "force-dynamic";
@@ -686,15 +687,17 @@ function createProgressStream(
                         outstandingBalance: Math.max(totalPremiumDue - newAmountPaid, 0),
                       });
                       
-                      // Create receipt - use system time when payment was received (imported now)
-                      const receiptDate = new Date();
+                      // Create receipt - use system time in UTC-4 when payment was received (imported now)
+                      const receiptDate = getCurrentTimeInUTC4();
+                      const generatedAt = getCurrentTimeInUTC4();
                       await Receipt.create({
                         receiptNumber: finalReceiptNumber,
                         paymentId: payment._id,
                         policyId: policy._id,
                         customerId: (policy.customerIds as any)?.[0] || policy.customerId,
                         amount: amount,
-                        paymentDate: receiptDate, // Use system time when payment was received
+                        paymentDate: receiptDate, // Use system time in UTC-4 when payment was received
+                        generatedAt: generatedAt, // Use system time in UTC-4 when receipt was generated
                         paymentMethod: paymentMethod,
                         generatedBy: adminUser.id,
                       });
@@ -830,7 +833,7 @@ function createProgressStream(
                     await policy.save();
                   }
 
-                  if (!record.paymentDate || record.paymentDate === null) record.paymentDate = new Date();
+                  if (!record.paymentDate || record.paymentDate === null) record.paymentDate = getCurrentTimeInUTC4();
                   if (!record.paymentMethod || record.paymentMethod === null) record.paymentMethod = "Cash";
                   if (record.arrearsOverrideUsed === undefined || record.arrearsOverrideUsed === null) {
                     record.arrearsOverrideUsed = false;
@@ -973,13 +976,13 @@ function createProgressStream(
                   record.amount = 0;
                 }
                 if (!record.paymentDate || record.paymentDate === null) {
-                  record.paymentDate = new Date();
+                  record.paymentDate = getCurrentTimeInUTC4();
                 }
                 if (!record.status || record.status === null) {
                   record.status = "active";
                 }
                 if (!record.generatedAt) {
-                  record.generatedAt = new Date();
+                  record.generatedAt = getCurrentTimeInUTC4();
                 }
 
                 // Set location based on policy ID prefix (VF = Vieux Fort)

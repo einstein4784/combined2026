@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { formatDateOnly } from "@/lib/utils";
+import { formatDateTimeInUTC4 } from "@/lib/timezone";
 import { SendReceiptEmailButton } from "./SendReceiptEmailButton";
 
 type ReceiptViewModel = {
@@ -39,21 +40,7 @@ export function ReceiptViewer({ receipt, backHref }: Props) {
   const [dotCopies, setDotCopies] = useState<1 | 2 | 3>(1);
 
   const formattedDate = useMemo(() => {
-    const date = new Date(receipt.paymentDate);
-    const dateOptions: Intl.DateTimeFormatOptions = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    };
-    const timeOptions: Intl.DateTimeFormatOptions = {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    };
-    const dateStr = date.toLocaleDateString("en-US", dateOptions);
-    const timeStr = date.toLocaleTimeString("en-US", timeOptions);
-    return `${dateStr} at ${timeStr}`;
+    return formatDateTimeInUTC4(receipt.paymentDate);
   }, [receipt.paymentDate]);
 
   const handlePrint = () => {

@@ -12,6 +12,7 @@ import { logAuditAction } from "@/lib/audit";
 import { User } from "@/models/User";
 import { rateLimitMiddleware } from "@/lib/rate-limit";
 import { parsePaginationParams, createPaginatedResponse } from "@/lib/pagination";
+import { getCurrentTimeInUTC4, toUTC4Date } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
@@ -110,10 +111,10 @@ export async function POST(request: Request) {
     policy.outstandingBalance = Math.max(totalPremiumDue - newAmountPaid, 0);
     await policy.save();
 
-    // Parse payment date from form or use current date
+    // Parse payment date from form or use current date in UTC-4
     const paymentDate = parsed.data.paymentDate 
-      ? new Date(parsed.data.paymentDate) 
-      : new Date();
+      ? toUTC4Date(parsed.data.paymentDate) 
+      : getCurrentTimeInUTC4();
 
     const payment = await Payment.create({
       policyId: policy._id,
@@ -133,8 +134,9 @@ export async function POST(request: Request) {
       receiptLocation = "Vieux Fort";
     }
 
-    // Use current system time for receipt date (when payment was received)
-    const receiptDate = new Date();
+    // Use current system time in UTC-4 for receipt date (when payment was received)
+    const receiptDate = getCurrentTimeInUTC4();
+    const generatedAt = getCurrentTimeInUTC4();
     
     const receipt = await Receipt.create({
       receiptNumber,
@@ -142,7 +144,8 @@ export async function POST(request: Request) {
       policyId: policy._id,
       customerId: policy.customerId,
       amount: amount, // cash received
-      paymentDate: receiptDate, // Use system time when payment was received
+      paymentDate: receiptDate, // Use system time in UTC-4 when payment was received
+      generatedAt: generatedAt, // Use system time in UTC-4 when receipt was generated
       generatedBy: auth.session.id,
       generatedByName: receivedByName,
       paymentMethod: parsed.data.paymentMethod || "Cash",

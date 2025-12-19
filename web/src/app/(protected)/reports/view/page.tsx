@@ -22,7 +22,9 @@ function parseDate(value?: string | string[] | null): Date | null {
   if (!v) return null;
   // Parse date inputs (yyyy-mm-dd) in local time to avoid UTC shift.
   if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-    const d = new Date(`${v}T00:00:00`);
+    // Parse as local date to avoid timezone issues
+    const [year, month, day] = v.split("-").map(Number);
+    const d = new Date(year, month - 1, day, 0, 0, 0, 0);
     return isNaN(d.getTime()) ? null : d;
   }
   const d = new Date(v);

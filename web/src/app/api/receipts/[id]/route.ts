@@ -2,6 +2,7 @@ import { connectDb } from "@/lib/db";
 import { guardPermission } from "@/lib/api-auth";
 import { json, handleRouteError } from "@/lib/utils";
 import { Receipt } from "@/models/Receipt";
+import { toUTC4Date } from "@/lib/timezone";
 import type { NextRequest } from "next/server";
 
 type RouteContext =
@@ -72,7 +73,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     
     const updateData: any = {};
     if (amount !== undefined) updateData.amount = amount;
-    if (paymentDate) updateData.paymentDate = new Date(paymentDate);
+    if (paymentDate) updateData.paymentDate = toUTC4Date(paymentDate);
     if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
     if (notes !== undefined) updateData.notes = notes || null;
     if (location !== undefined) updateData.location = location || null;

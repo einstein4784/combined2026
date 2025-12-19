@@ -8,8 +8,29 @@ import "@/models/Customer";
 
 function parseDate(value: string | null): Date | null {
   if (!value) return null;
+  // Parse date inputs (yyyy-mm-dd) in local time to avoid UTC shift
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    // Parse as local date to avoid timezone issues
+    const [year, month, day] = value.split("-").map(Number);
+    const d = new Date(year, month - 1, day, 0, 0, 0, 0);
+    return isNaN(d.getTime()) ? null : d;
+  }
   const d = new Date(value);
   return isNaN(d.getTime()) ? null : d;
+}
+
+function startOfDay(date: Date | null): Date | null {
+  if (!date) return null;
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function endOfDay(date: Date | null): Date | null {
+  if (!date) return null;
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
 }
 
 export async function GET(req: NextRequest) {
@@ -19,11 +40,11 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type") || "cash";
-    const fromParam = parseDate(searchParams.get("from"));
-    const toParam = parseDate(searchParams.get("to"));
+    const fromParam = startOfDay(parseDate(searchParams.get("from")));
+    const toParam = endOfDay(parseDate(searchParams.get("to")));
 
-    const from = fromParam ?? new Date(0);
-    const to = toParam ?? new Date();
+    const from = fromParam ?? startOfDay(new Date(0))!;
+    const to = toParam ?? endOfDay(new Date())!;
     const prefix = (searchParams.get("prefix") || "").toUpperCase();
 
     await connectDb();
