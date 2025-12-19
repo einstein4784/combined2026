@@ -131,6 +131,14 @@ export function MultiPaymentImporter() {
       return;
     }
 
+    if (!confirm(
+      `⚠️ WARNING: You are about to import multiple payments from CSV.\n\n` +
+      `This will create payment records in the database.\n\n` +
+      `This action cannot be undone. Are you sure you want to continue?`
+    )) {
+      return;
+    }
+
     setUploading(true);
     setResults(null);
 

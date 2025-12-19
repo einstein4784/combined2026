@@ -8,11 +8,13 @@ import { Payment } from "@/models/Payment";
 import { Receipt } from "@/models/Receipt";
 import { User } from "@/models/User";
 import { RolePermission } from "@/models/RolePermission";
+import { CoverageType } from "@/models/CoverageType";
+import { StatementRecipient } from "@/models/StatementRecipient";
 import mongoose from "mongoose";
 
 export const dynamic = "force-dynamic";
 
-type CollectionName = "customers" | "policies" | "payments" | "receipts" | "users" | "rolePermissions";
+type CollectionName = "customers" | "policies" | "payments" | "receipts" | "users" | "rolePermissions" | "coverageTypes" | "statementRecipients";
 
 const COLLECTIONS: Record<CollectionName, any> = {
   customers: Customer,
@@ -21,20 +23,36 @@ const COLLECTIONS: Record<CollectionName, any> = {
   receipts: Receipt,
   users: User,
   rolePermissions: RolePermission,
+  coverageTypes: CoverageType,
+  statementRecipients: StatementRecipient,
 };
 
 function serializeRow(collection: CollectionName, doc: any) {
   const plain = { ...doc };
   delete (plain as any).__v;
+  
+  // Ensure ObjectIds are strings (should already be strings from .lean(), but be explicit)
+  const serialized = JSON.parse(JSON.stringify(plain));
+  
   return {
     collection,
-    data: JSON.stringify(plain),
+    data: JSON.stringify(serialized),
   };
 }
 
-function toCsv(rows: { collection: string; data: string }[]) {
+function toCsv(rows: { collection: string; data: string }[], metadata?: { timestamp: string; counts: Record<string, number> }) {
   const escape = (val: string) => `"${val.replace(/"/g, '""')}"`;
-  const lines = ["collection,data", ...rows.map((r) => `${escape(r.collection)},${escape(r.data)}`)];
+  const lines: string[] = [];
+  
+  // Add metadata as comments if provided
+  if (metadata) {
+    lines.push(`# Backup created: ${metadata.timestamp}`);
+    lines.push(`# Collection counts: ${JSON.stringify(metadata.counts)}`);
+    lines.push(`#`);
+  }
+  
+  lines.push("collection,data");
+  lines.push(...rows.map((r) => `${escape(r.collection)},${escape(r.data)}`));
   return lines.join("\n");
 }
 
@@ -65,7 +83,7 @@ function splitCsvRow(line: string): string[] {
 }
 
 function parseCsv(text: string): { collection: CollectionName; data: any }[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length);
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length && !l.trim().startsWith("#"));
   if (lines.length < 2) return [];
 
   const headerCols = splitCsvRow(lines[0].trim()).map((h) => h.trim().toLowerCase());
@@ -82,14 +100,22 @@ function parseCsv(text: string): { collection: CollectionName; data: any }[] {
     const dataVal = cols[colIdx.data]?.replace(/\r$/, "");
     if (!collectionVal || !dataVal) continue;
     if (
-      !["customers", "policies", "payments", "receipts", "users", "rolepermissions"].includes(
+      !["customers", "policies", "payments", "receipts", "users", "rolepermissions", "coveragetypes", "statementrecipients"].includes(
         collectionVal.toLowerCase(),
       )
     )
       continue;
-    const collection = (collectionVal.toLowerCase() === "rolepermissions"
-      ? "rolePermissions"
-      : (collectionVal as CollectionName)) as CollectionName;
+    let collection: CollectionName;
+    const lower = collectionVal.toLowerCase();
+    if (lower === "rolepermissions") {
+      collection = "rolePermissions";
+    } else if (lower === "coveragetypes") {
+      collection = "coverageTypes";
+    } else if (lower === "statementrecipients") {
+      collection = "statementRecipients";
+    } else {
+      collection = collectionVal as CollectionName;
+    }
     try {
       const obj = JSON.parse(dataVal);
       rows.push({ collection, data: obj });
@@ -107,15 +133,23 @@ export async function GET() {
 
     await connectDb();
     const rows: { collection: string; data: string }[] = [];
+    const collectionCounts: Record<string, number> = {};
+    
     const entries = await Promise.all(
       (Object.keys(COLLECTIONS) as CollectionName[]).map(async (name) => {
         const docs = await COLLECTIONS[name].find().lean();
+        collectionCounts[name] = docs.length;
         return docs.map((d: any) => serializeRow(name, d));
       }),
     );
     entries.forEach((arr) => rows.push(...arr));
 
-    const csv = toCsv(rows);
+    const metadata = {
+      timestamp: new Date().toISOString(),
+      counts: collectionCounts,
+    };
+
+    const csv = toCsv(rows, metadata);
     return new Response(csv, {
       status: 200,
       headers: {
@@ -172,6 +206,20 @@ export async function POST(req: NextRequest) {
         const validId = hasId && mongoose.Types.ObjectId.isValid(payload._id);
         if (!validId) {
           delete (payload as any)._id;
+        }
+
+        // Mongoose automatically converts ObjectId strings to ObjectId objects based on schema definitions
+        // However, we explicitly convert _id and arrays of ObjectIds for reliability
+        if (validId && typeof payload._id === "string") {
+          payload._id = new mongoose.Types.ObjectId(payload._id);
+        }
+        
+        // Convert arrays of ObjectId strings (e.g., Policy.customerIds)
+        // Mongoose should handle this, but explicit conversion ensures reliability
+        if (Array.isArray((payload as any).customerIds)) {
+          (payload as any).customerIds = (payload as any).customerIds.map((id: any) => 
+            typeof id === "string" && mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id
+          );
         }
 
         if (validId) {

@@ -125,6 +125,14 @@ export function MultiReceiptImporter() {
       return;
     }
 
+    if (!confirm(
+      `⚠️ WARNING: You are about to import multiple receipts from CSV.\n\n` +
+      `This will create receipt records in the database.\n\n` +
+      `This action cannot be undone. Are you sure you want to continue?`
+    )) {
+      return;
+    }
+
     setUploading(true);
     setResults(null);
 

@@ -11,6 +11,14 @@ export function AssignVFPrefixButton() {
   const [error, setError] = useState<string | null>(null);
 
   const handleAssign = async () => {
+    if (!confirm(
+      `⚠️ WARNING: You are about to assign VF prefix to all policies that contain "VF" in their policy ID or policy number.\n\n` +
+      `This will update policy formatting and associated receipt locations.\n\n` +
+      `This action cannot be undone. Are you sure you want to continue?`
+    )) {
+      return;
+    }
+
     setBusy(true);
     setError(null);
 

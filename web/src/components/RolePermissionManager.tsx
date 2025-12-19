@@ -42,6 +42,14 @@ export function RolePermissionManager() {
   };
 
   const save = async () => {
+    if (!confirm(
+      `⚠️ WARNING: You are about to update permissions for the "${role}" role.\n\n` +
+      `This will change what users with this role can access in the system.\n\n` +
+      `This action cannot be undone. Are you sure you want to continue?`
+    )) {
+      return;
+    }
+
     setSaving(true);
     setError(null);
     setSuccess(null);

@@ -41,6 +41,15 @@ export function StatementRecipientManager() {
       setError("Email is required");
       return;
     }
+
+    if (!confirm(
+      `⚠️ WARNING: You are about to add "${email.trim()}" as a statement recipient.\n\n` +
+      `This will add this email to receive cash statement reports.\n\n` +
+      `Are you sure you want to continue?`
+    )) {
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
@@ -64,6 +73,16 @@ export function StatementRecipientManager() {
   };
 
   const onDelete = async (id: string) => {
+    const recipient = recipients.find(r => r._id === id);
+    const emailToDelete = recipient?.email || "this recipient";
+    
+    if (!confirm(
+      `⚠️ WARNING: You are about to remove "${emailToDelete}" from statement recipients.\n\n` +
+      `This action cannot be undone. Are you sure you want to continue?`
+    )) {
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {

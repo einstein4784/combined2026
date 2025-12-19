@@ -208,6 +208,15 @@ export function DataMigrationTool() {
       return;
     }
 
+    if (!confirm(
+      `⚠️ WARNING: You are about to import data into the "${collectionType}" collection.\n\n` +
+      `This will create or update records in the database.\n\n` +
+      `Total rows to process: ${csvData.rows.length}\n\n` +
+      `This action cannot be undone. Are you sure you want to continue?`
+    )) {
+      return;
+    }
+
     setBusy(true);
     setError(null);
     setErrorDetails([]);

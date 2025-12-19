@@ -12,9 +12,9 @@ export function AssignSFPrefixButton() {
 
   const handleAssign = async () => {
     if (!confirm(
-      "This will add the 'SF' prefix to all policy numbers where the customer's ID begins with 'SF'.\n\n" +
-      "Associated receipts will also have their location updated to 'Soufriere'.\n\n" +
-      "Are you sure you want to continue?"
+      `⚠️ WARNING: You are about to assign SF prefix to all policies where the customer's ID number begins with "SF".\n\n` +
+      `This will update policy formatting and associated receipt locations to "Soufriere".\n\n` +
+      `This action cannot be undone. Are you sure you want to continue?`
     )) {
       return;
     }

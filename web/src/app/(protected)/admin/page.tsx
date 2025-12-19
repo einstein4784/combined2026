@@ -9,8 +9,6 @@ import { StatementRecipientManager } from "@/components/StatementRecipientManage
 import { DeleteAllDataButton } from "@/components/DeleteAllDataButton";
 import { DataMigrationTool } from "@/components/DataMigrationTool";
 import { DeleteDuplicateCustomersButton } from "@/components/DeleteDuplicateCustomersButton";
-import { AssignVFPrefixButton } from "@/components/AssignVFPrefixButton";
-import { AssignSFPrefixButton } from "@/components/AssignSFPrefixButton";
 import { MultiPaymentImporter } from "@/components/MultiPaymentImporter";
 import { MultiReceiptImporter } from "@/components/MultiReceiptImporter";
 import { DuplicatePaymentCleaner } from "@/components/DuplicatePaymentCleaner";
@@ -51,6 +49,24 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-6">
+      {/* Warning Banner */}
+      <div className="rounded-lg border-2 border-red-500 bg-red-50 p-4">
+        <div className="flex items-start gap-3">
+          <div className="text-2xl">⚠️</div>
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-red-800 mb-2">
+              WARNING: Changes Cannot Be Undone
+            </h3>
+            <p className="text-sm text-red-700 mb-1">
+              <strong>Do not execute any commands on this page without confirmation.</strong>
+            </p>
+            <p className="text-sm text-red-700">
+              All actions performed on this page can result in permanent data loss. Please carefully review each action before confirming.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="page-title-box">
         <p className="section-heading">Admin</p>
         <h4>Admin console</h4>
@@ -80,8 +96,6 @@ export default async function AdminPage() {
       <ResetCoverageTypesButton />
       <CoverageTypeManager />
       <StatementRecipientManager />
-      <AssignVFPrefixButton />
-      <AssignSFPrefixButton />
       <DeleteDuplicateCustomersButton />
       
       {/* Data Wipe - New dedicated page */}

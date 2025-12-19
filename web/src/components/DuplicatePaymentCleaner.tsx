@@ -61,9 +61,9 @@ export function DuplicatePaymentCleaner() {
 
   const deleteDuplicates = async () => {
     if (!confirm(
-      `This will delete ${totalDuplicates} duplicate payment${totalDuplicates !== 1 ? "s" : ""} from ${totalGroups} group${totalGroups !== 1 ? "s" : ""}.\n\n` +
+      `⚠️ WARNING: You are about to delete ${totalDuplicates} duplicate payment${totalDuplicates !== 1 ? "s" : ""} from ${totalGroups} group${totalGroups !== 1 ? "s" : ""}.\n\n` +
       `The oldest payment in each group will be kept.\n\n` +
-      `Are you sure you want to continue?`
+      `This action cannot be undone. Are you sure you want to continue?`
     )) {
       return;
     }

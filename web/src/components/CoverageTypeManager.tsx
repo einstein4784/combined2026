@@ -33,6 +33,15 @@ export function CoverageTypeManager() {
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    
+    if (!confirm(
+      `⚠️ WARNING: You are about to add a new coverage type "${name.trim()}".\n\n` +
+      `This will allow this coverage type to be used for policies.\n\n` +
+      `Are you sure you want to continue?`
+    )) {
+      return;
+    }
+
     try {
       setSaving(true);
       const res = await fetch("/api/coverage-types", {
