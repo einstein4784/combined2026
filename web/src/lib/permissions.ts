@@ -3,6 +3,7 @@ export type UserRole = "Admin" | "Supervisor" | "Cashier" | "Underwriter";
 export type SystemFunctionId =
   | "create_edit_customer"
   | "create_edit_policy"
+  | "renew_policy"
   | "receive_payment"
   | "generate_user_report"
   | "generate_cash_statements"
@@ -12,7 +13,9 @@ export type SystemFunctionId =
   | "close_period"
   | "view_dashboard"
   | "manage_permissions"
-  | "approve_deletions";
+  | "approve_deletions"
+  | "void_restore_receipt"
+  | "send_renewal_notices";
 
 export const SYSTEM_FUNCTIONS: Record<
   SystemFunctionId,
@@ -28,6 +31,12 @@ export const SYSTEM_FUNCTIONS: Record<
     id: "create_edit_policy",
     name: "Create/Edit Policy",
     description: "Ability to create new policies and edit existing policies",
+    category: "Policy Management",
+  },
+  renew_policy: {
+    id: "renew_policy",
+    name: "Renew Policy",
+    description: "Ability to renew existing policies and create renewal policies",
     category: "Policy Management",
   },
   receive_payment: {
@@ -90,6 +99,18 @@ export const SYSTEM_FUNCTIONS: Record<
     description: "Approve or deny delete requests raised by staff",
     category: "System Administration",
   },
+  void_restore_receipt: {
+    id: "void_restore_receipt",
+    name: "Void/Restore Receipt",
+    description: "Ability to void and restore receipts",
+    category: "Payment Processing",
+  },
+  send_renewal_notices: {
+    id: "send_renewal_notices",
+    name: "Send Renewal Notices",
+    description: "Ability to send renewal notices and emails to customers",
+    category: "Policy Management",
+  },
 };
 
 export const DEFAULT_PERMISSIONS: Record<UserRole, SystemFunctionId[]> = {
@@ -97,6 +118,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, SystemFunctionId[]> = {
   Supervisor: [
     "create_edit_customer",
     "create_edit_policy",
+    "renew_policy",
     "receive_payment",
     "generate_user_report",
     "generate_cash_statements",
@@ -105,9 +127,11 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, SystemFunctionId[]> = {
     "close_period",
     "view_dashboard",
     "approve_deletions",
+    "void_restore_receipt",
+    "send_renewal_notices",
   ],
   Cashier: ["receive_payment", "generate_cash_statements", "view_dashboard"],
-  Underwriter: ["create_edit_customer", "create_edit_policy", "view_dashboard"],
+  Underwriter: ["create_edit_customer", "create_edit_policy", "renew_policy", "view_dashboard", "send_renewal_notices"],
 };
 
 export function roleHasPermission(role: UserRole, permission: SystemFunctionId) {

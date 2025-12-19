@@ -8,8 +8,8 @@ export async function POST(req: NextRequest) {
   try {
     console.log("[Renew] Starting policy renewal request");
     
-    // Guard permission - allow all logged-in users to renew policies
-    const auth = await guardPermission("view_dashboard");
+    // Guard permission - require renew_policy permission
+    const auth = await guardPermission("renew_policy");
     if ("response" in auth) {
       console.log("[Renew] Auth failed");
       return auth.response;

@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const auth = await guardSession();
+    const { guardPermission } = await import("@/lib/api-auth");
+    const auth = await guardPermission("send_renewal_notices");
     if ("response" in auth) return auth.response;
 
     const body = await request.json().catch(() => ({}));

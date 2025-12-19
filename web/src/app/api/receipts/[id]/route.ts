@@ -32,7 +32,7 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
 export async function PATCH(req: NextRequest, context: RouteContext) {
   try {
     const params = await resolveParams(context);
-    const auth = await guardPermission("manage_permissions"); // Admin-only for void/restore
+    const auth = await guardPermission("void_restore_receipt");
     if ("response" in auth) return auth.response;
 
     const { status } = await req.json().catch(() => ({}));
