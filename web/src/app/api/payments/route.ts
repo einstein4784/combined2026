@@ -14,8 +14,6 @@ import { rateLimitMiddleware } from "@/lib/rate-limit";
 import { parsePaginationParams, createPaginatedResponse } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
-import { rateLimitMiddleware } from "@/lib/rate-limit";
-import { parsePaginationParams, createPaginatedResponse } from "@/lib/pagination";
 
 export async function GET(req: NextRequest) {
   try {
