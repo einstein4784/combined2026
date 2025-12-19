@@ -7,6 +7,7 @@ import { Customer } from "@/models/Customer";
 import { logAuditAction } from "@/lib/audit";
 import { rateLimitMiddleware } from "@/lib/rate-limit";
 import { parsePaginationParams, createPaginatedResponse } from "@/lib/pagination";
+import { generateCustomerId } from "@/lib/ids";
 
 export const dynamic = "force-dynamic";
 
@@ -65,21 +66,56 @@ export async function POST(request: Request) {
     const email = parsed.data.email?.trim() || "na@none.com";
 
     await connectDb();
+    
+    // Generate customer ID if not provided or if it's a duplicate
+    let customerId = parsed.data.idNumber?.trim();
+    if (!customerId || customerId.length < 3) {
+      customerId = await generateCustomerId(Customer);
+    } else {
+      // Check if the provided ID already exists
+      const existing = await Customer.findOne({ idNumber: customerId }).lean();
+      if (existing) {
+        // Generate a new one if duplicate
+        customerId = await generateCustomerId(Customer);
+      }
+    }
+    
     let created;
     try {
       created = await Customer.create({
         ...parsed.data,
+        idNumber: customerId,
         email,
         middleName: parsed.data.middleName || null,
         sex: parsed.data.sex || null,
+        driversLicenseNumber: parsed.data.driversLicenseNumber?.trim() || null,
       });
     } catch (err: any) {
       if (err?.code === 11000) {
         const fields = Object.keys(err?.keyPattern || {});
         const fieldLabel = fields.length ? fields.join(", ") : "unique field";
-        return json({ error: `Customer with this ${fieldLabel} already exists.` }, { status: 400 });
+        
+        // If it's the idNumber that's duplicate, try generating a new one once
+        if (fields.includes("idNumber")) {
+          try {
+            const newId = await generateCustomerId(Customer);
+            created = await Customer.create({
+              ...parsed.data,
+              idNumber: newId,
+              email,
+              middleName: parsed.data.middleName || null,
+              sex: parsed.data.sex || null,
+              driversLicenseNumber: parsed.data.driversLicenseNumber?.trim() || null,
+            });
+          } catch (retryErr: any) {
+            return json({ error: `Customer ID "${customerId}" already exists. Please use a different Customer ID.` }, { status: 400 });
+          }
+        } else {
+          return json({ error: `Customer with this ${fieldLabel} already exists.` }, { status: 400 });
+        }
+      } else {
+        throw err;
       }
-      throw err;
     }
 
     await logAuditAction({

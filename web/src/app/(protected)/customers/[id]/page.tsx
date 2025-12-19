@@ -75,6 +75,7 @@ export default async function CustomerDetailPage(context: PageParams) {
     email: customer.email || "",
     sex: (customer as any).sex || "Male",
     idNumber: customer.idNumber || "",
+    driversLicenseNumber: (customer as any).driversLicenseNumber || "",
     hasArrears: (customer as any).hasArrears ?? false,
     arrearsOverride: (customer as any).arrearsOverride ?? false,
     createdAt: customer.createdAt,
@@ -99,7 +100,8 @@ export default async function CustomerDetailPage(context: PageParams) {
           <Detail label="Name" value={`${safeCustomer.firstName} ${safeCustomer.middleName} ${safeCustomer.lastName}`} />
           <Detail label="Email" value={safeCustomer.email} />
           <Detail label="Contact" value={safeCustomer.contactNumber} />
-          <Detail label="ID Number" value={safeCustomer.idNumber} />
+          <Detail label="Customer ID" value={safeCustomer.idNumber} />
+          <Detail label="Drivers License Number" value={safeCustomer.driversLicenseNumber || "—"} />
           <Detail label="Sex" value={safeCustomer.sex || "—"} />
           <Detail label="Address" value={safeCustomer.address} />
           <Detail

@@ -46,12 +46,25 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const email = parsed.data.email?.trim() || "na@none.com";
 
     await connectDb();
+    
+    // Check if idNumber is being changed and if it's a duplicate
+    if (parsed.data.idNumber && parsed.data.idNumber.trim()) {
+      const existing = await Customer.findOne({ 
+        idNumber: parsed.data.idNumber.trim(),
+        _id: { $ne: params.id } // Exclude current customer
+      }).lean();
+      if (existing) {
+        return json({ error: "Customer ID already exists. Please use a different Customer ID." }, { status: 400 });
+      }
+    }
+    
     await Customer.findByIdAndUpdate(params.id, {
       ...parsed.data,
       email,
       middleName: parsed.data.middleName || null,
       contactNumber2: parsed.data.contactNumber2 || null,
       sex: parsed.data.sex || null,
+      driversLicenseNumber: parsed.data.driversLicenseNumber?.trim() || null,
     });
 
     await logAuditAction({

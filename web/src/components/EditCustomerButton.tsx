@@ -15,6 +15,7 @@ type Props = {
     email?: string;
     sex?: string | null;
     idNumber?: string;
+    driversLicenseNumber?: string | null;
   };
 };
 
@@ -33,6 +34,7 @@ export function EditCustomerButton({ customer }: Props) {
     email: customer.email || "",
     sex: customer.sex || "Male",
     idNumber: customer.idNumber || "",
+    driversLicenseNumber: customer.driversLicenseNumber || "",
   });
 
   const update = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -41,10 +43,14 @@ export function EditCustomerButton({ customer }: Props) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const payload = {
+      ...form,
+      driversLicenseNumber: form.driversLicenseNumber?.trim() || null,
+    };
     const res = await fetch(`/api/customers/${customer._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       setOpen(false);
@@ -157,12 +163,20 @@ export function EditCustomerButton({ customer }: Props) {
                   </select>
                 </div>
                 <div>
-                  <label>ID Number</label>
+                  <label>Customer ID</label>
                   <input
                     className="mt-1"
                     value={form.idNumber}
                     onChange={(e) => update("idNumber", e.target.value)}
                     required
+                  />
+                </div>
+                <div>
+                  <label>Drivers License Number</label>
+                  <input
+                    className="mt-1"
+                    value={form.driversLicenseNumber}
+                    onChange={(e) => update("driversLicenseNumber", e.target.value)}
                   />
                 </div>
               </div>

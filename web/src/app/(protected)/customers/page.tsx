@@ -77,7 +77,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
               <input
                 type="text"
                 name="q"
-                placeholder="Search name, email, ID, contact, address…"
+                placeholder="Search name, email, Customer ID, contact, address…"
                 defaultValue={q}
                 className="w-full rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
               />
@@ -125,7 +125,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                       field="id"
                       currentSort={sortBy}
                       currentOrder={sortOrder}
-                      label="ID"
+                      label="Customer ID"
                       basePath="/customers"
                       searchParams={params}
                     />

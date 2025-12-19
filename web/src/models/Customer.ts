@@ -11,6 +11,7 @@ export type CustomerDocument = {
   email: string;
   sex?: "Male" | "Female" | "Other" | null;
   idNumber: string;
+  driversLicenseNumber?: string | null;
   hasArrears: boolean;
   arrearsOverride: boolean;
   arrearsOverrideBy?: string;
@@ -30,6 +31,7 @@ const CustomerSchema = new Schema<CustomerDocument>(
     email: { type: String, required: true, index: true },
     sex: { type: String, enum: ["Male", "Female", "Other"], default: null },
     idNumber: { type: String, required: true, unique: true, index: true },
+    driversLicenseNumber: { type: String, default: null },
     hasArrears: { type: Boolean, default: false },
     arrearsOverride: { type: Boolean, default: false },
     arrearsOverrideBy: { type: String },
