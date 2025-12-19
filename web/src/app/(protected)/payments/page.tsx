@@ -30,21 +30,38 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
 
   await connectDb();
   
-  // Build sort object
+  // Build sort object for direct payment fields
   const sortObject: Record<string, 1 | -1> = {};
   const sortFieldMap: Record<string, string> = {
     amount: "amount",
     paymentDate: "paymentDate",
     paymentMethod: "paymentMethod",
     createdAt: "createdAt",
+    policyNumber: "policyNumber", // Will sort in memory
+    policyIdNumber: "policyIdNumber", // Will sort in memory
+    customerName: "customerName", // Will sort in memory
+    outstandingBalance: "outstandingBalance", // Will sort in memory
+    totalPremiumDue: "totalPremiumDue", // Will sort in memory
   };
-  const dbSortField = sortFieldMap[sortBy] || "paymentDate";
-  sortObject[dbSortField] = sortOrder;
+  
+  // Check if we need to sort by a nested field (requires in-memory sorting)
+  const requiresMemorySort = ["policyNumber", "policyIdNumber", "customerName", "outstandingBalance", "totalPremiumDue"].includes(sortBy);
+  
+  // For direct payment fields, use MongoDB sort
+  if (!requiresMemorySort) {
+    const dbSortField = sortFieldMap[sortBy] || "paymentDate";
+    sortObject[dbSortField] = sortOrder;
+  } else {
+    // Default sort by paymentDate for initial fetch, then sort in memory
+    sortObject["paymentDate"] = -1;
+  }
 
-  const [totalCount, payments] = await Promise.all([
+  // For nested field sorting, fetch all records, sort in memory, then paginate
+  // For direct field sorting, use MongoDB sort with pagination
+  const [totalCount, allPayments] = await Promise.all([
     Payment.countDocuments(),
     Payment.find()
-      .select("amount refundAmount paymentMethod paymentDate policyId")
+      .select("amount refundAmount paymentMethod paymentDate policyId createdAt")
       .populate({
         path: "policyId",
         select: "policyNumber policyIdNumber totalPremiumDue outstandingBalance customerId customerIds",
@@ -54,10 +71,17 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
         ],
       })
       .sort(sortObject)
-      .skip((page - 1) * ITEMS_PER_PAGE)
-      .limit(ITEMS_PER_PAGE)
       .lean(),
   ]);
+
+  // If sorting by nested field, we need all records to sort properly
+  // Otherwise, we can paginate at DB level
+  let payments;
+  if (requiresMemorySort) {
+    payments = allPayments; // Will paginate after sorting
+  } else {
+    payments = allPayments.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  }
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
@@ -76,7 +100,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
     receiptByPayment[String(r.paymentId)] = { _id: r._id.toString(), receiptNumber: r.receiptNumber };
   });
 
-  const paymentRows = payments.map((p: any) => {
+  let paymentRows = payments.map((p: any) => {
     const policy = p.policyId as any;
     const customer = policy?.customerId as any;
     const customers = [
@@ -100,8 +124,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
       grossAmount: net + refund,
       paymentMethod: p.paymentMethod,
       paymentDate: p.paymentDate,
-      policyNumber: policy?.policyNumber,
-      policyIdNumber: policy?.policyIdNumber,
+      policyNumber: policy?.policyNumber || "",
+      policyIdNumber: policy?.policyIdNumber || "",
+      totalPremiumDue: typeof policy?.totalPremiumDue === "number" ? policy.totalPremiumDue : 0,
       totalPremiumDueDisplay:
         typeof policy?.totalPremiumDue === "number"
           ? `$${policy.totalPremiumDue.toFixed(2)}`
@@ -109,9 +134,52 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
       customerName: names,
       customerEmail: customer?.email || "",
       customerContact: customer?.contactNumber || "",
-      outstandingBalance: policy?.outstandingBalance,
+      outstandingBalance: typeof policy?.outstandingBalance === "number" ? policy.outstandingBalance : 0,
     };
   });
+
+  // Sort in memory for nested fields
+  if (requiresMemorySort) {
+    paymentRows.sort((a, b) => {
+      let aVal: any;
+      let bVal: any;
+      
+      switch (sortBy) {
+        case "policyNumber":
+          aVal = (a.policyNumber || "").toLowerCase();
+          bVal = (b.policyNumber || "").toLowerCase();
+          break;
+        case "policyIdNumber":
+          aVal = (a.policyIdNumber || "").toLowerCase();
+          bVal = (b.policyIdNumber || "").toLowerCase();
+          break;
+        case "customerName":
+          aVal = (a.customerName || "").toLowerCase();
+          bVal = (b.customerName || "").toLowerCase();
+          break;
+        case "outstandingBalance":
+          aVal = a.outstandingBalance;
+          bVal = b.outstandingBalance;
+          break;
+        case "totalPremiumDue":
+          aVal = a.totalPremiumDue;
+          bVal = b.totalPremiumDue;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aVal < bVal) return -sortOrder;
+      if (aVal > bVal) return sortOrder;
+      return 0;
+    });
+  }
+
+  // Apply pagination after sorting
+  const totalRows = paymentRows.length;
+  const startIdx = (page - 1) * ITEMS_PER_PAGE;
+  const endIdx = startIdx + ITEMS_PER_PAGE;
+  paymentRows = paymentRows.slice(startIdx, endIdx);
 
   const policyOptions = policies.map((p) => {
     const customers = [
@@ -172,10 +240,46 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
             <table className="min-w-full">
               <thead>
                 <tr>
-                  <th>Policy</th>
-                  <th>Policy ID</th>
-                  <th>Customer</th>
-                  <th>Total Premium Due</th>
+                  <th>
+                    <SortableHeader
+                      field="policyNumber"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Policy"
+                      basePath="/payments"
+                      searchParams={params}
+                    />
+                  </th>
+                  <th>
+                    <SortableHeader
+                      field="policyIdNumber"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Policy ID"
+                      basePath="/payments"
+                      searchParams={params}
+                    />
+                  </th>
+                  <th>
+                    <SortableHeader
+                      field="customerName"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Customer"
+                      basePath="/payments"
+                      searchParams={params}
+                    />
+                  </th>
+                  <th>
+                    <SortableHeader
+                      field="totalPremiumDue"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Total Premium Due"
+                      basePath="/payments"
+                      searchParams={params}
+                    />
+                  </th>
                   <th>
                     <SortableHeader
                       field="amount"
@@ -186,7 +290,16 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                       searchParams={params}
                     />
                   </th>
-                  <th>Outstanding</th>
+                  <th>
+                    <SortableHeader
+                      field="outstandingBalance"
+                      currentSort={sortBy}
+                      currentOrder={sortOrder}
+                      label="Outstanding"
+                      basePath="/payments"
+                      searchParams={params}
+                    />
+                  </th>
                   <th>
                     <SortableHeader
                       field="paymentMethod"
