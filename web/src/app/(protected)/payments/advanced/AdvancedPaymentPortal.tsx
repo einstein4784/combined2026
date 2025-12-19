@@ -34,11 +34,22 @@ type Props = {
 export default function AdvancedPaymentPortal({ policies, payments }: Props) {
   const router = useRouter();
   const [selectedPolicyId, setSelectedPolicyId] = useState(policies[0]?.id ?? "");
+  
+  // Get today's date in YYYY-MM-DD format for the date input
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [form, setForm] = useState({
     amount: "",
     refundAmount: "",
     paymentMethod: "Cash",
     notes: "",
+    paymentDate: getTodayDate(),
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +99,7 @@ export default function AdvancedPaymentPortal({ policies, payments }: Props) {
         refundAmount: refundNumber,
         paymentMethod: form.paymentMethod,
         notes: form.notes,
+        paymentDate: form.paymentDate || getTodayDate(),
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -98,7 +110,7 @@ export default function AdvancedPaymentPortal({ policies, payments }: Props) {
           ? "Transaction saved and receipt generated."
           : "Transaction saved successfully.",
       });
-      setForm({ amount: "", refundAmount: "", paymentMethod: "Cash", notes: "" });
+      setForm({ amount: "", refundAmount: "", paymentMethod: "Cash", notes: "", paymentDate: getTodayDate() });
       router.refresh();
     } else {
       setError(data.error || "Failed to save payment");
@@ -214,6 +226,16 @@ export default function AdvancedPaymentPortal({ policies, payments }: Props) {
                   <option value="Cheque">Cheque</option>
                   <option value="Transfer">Transfer</option>
                 </select>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[var(--ic-gray-700)]">Payment Date</label>
+                <input
+                  type="date"
+                  className="mt-1"
+                  value={form.paymentDate}
+                  onChange={(e) => setForm((prev) => ({ ...prev, paymentDate: e.target.value }))}
+                  required
+                />
               </div>
             </div>
             <div>

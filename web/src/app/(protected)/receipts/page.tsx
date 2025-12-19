@@ -9,6 +9,7 @@ import { SortableHeader } from "@/components/SortableHeader";
 import { guardPermission } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 import { VoidReceiptButton } from "@/components/VoidReceiptButton";
+import { EditReceiptButton } from "@/components/EditReceiptButton";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +90,10 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
     customerContact: r.customerContactSnapshot || (r.customerId as any)?.contactNumber || "",
     amount: r.amount,
     paymentDate: r.paymentDate,
+    paymentMethod: r.paymentMethod,
+    notes: r.notes,
+    location: r.location,
+    registrationNumber: r.registrationNumber,
   }));
 
   return (
@@ -180,6 +185,20 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
                       >
                         🔍
                       </Link>
+                      {r.status !== "void" && (
+                        <EditReceiptButton
+                          receipt={{
+                            _id: r._id,
+                            receiptNumber: r.receiptNumber,
+                            amount: r.amount,
+                            paymentDate: r.paymentDate instanceof Date ? r.paymentDate.toISOString() : new Date(r.paymentDate).toISOString(),
+                            paymentMethod: r.paymentMethod,
+                            notes: r.notes,
+                            location: r.location,
+                            registrationNumber: r.registrationNumber,
+                          }}
+                        />
+                      )}
                       {r.status === "void" && (
                         <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700">
                           VOID

@@ -51,5 +51,43 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   }
 }
 
+export async function PUT(req: NextRequest, context: RouteContext) {
+  try {
+    const params = await resolveParams(context);
+    const auth = await guardPermission("generate_cash_statements");
+    if ("response" in auth) return auth.response;
+
+    const body = await req.json().catch(() => ({}));
+    const { amount, paymentDate, paymentMethod, notes, location, registrationNumber } = body;
+
+    if (amount !== undefined && (typeof amount !== "number" || amount < 0)) {
+      return json({ error: "Invalid amount" }, { status: 400 });
+    }
+
+    if (paymentDate && !Date.parse(paymentDate)) {
+      return json({ error: "Invalid payment date" }, { status: 400 });
+    }
+
+    await connectDb();
+    
+    const updateData: any = {};
+    if (amount !== undefined) updateData.amount = amount;
+    if (paymentDate) updateData.paymentDate = new Date(paymentDate);
+    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
+    if (notes !== undefined) updateData.notes = notes || null;
+    if (location !== undefined) updateData.location = location || null;
+    if (registrationNumber !== undefined) updateData.registrationNumber = registrationNumber || null;
+
+    const updated = await Receipt.findByIdAndUpdate(params.id, updateData, { new: true }).lean();
+    if (!updated) {
+      return json({ error: "Receipt not found" }, { status: 404 });
+    }
+
+    return json({ success: true, receipt: updated });
+  } catch (error) {
+    return handleRouteError(error);
+  }
+}
+
 
 

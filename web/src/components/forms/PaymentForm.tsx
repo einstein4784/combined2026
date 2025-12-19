@@ -22,11 +22,21 @@ export function PaymentForm({ policies }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Get today's date in YYYY-MM-DD format for the date input
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [form, setForm] = useState({
     policyId: "",
     amount: "0",
     paymentMethod: "Cash",
     notes: "",
+    paymentDate: getTodayDate(),
   });
 
   const update = (key: string, value: string) =>
@@ -74,11 +84,12 @@ export function PaymentForm({ policies }: Props) {
         ...form,
         amount: amountNumber,
         refundAmount: 0,
+        paymentDate: form.paymentDate || getTodayDate(),
       }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      setForm({ policyId: "", amount: "", paymentMethod: "Cash", notes: "" });
+      setForm({ policyId: "", amount: "", paymentMethod: "Cash", notes: "", paymentDate: getTodayDate() });
       showSuccessToast({
         title: "Payment recorded",
         message: data?.receipt?._id ? "Payment saved and receipt created." : "Payment saved successfully.",
@@ -126,6 +137,18 @@ export function PaymentForm({ policies }: Props) {
             required
             min={0}
             step="0.01"
+          />
+        </div>
+        <div>
+          <label className="flex items-center gap-2">
+            Payment Date <InfoTooltip content="Date of the payment. Defaults to today but can be edited." />
+          </label>
+          <input
+            type="date"
+            className="mt-1"
+            value={form.paymentDate}
+            onChange={(e) => update("paymentDate", e.target.value)}
+            required
           />
         </div>
         <div className="md:col-span-2 space-y-1 text-sm font-semibold">

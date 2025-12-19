@@ -110,11 +110,16 @@ export async function POST(request: Request) {
     policy.outstandingBalance = Math.max(totalPremiumDue - newAmountPaid, 0);
     await policy.save();
 
+    // Parse payment date from form or use current date
+    const paymentDate = parsed.data.paymentDate 
+      ? new Date(parsed.data.paymentDate) 
+      : new Date();
+
     const payment = await Payment.create({
       policyId: policy._id,
       amount: amount, // store the payment received
       refundAmount,
-      paymentDate: new Date(),
+      paymentDate: paymentDate,
       paymentMethod: parsed.data.paymentMethod || "Cash",
       receiptNumber,
       receivedBy: auth.session.id,

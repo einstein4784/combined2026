@@ -66,6 +66,7 @@ export const paymentSchema = z.object({
   notes: z.string().optional(),
   arrearsOverrideUsed: z.boolean().optional(),
   refundAmount: z.number().nonnegative().default(0),
+  paymentDate: z.string().optional(), // ISO date string or YYYY-MM-DD format
 }).superRefine((data, ctx) => {
   if ((data.amount ?? 0) <= 0 && (data.refundAmount ?? 0) <= 0) {
     ctx.addIssue({
