@@ -222,14 +222,27 @@ export async function POST(req: NextRequest) {
       }
 
       // Find the policy
-      const policy = await Policy.findOne({ policyNumber })
-        .populate("customerId", "_id firstName lastName")
-        .lean();
+      const policy = await Policy.findOne({ policyNumber }).lean();
       
       if (!policy) {
         results.policiesNotFound.push(`${policyNumber} (Row ${rowNum})`);
         continue;
       }
+
+      // Fetch customer separately to avoid populate registration issues
+      const customer = await Customer.findById(policy.customerId)
+        .select("_id firstName lastName")
+        .lean();
+
+      if (!customer) {
+        results.errors.push(`Row ${rowNum}: Policy ${policyNumber} has no associated customer`);
+        continue;
+      }
+
+      const customerIdValue = typeof customer._id === 'string' ? customer._id : customer._id.toString();
+      const customerName = customer.firstName && customer.lastName
+        ? `${customer.firstName} ${customer.lastName}`
+        : "Unknown";
 
       // Process each receipt for this policy
       for (const receiptCol of receiptColumns) {
@@ -307,25 +320,6 @@ export async function POST(req: NextRequest) {
             continue;
           }
         }
-
-        // Get customer info
-        const customerId = policy.customerId;
-        let customerIdValue: any;
-        
-        if (typeof customerId === 'object' && customerId !== null) {
-          customerIdValue = (customerId as any)._id || customerId;
-        } else {
-          customerIdValue = customerId;
-        }
-
-        if (!customerIdValue) {
-          results.errors.push(`Row ${rowNum}: Policy ${policyNumber} has no customer ID`);
-          continue;
-        }
-
-        const customerName = (policy.customerId as any)?.firstName && (policy.customerId as any)?.lastName
-          ? `${(policy.customerId as any).firstName} ${(policy.customerId as any).lastName}`
-          : "Unknown";
 
         // Create the receipt
         try {
