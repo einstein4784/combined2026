@@ -17,7 +17,7 @@ export async function getSession(): Promise<SessionUser | null> {
     const originalError = console.error;
     
     console.error = (...args: any[]) => {
-      // Check if this is a JWTSessionError log from NextAuth
+      // Check if this is a JWTSessionError or decryption error log from NextAuth
       const firstArg = args[0];
       const errorStr = args.map(arg => 
         typeof arg === "string" ? arg : 
@@ -25,12 +25,15 @@ export async function getSession(): Promise<SessionUser | null> {
         String(arg)
       ).join(" ");
       
-      // Suppress only JWTSessionError logs from NextAuth
+      // Suppress NextAuth debug/info/error logs related to session validation
+      // These are expected when cookies are invalid or encrypted with a different secret
       if (
-        (typeof firstArg === "string" && firstArg.includes("[auth][error]")) ||
+        (typeof firstArg === "string" && firstArg.includes("[auth][")) ||
         errorStr.includes("JWTSessionError") ||
         errorStr.includes("authjs.dev#jwtsessionerror") ||
-        errorStr.includes("Read more at https://errors.authjs.dev#jwtsessionerror")
+        errorStr.includes("Read more at https://errors.authjs.dev#jwtsessionerror") ||
+        errorStr.includes("no matching decryption secret") ||
+        errorStr.includes("decryption secret")
       ) {
         return; // Don't log this error - it's expected when cookies are invalid
       }
@@ -50,15 +53,21 @@ export async function getSession(): Promise<SessionUser | null> {
     const errorName = err?.name || err?.constructor?.name || "";
     const errorMessage = err?.message || "";
     const errorCode = err?.code || "";
+    const errorString = String(err);
     
-    // Check for JWT session errors (invalid/expired tokens)
+    // Check for JWT session errors (invalid/expired tokens) or decryption secret errors
     if (
       errorName === "JWTSessionError" ||
       errorCode === "ERR_JWT_SESSION_ERROR" ||
       errorMessage.includes("JWTSessionError") ||
-      errorMessage.includes("authjs.dev#jwtsessionerror")
+      errorMessage.includes("authjs.dev#jwtsessionerror") ||
+      errorMessage.includes("no matching decryption secret") ||
+      errorMessage.includes("decryption secret") ||
+      errorString.includes("no matching decryption secret") ||
+      errorString.includes("decryption secret")
     ) {
       // Silently return null for invalid tokens (expected behavior)
+      // This happens when cookies were encrypted with a different AUTH_SECRET
       return null;
     }
     // Only log unexpected errors

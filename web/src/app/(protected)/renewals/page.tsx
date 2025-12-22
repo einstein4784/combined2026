@@ -4,6 +4,7 @@ import { Policy } from "@/models/Policy";
 import { Customer } from "@/models/Customer";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { escapeRegex } from "@/lib/regex-utils";
 import RenewalsClient from "./RenewalsClient";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -60,15 +61,35 @@ export default async function RenewalsPage({ searchParams }: Props) {
 
   await connectDb();
 
+  const escapedQuery = useSearch ? escapeRegex(q) : "";
   const customerMatch = useSearch
     ? {
         $or: [
-          { firstName: { $regex: q, $options: "i" } },
-          { lastName: { $regex: q, $options: "i" } },
-          { middleName: { $regex: q, $options: "i" } },
-          { email: { $regex: q, $options: "i" } },
-          { contactNumber: { $regex: q, $options: "i" } },
-          { idNumber: { $regex: q, $options: "i" } },
+          // Full name search - concatenate all name parts and search
+          {
+            $expr: {
+              $regexMatch: {
+                input: {
+                  $concat: [
+                    { $ifNull: ["$firstName", ""] },
+                    " ",
+                    { $ifNull: ["$middleName", ""] },
+                    " ",
+                    { $ifNull: ["$lastName", ""] },
+                  ],
+                },
+                regex: escapedQuery,
+                options: "i",
+              },
+            },
+          },
+          // Individual field searches (backward compatible)
+          { firstName: { $regex: escapedQuery, $options: "i" } },
+          { lastName: { $regex: escapedQuery, $options: "i" } },
+          { middleName: { $regex: escapedQuery, $options: "i" } },
+          { email: { $regex: escapedQuery, $options: "i" } },
+          { contactNumber: { $regex: escapedQuery, $options: "i" } },
+          { idNumber: { $regex: escapedQuery, $options: "i" } },
         ],
       }
     : {};

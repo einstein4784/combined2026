@@ -6,7 +6,7 @@ import { SearchableSelect } from "./SearchableSelect";
 import { InfoTooltip } from "../InfoTooltip";
 import { showSuccessToast } from "../GlobalSuccessToast";
 
-type CustomerOption = { id: string; name: string };
+type CustomerOption = { id: string; name: string; idNumber?: string };
 
 type Props = {
   customers: CustomerOption[];
@@ -50,6 +50,7 @@ export const PolicyForm = memo(function PolicyForm({ customers: initialCustomers
           const formatted = customersData.map((c: any) => ({
             id: c._id.toString(),
             name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+            idNumber: c.idNumber || "",
           }));
           setCustomerOptions(formatted);
         }
@@ -102,7 +103,32 @@ export const PolicyForm = memo(function PolicyForm({ customers: initialCustomers
     setForm((prev) => {
       const next = [...prev.customerIds];
       next[idx] = value;
-      return { ...prev, customerIds: next };
+      const updated = { ...prev, customerIds: next };
+      
+      // Auto-populate Policy ID Number with the first customer's ID number
+      if (idx === 0 && value) {
+        const selectedCustomer = customerOptions.find((c) => c.id === value);
+        if (selectedCustomer?.idNumber) {
+          updated.policyIdNumber = selectedCustomer.idNumber;
+        } else {
+          // If idNumber not in options, fetch it from API
+          fetch(`/api/customers/${value}`)
+            .then((res) => res.json())
+            .then((customer: any) => {
+              if (customer?.idNumber) {
+                setForm((prevForm) => ({
+                  ...prevForm,
+                  policyIdNumber: customer.idNumber,
+                }));
+              }
+            })
+            .catch(() => {
+              // Ignore errors
+            });
+        }
+      }
+      
+      return updated;
     });
   };
 
@@ -211,6 +237,7 @@ export const PolicyForm = memo(function PolicyForm({ customers: initialCustomers
                       const formatted = customersData.map((c: any) => ({
                         id: c._id.toString(),
                         name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+                        idNumber: c.idNumber || "",
                       }));
                       setCustomerOptions(formatted);
                     }
@@ -253,13 +280,13 @@ export const PolicyForm = memo(function PolicyForm({ customers: initialCustomers
         </div>
         <div>
           <label className="flex items-center gap-2">
-            Policy ID Number <InfoTooltip content="Internal identifier for this policy; required." />
+            Customer ID <InfoTooltip content="Customer ID number (auto-populated from selected customer); required." />
           </label>
           <input
             className="mt-1"
             value={form.policyIdNumber}
             onChange={(e) => update("policyIdNumber", e.target.value)}
-            placeholder="Internal ID"
+            placeholder="Customer ID"
             required
           />
         </div>

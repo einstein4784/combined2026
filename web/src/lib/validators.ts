@@ -29,7 +29,7 @@ export const customerSchema = z.object({
     .or(z.literal(""))
     .transform((v) => (v === "" ? undefined : v)),
   sex: z.enum(["Male", "Female", "Other"]).optional().nullable(),
-  idNumber: z.string().min(3),
+  idNumber: z.string().min(1),
   driversLicenseNumber: z.string().optional().nullable(),
 });
 

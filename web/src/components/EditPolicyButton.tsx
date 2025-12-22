@@ -23,9 +23,13 @@ type PolicyEdit = {
 const PREFIXES = ["CA", "VF", "SF"];
 
 function splitPrefix(value?: string) {
-  if (!value) return { prefix: "CA", suffix: "" };
+  if (!value) return { prefix: "", suffix: "" };
   const [first, ...rest] = value.split("-");
-  return { prefix: first || "CA", suffix: rest.join("-") || "" };
+  // If the value doesn't start with a known prefix, treat the whole thing as suffix
+  if (first && !["CA", "VF", "SF"].includes(first)) {
+    return { prefix: "", suffix: value };
+  }
+  return { prefix: first || "", suffix: rest.join("-") || "" };
 }
 
 export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
@@ -43,7 +47,7 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
     const idParts = splitPrefix(policy.policyIdNumber);
     const numberParts = splitPrefix(policy.policyNumber);
     return {
-      policyPrefix: idParts.prefix,
+      policyPrefix: numberParts.prefix || "",
       policyNumberSuffix: numberParts.suffix,
       policyIdSuffix: idParts.suffix,
       coverageType: policy.coverageType || "",
@@ -111,6 +115,29 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
           updated.policyIdSuffix = trimmedValue.substring(2).trim();
         }
       }
+      // Auto-set prefix for policy number if it begins with a prefix
+      if (key === "policyNumberSuffix") {
+        const trimmedValue = value.trim().toUpperCase();
+        if (trimmedValue.startsWith("CA-")) {
+          updated.policyPrefix = "CA";
+          updated.policyNumberSuffix = trimmedValue.substring(3).trim();
+        } else if (trimmedValue.startsWith("VF-")) {
+          updated.policyPrefix = "VF";
+          updated.policyNumberSuffix = trimmedValue.substring(3).trim();
+        } else if (trimmedValue.startsWith("SF-")) {
+          updated.policyPrefix = "SF";
+          updated.policyNumberSuffix = trimmedValue.substring(3).trim();
+        } else if (trimmedValue.startsWith("CA") && trimmedValue.length > 2 && !trimmedValue.includes("-")) {
+          updated.policyPrefix = "CA";
+          updated.policyNumberSuffix = trimmedValue.substring(2).trim();
+        } else if (trimmedValue.startsWith("VF") && trimmedValue.length > 2 && !trimmedValue.includes("-")) {
+          updated.policyPrefix = "VF";
+          updated.policyNumberSuffix = trimmedValue.substring(2).trim();
+        } else if (trimmedValue.startsWith("SF") && trimmedValue.length > 2 && !trimmedValue.includes("-")) {
+          updated.policyPrefix = "SF";
+          updated.policyNumberSuffix = trimmedValue.substring(2).trim();
+        }
+      }
       return updated;
     });
   };
@@ -120,15 +147,19 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
     setLoading(true);
     setError(null);
 
-    // Policy number and Account number are read-only, keep the original values
-    const policyNumber = policy.policyNumber || "";
+    // Build policy number from prefix and suffix
+    const policyNumber = form.policyNumberSuffix 
+      ? (form.policyPrefix ? `${form.policyPrefix}-${form.policyNumberSuffix}` : form.policyNumberSuffix)
+      : (form.policyPrefix || "");
+    
+    // Account number is read-only, keep the original value
     const policyIdNumber = policy.policyIdNumber || "";
 
     const res = await fetch(`/api/policies/${policy._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        policyNumber, // Keep original policy number (read-only)
+        policyNumber, // Use edited policy number
         policyIdNumber, // Keep original account number (read-only)
         coverageType: form.coverageType,
         registrationNumber: form.registrationNumber || undefined,
@@ -181,60 +212,78 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
 
             <form className="mt-4 space-y-4" onSubmit={onSubmit}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="flex items-center gap-2">
-                    Policy Number <InfoTooltip content="The policy number cannot be edited." />
+                <div className="flex flex-col">
+                  <label className="flex items-center gap-2 mb-1">
+                    Policy Number <InfoTooltip content="Edit the policy number. Prefix will be applied automatically." />
                   </label>
-                  <input
-                    className="mt-1 bg-[var(--ic-gray-50)] cursor-not-allowed"
-                    value={policy.policyNumber || `${form.policyPrefix}${form.policyNumberSuffix ? `-${form.policyNumberSuffix}` : ""}`}
-                    readOnly
-                    disabled
-                  />
-                  <p className="mt-1 text-xs text-[var(--ic-gray-500)]">Policy number cannot be changed</p>
+                  <div className="flex items-center gap-3">
+                    <select
+                      className="w-24 rounded-md border-2 border-[var(--ic-gray-300)] bg-white px-3 py-2.5 text-sm font-semibold shadow-sm focus:border-[var(--ic-navy)] focus:outline-none focus:ring-2 focus:ring-[var(--ic-navy)] focus:ring-opacity-20"
+                      value={form.policyPrefix}
+                      onChange={(e) => update("policyPrefix", e.target.value)}
+                    >
+                      <option value="">(None)</option>
+                      <option value="CA">CA</option>
+                      <option value="VF">VF</option>
+                      <option value="SF">SF</option>
+                    </select>
+                    {form.policyPrefix && (
+                      <span className="text-[var(--ic-gray-600)] font-bold text-xl">-</span>
+                    )}
+                    <input
+                      className="min-w-[250px] flex-1 rounded-md border-2 border-[var(--ic-gray-400)] bg-white px-4 py-2.5 text-base font-semibold text-[var(--ic-navy)] shadow-md focus:border-[var(--ic-navy)] focus:outline-none focus:ring-2 focus:ring-[var(--ic-navy)] focus:ring-opacity-30"
+                      value={form.policyNumberSuffix}
+                      onChange={(e) => update("policyNumberSuffix", e.target.value)}
+                      placeholder="Enter policy number"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-[var(--ic-gray-500)]">
+                    Full policy number: {form.policyPrefix ? `${form.policyPrefix}${form.policyNumberSuffix ? `-${form.policyNumberSuffix}` : ""}` : (form.policyNumberSuffix || "(empty)")}
+                  </p>
                 </div>
-                <div>
-                  <label className="flex items-center gap-2">
+                <div className="flex flex-col">
+                  <label className="flex items-center gap-2 mb-1">
                     Account Number <InfoTooltip content="The account number cannot be edited." />
                   </label>
                   <input
-                    className="mt-1 bg-[var(--ic-gray-50)] cursor-not-allowed"
+                    className="rounded-md border border-[var(--ic-gray-200)] bg-[var(--ic-gray-50)] px-3 py-2 text-sm shadow-sm cursor-not-allowed"
                     value={policy.policyIdNumber || `${form.policyPrefix}-${form.policyIdSuffix}`}
                     readOnly
                     disabled
                   />
                   <p className="mt-1 text-xs text-[var(--ic-gray-500)]">Account number cannot be changed</p>
                 </div>
-                <div>
-                  <label>Registration Number</label>
+                <div className="flex flex-col">
+                  <label className="mb-1">Registration Number</label>
                   <input
-                    className="mt-1"
+                    className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                     value={form.registrationNumber}
                     onChange={(e) => update("registrationNumber", e.target.value)}
+                    placeholder="Vehicle registration"
                   />
                 </div>
-                <div>
-                  <label>Engine Number</label>
+                <div className="flex flex-col">
+                  <label className="mb-1">Engine Number</label>
                   <input
-                    className="mt-1"
+                    className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                     value={form.engineNumber}
                     onChange={(e) => update("engineNumber", e.target.value)}
                     placeholder="Engine number"
                   />
                 </div>
-                <div>
-                  <label>Chassis Number</label>
+                <div className="flex flex-col">
+                  <label className="mb-1">Chassis Number</label>
                   <input
-                    className="mt-1"
+                    className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                     value={form.chassisNumber}
                     onChange={(e) => update("chassisNumber", e.target.value)}
                     placeholder="Chassis number"
                   />
                 </div>
-                <div>
-                  <label>Vehicle Type</label>
+                <div className="flex flex-col">
+                  <label className="mb-1">Vehicle Type</label>
                   <input
-                    className="mt-1"
+                    className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                     value={form.vehicleType}
                     onChange={(e) => update("vehicleType", e.target.value)}
                     placeholder="Vehicle type (e.g., Sedan, SUV, Truck)"
@@ -243,10 +292,10 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label>Coverage Type</label>
+                <div className="flex flex-col">
+                  <label className="mb-1">Coverage Type</label>
                   <select
-                    className="mt-1 w-full"
+                    className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                     value={form.coverageType}
                     onChange={(e) => update("coverageType", e.target.value)}
                   >
@@ -257,10 +306,10 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label>Status</label>
+                <div className="flex flex-col">
+                  <label className="mb-1">Status</label>
                   <select
-                    className="mt-1 w-full"
+                    className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                     value={form.status}
                     onChange={(e) => update("status", e.target.value)}
                   >
@@ -272,11 +321,11 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label>Total Premium</label>
+                <div className="flex flex-col">
+                  <label className="mb-1">Total Premium</label>
                   <input
                     type="number"
-                    className="mt-1"
+                    className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                     value={form.totalPremiumDue}
                     onChange={(e) => update("totalPremiumDue", e.target.value)}
                     min={0}
@@ -284,17 +333,19 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
                     required
                   />
                 </div>
-                <div>
-                  <label>Coverage Dates</label>
-                  <div className="mt-1 grid grid-cols-2 gap-2">
+                <div className="flex flex-col">
+                  <label className="mb-1">Coverage Dates</label>
+                  <div className="grid grid-cols-2 gap-2">
                     <input
                       type="date"
+                      className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                       value={form.coverageStartDate}
                       onChange={(e) => update("coverageStartDate", e.target.value)}
                       required
                     />
                     <input
                       type="date"
+                      className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                       value={form.coverageEndDate}
                       onChange={(e) => update("coverageEndDate", e.target.value)}
                       required
@@ -303,14 +354,15 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
                 </div>
               </div>
 
-              <div>
-                <label>Notes</label>
+              <div className="flex flex-col">
+                <label className="mb-1">Notes</label>
                 <textarea
-                  className="mt-1"
+                  className="rounded-md border border-[var(--ic-gray-200)] px-3 py-2 text-sm shadow-sm focus:border-[var(--ic-navy)] focus:outline-none"
                   value={form.notes}
                   onChange={(e) => update("notes", e.target.value)}
                   rows={3}
                   maxLength={2000}
+                  placeholder="Additional notes about the policy"
                 />
               </div>
 

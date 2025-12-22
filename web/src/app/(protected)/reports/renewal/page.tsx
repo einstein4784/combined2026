@@ -4,6 +4,7 @@ import { Customer } from "@/models/Customer";
 import Link from "next/link";
 import { PrintButton } from "@/components/PrintButton";
 import { formatDateOnly } from "@/lib/utils";
+import { escapeRegex } from "@/lib/regex-utils";
 
 type SearchParams = {
   q?: string | string[];
@@ -34,13 +35,33 @@ export default async function RenewalSearchPage({
 
   await connectDb();
 
+  const escapedQuery = q ? escapeRegex(q) : "";
   const customerMatch = q
     ? {
         $or: [
-          { firstName: { $regex: q, $options: "i" } },
-          { lastName: { $regex: q, $options: "i" } },
-          { email: { $regex: q, $options: "i" } },
-          { idNumber: { $regex: q, $options: "i" } },
+          // Full name search - concatenate all name parts and search
+          {
+            $expr: {
+              $regexMatch: {
+                input: {
+                  $concat: [
+                    { $ifNull: ["$firstName", ""] },
+                    " ",
+                    { $ifNull: ["$middleName", ""] },
+                    " ",
+                    { $ifNull: ["$lastName", ""] },
+                  ],
+                },
+                regex: escapedQuery,
+                options: "i",
+              },
+            },
+          },
+          // Individual field searches (backward compatible)
+          { firstName: { $regex: escapedQuery, $options: "i" } },
+          { lastName: { $regex: escapedQuery, $options: "i" } },
+          { email: { $regex: escapedQuery, $options: "i" } },
+          { idNumber: { $regex: escapedQuery, $options: "i" } },
         ],
       }
     : {};

@@ -32,8 +32,29 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
   const customerIds: string[] = [];
   if (q) {
     const escapedQuery = escapeRegex(q);
+    // Search by full name (concatenated firstName + middleName + lastName)
+    // Also search individual fields for backward compatibility
     const matches = await Customer.find({
       $or: [
+        // Full name search - concatenate all name parts and search
+        {
+          $expr: {
+            $regexMatch: {
+              input: {
+                $concat: [
+                  { $ifNull: ["$firstName", ""] },
+                  " ",
+                  { $ifNull: ["$middleName", ""] },
+                  " ",
+                  { $ifNull: ["$lastName", ""] },
+                ],
+              },
+              regex: escapedQuery,
+              options: "i",
+            },
+          },
+        },
+        // Individual field searches (backward compatible)
         { firstName: { $regex: escapedQuery, $options: "i" } },
         { middleName: { $regex: escapedQuery, $options: "i" } },
         { lastName: { $regex: escapedQuery, $options: "i" } },
@@ -81,7 +102,7 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
       .limit(ITEMS_PER_PAGE)
       .lean(),
     Customer.find()
-      .select("_id firstName middleName lastName")
+      .select("_id firstName middleName lastName idNumber")
       .limit(1000) // Limit customer dropdown to 1000 most recent
       .sort({ firstName: 1 })
       .lean(),
@@ -142,6 +163,7 @@ export default async function PoliciesPage({ searchParams }: { searchParams: Pro
   const customerOptions = customers.map((c) => ({
     id: c._id.toString(),
     name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+    idNumber: (c as any).idNumber || "",
   }));
 
   return (

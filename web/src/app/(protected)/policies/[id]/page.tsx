@@ -148,7 +148,7 @@ export default async function PolicyDetailPage(context: PageParams) {
           <h2 className="text-lg font-semibold text-[var(--ic-navy)]">Policy Details</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Detail label="Policy Number" value={safePolicy.policyNumber} />
-            <Detail label="Policy ID Number" value={safePolicy.policyIdNumber} />
+            <Detail label="Customer ID" value={customers.length > 0 ? (customers[0] as any).idNumber || "—" : "—"} />
             <Detail label="Coverage Type" value={safePolicy.coverageType} />
             <Detail label="Status" value={safePolicy.status} />
             <Detail

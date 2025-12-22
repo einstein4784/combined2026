@@ -17,7 +17,7 @@ Before implementing performance fixes, ensure you have a database backup:
 # Full database backup
 mongodump --uri="$MONGODB_URI" --out=./backup/$(Get-Date -Format "yyyy-MM-dd")
 
-# Or if using mongosh
+# Or if using mongoshremo
 mongosh "$MONGODB_URI" --eval "db.adminCommand('backupDatabase')"
 ```
 
@@ -39,4 +39,6 @@ git reset --hard HEAD~N  # where N is number of commits
 1. Review changes: `git diff backup-before-performance-fixes main`
 2. Revert specific files: `git checkout backup-before-performance-fixes -- <file>`
 3. Full rollback: `git reset --hard backup-before-performance-fixes`
+
+
 

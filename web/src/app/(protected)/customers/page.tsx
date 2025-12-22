@@ -24,18 +24,38 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const sortOrder = normalize(params.sortOrder) === "asc" ? 1 : -1;
 
   await connectDb();
+  const escapedQuery = escapeRegex(q);
   const filter =
     q.length === 0
       ? {}
       : {
           $or: [
-            { firstName: { $regex: escapeRegex(q), $options: "i" } },
-            { middleName: { $regex: escapeRegex(q), $options: "i" } },
-            { lastName: { $regex: escapeRegex(q), $options: "i" } },
-            { email: { $regex: escapeRegex(q), $options: "i" } },
-            { contactNumber: { $regex: escapeRegex(q), $options: "i" } },
-            { idNumber: { $regex: escapeRegex(q), $options: "i" } },
-            { address: { $regex: escapeRegex(q), $options: "i" } },
+            // Full name search - concatenate all name parts and search
+            {
+              $expr: {
+                $regexMatch: {
+                  input: {
+                    $concat: [
+                      { $ifNull: ["$firstName", ""] },
+                      " ",
+                      { $ifNull: ["$middleName", ""] },
+                      " ",
+                      { $ifNull: ["$lastName", ""] },
+                    ],
+                  },
+                  regex: escapedQuery,
+                  options: "i",
+                },
+              },
+            },
+            // Individual field searches (backward compatible)
+            { firstName: { $regex: escapedQuery, $options: "i" } },
+            { middleName: { $regex: escapedQuery, $options: "i" } },
+            { lastName: { $regex: escapedQuery, $options: "i" } },
+            { email: { $regex: escapedQuery, $options: "i" } },
+            { contactNumber: { $regex: escapedQuery, $options: "i" } },
+            { idNumber: { $regex: escapedQuery, $options: "i" } },
+            { address: { $regex: escapedQuery, $options: "i" } },
           ],
         };
 
