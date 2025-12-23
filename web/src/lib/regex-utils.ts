@@ -30,3 +30,4 @@ export function createSafeRegex(searchString: string, options: { caseInsensitive
 
 
 
+

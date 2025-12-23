@@ -4,6 +4,7 @@ import { json, handleRouteError } from "@/lib/utils";
 import { policySchema } from "@/lib/validators";
 import { Policy } from "@/models/Policy";
 import { logAuditAction } from "@/lib/audit";
+import mongoose from "mongoose";
 import type { NextRequest } from "next/server";
 
 const parseDateOnly = (value?: string) => {
@@ -91,6 +92,21 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
     if (coverageEndDate < coverageStartDate) {
       return json({ error: "Coverage end date cannot be before start date" }, { status: 400 });
+    }
+
+    // Update customerIds if provided
+    if (parsed.data.customerIds && Array.isArray(parsed.data.customerIds) && parsed.data.customerIds.length > 0) {
+      // Validate all customer IDs are valid ObjectIds
+      const validCustomerIds = parsed.data.customerIds.filter((id: any) => mongoose.isValidObjectId(id));
+      if (validCustomerIds.length === 0) {
+        return json({ error: "At least one valid customer ID is required" }, { status: 400 });
+      }
+      if (validCustomerIds.length > 3) {
+        return json({ error: "Maximum 3 customers allowed" }, { status: 400 });
+      }
+      existing.customerIds = validCustomerIds;
+      // Update primary customerId to first customer in the array
+      existing.customerId = validCustomerIds[0];
     }
 
     existing.coverageType = coverageType;

@@ -5,6 +5,8 @@ import { Policy } from "@/models/Policy";
 import { Payment } from "@/models/Payment";
 import { Receipt } from "@/models/Receipt";
 import { Customer } from "@/models/Customer";
+import { AuditLog } from "@/models/AuditLog";
+import { User } from "@/models/User";
 import { EditPolicyButton } from "@/components/EditPolicyButton";
 import { DeletePolicyButton } from "@/components/DeletePolicyButton";
 import { formatDateOnly } from "@/lib/utils";
@@ -29,7 +31,7 @@ export default async function PolicyDetailPage(context: PageParams) {
   });
   const customerIds = Array.from(customerIdSet);
 
-  const [customers, payments, receipts] = await Promise.all([
+  const [customers, payments, receipts, auditLogs, createdByUser] = await Promise.all([
     customerIds.length
       ? Customer.find({ _id: { $in: customerIds } })
           .select("firstName middleName lastName email contactNumber idNumber")
@@ -37,6 +39,17 @@ export default async function PolicyDetailPage(context: PageParams) {
       : [],
     Payment.find({ policyId: id }).sort({ paymentDate: -1 }).lean(),
     Receipt.find({ policyId: id }).sort({ paymentDate: -1 }).lean(),
+    AuditLog.find({
+      entityType: "Policy",
+      entityId: id,
+      action: { $in: ["CREATE_POLICY", "UPDATE_POLICY"] },
+    })
+      .populate("userId", "fullName username")
+      .sort({ createdAt: -1 })
+      .lean(),
+    policy.createdBy
+      ? User.findById(policy.createdBy).select("fullName username").lean()
+      : null,
   ]);
 
   const safePolicy = {
@@ -107,6 +120,7 @@ export default async function PolicyDetailPage(context: PageParams) {
               totalPremiumDue: safePolicy.totalPremiumDue,
               status: safePolicy.status as any,
               notes: safePolicy.notes,
+              customerIds: customerIds,
             }}
           />
           <DeletePolicyButton policyId={safePolicy._id} policyNumber={safePolicy.policyNumber} />
@@ -329,6 +343,108 @@ export default async function PolicyDetailPage(context: PageParams) {
           </table>
         </div>
       )}
+
+      {/* Audit Log / Edit History */}
+      <div className="card">
+        <h2 className="text-lg font-semibold text-[var(--ic-navy)] mb-4">Edit Log & History</h2>
+        
+        {/* Creation Info */}
+        {(() => {
+          const createLog = auditLogs.find((log: any) => log.action === "CREATE_POLICY");
+          const lastEditLog = auditLogs.find((log: any) => log.action === "UPDATE_POLICY");
+          const createUser = createLog?.userId as any;
+          const lastEditUser = lastEditLog?.userId as any;
+          
+          return (
+            <div className="mb-6 pb-6 border-b border-[var(--ic-gray-200)]">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--ic-gray-600)] mb-1">Created By</p>
+                  <p className="text-sm font-semibold text-[var(--ic-navy)]">
+                    {createdByUser
+                      ? `${(createdByUser as any).fullName} (${(createdByUser as any).username})`
+                      : createUser
+                        ? `${createUser.fullName || "Unknown"} (${createUser.username || "N/A"})`
+                        : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--ic-gray-600)] mb-1">Created At</p>
+                  <p className="text-sm font-semibold text-[var(--ic-navy)]">
+                    {safePolicy.createdAt
+                      ? new Date(safePolicy.createdAt).toLocaleString()
+                      : createLog
+                        ? new Date(createLog.createdAt).toLocaleString()
+                        : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--ic-gray-600)] mb-1">Last Edited By</p>
+                  <p className="text-sm font-semibold text-[var(--ic-navy)]">
+                    {lastEditUser
+                      ? `${lastEditUser.fullName || "Unknown"} (${lastEditUser.username || "N/A"})`
+                      : "No edits yet"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--ic-gray-600)] mb-1">Last Edited At</p>
+                  <p className="text-sm font-semibold text-[var(--ic-navy)]">
+                    {safePolicy.updatedAt
+                      ? new Date(safePolicy.updatedAt).toLocaleString()
+                      : lastEditLog
+                        ? new Date(lastEditLog.createdAt).toLocaleString()
+                        : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* All Edits History */}
+        {(() => {
+          const editLogs = auditLogs.filter((log: any) => log.action === "UPDATE_POLICY");
+          return (
+            <div>
+              <h3 className="text-base font-semibold text-[var(--ic-navy)] mb-3">
+                All Edits ({editLogs.length})
+              </h3>
+              {editLogs.length > 0 ? (
+                <div className="space-y-3">
+                  {editLogs.map((log: any, index: number) => {
+                    const user = log.userId as any;
+                    return (
+                      <div
+                        key={log._id.toString()}
+                        className="rounded-lg border border-[var(--ic-gray-200)] bg-white p-4"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xs font-semibold text-[var(--ic-gray-600)]">
+                                Edit #{editLogs.length - index}
+                              </span>
+                              <span className="text-xs text-[var(--ic-gray-500)]">•</span>
+                              <span className="text-xs text-[var(--ic-gray-600)]">
+                                {user?.fullName || "Unknown"} ({user?.username || "N/A"})
+                              </span>
+                            </div>
+                            <p className="text-xs text-[var(--ic-gray-500)]">
+                              {new Date(log.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-[var(--ic-gray-600)] italic">No edits recorded yet.</p>
+              )}
+            </div>
+          );
+        })()}
+      </div>
 
       {/* Quick Actions */}
       <div className="card bg-[var(--ic-gray-50)]">

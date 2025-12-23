@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { InfoTooltip } from "./InfoTooltip";
+import { SearchableSelect } from "./forms/SearchableSelect";
 
 type PolicyEdit = {
   _id: string;
@@ -16,9 +17,12 @@ type PolicyEdit = {
   coverageStartDate?: string;
   coverageEndDate?: string;
   totalPremiumDue: number;
-    status: "Active" | "Cancelled" | "Suspended";
+  status: "Active" | "Cancelled" | "Suspended";
   notes?: string | null;
+  customerIds?: string[];
 };
+
+type CustomerOption = { id: string; name: string };
 
 const PREFIXES = ["CA", "VF", "SF"];
 
@@ -41,11 +45,15 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
     "Third Party",
     "Fully Comprehensive",
   ]);
+  const [customerOptions, setCustomerOptions] = useState<CustomerOption[]>([]);
 
   // Initialize form with all policy data
   const initializeForm = useMemo(() => {
     const idParts = splitPrefix(policy.policyIdNumber);
     const numberParts = splitPrefix(policy.policyNumber);
+    const initialCustomerIds = policy.customerIds && policy.customerIds.length > 0 
+      ? policy.customerIds.map((id: any) => id?.toString?.() || id)
+      : [""];
     return {
       policyPrefix: numberParts.prefix || "",
       policyNumberSuffix: numberParts.suffix,
@@ -68,8 +76,9 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
       totalPremiumDue: policy.totalPremiumDue?.toString() || "0",
       status: policy.status || "Active",
       notes: policy.notes || "",
+      customerIds: initialCustomerIds,
     };
-  }, [policy.policyIdNumber, policy.policyNumber, policy.coverageType, policy.registrationNumber, policy.engineNumber, policy.chassisNumber, policy.vehicleType, policy.coverageStartDate, policy.coverageEndDate, policy.totalPremiumDue, policy.status, policy.notes]);
+  }, [policy.policyIdNumber, policy.policyNumber, policy.coverageType, policy.registrationNumber, policy.engineNumber, policy.chassisNumber, policy.vehicleType, policy.coverageStartDate, policy.coverageEndDate, policy.totalPremiumDue, policy.status, policy.notes, policy.customerIds]);
 
   const [form, setForm] = useState(initializeForm);
 
@@ -98,7 +107,25 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
         // ignore
       }
     };
+    
+    const loadCustomers = async () => {
+      try {
+        const res = await fetch("/api/customers");
+        if (res.ok) {
+          const customersData = await res.json();
+          const formatted = customersData.map((c: any) => ({
+            id: c._id.toString(),
+            name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+          }));
+          setCustomerOptions(formatted);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    
     loadCoverageTypes();
+    loadCustomers();
   }, []);
 
   const update = (key: string, value: string) => {
@@ -142,6 +169,29 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
     });
   };
 
+  const updateCustomer = (idx: number, value: string) => {
+    setForm((prev) => {
+      const next = [...prev.customerIds];
+      next[idx] = value;
+      return { ...prev, customerIds: next };
+    });
+  };
+
+  const addCustomerSlot = () => {
+    setForm((prev) => {
+      if (prev.customerIds.length >= 3) return prev;
+      return { ...prev, customerIds: [...prev.customerIds, ""] };
+    });
+  };
+
+  const removeCustomerSlot = (idx: number) => {
+    setForm((prev) => {
+      if (prev.customerIds.length <= 1) return prev;
+      const next = prev.customerIds.filter((_, i) => i !== idx);
+      return { ...prev, customerIds: next };
+    });
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -155,12 +205,20 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
     // Account number is read-only, keep the original value
     const policyIdNumber = policy.policyIdNumber || "";
 
+    const customers = form.customerIds.filter(Boolean);
+    if (!customers.length) {
+      setError("Select at least one customer (max 3).");
+      setLoading(false);
+      return;
+    }
+
     const res = await fetch(`/api/policies/${policy._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         policyNumber, // Use edited policy number
         policyIdNumber, // Keep original account number (read-only)
+        customerIds: customers, // Include customer IDs
         coverageType: form.coverageType,
         registrationNumber: form.registrationNumber || undefined,
         engineNumber: form.engineNumber || undefined,
@@ -211,6 +269,65 @@ export function EditPolicyButton({ policy }: { policy: PolicyEdit }) {
             </div>
 
             <form className="mt-4 space-y-4" onSubmit={onSubmit}>
+              {/* Customer Selection */}
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="flex items-center gap-2">
+                    Customers <InfoTooltip content="Link up to 3 customers to this policy." />
+                  </label>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 rounded-md bg-[var(--ic-teal)] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--ic-navy)]"
+                    onClick={addCustomerSlot}
+                    disabled={form.customerIds.length >= 3}
+                  >
+                    <span className="text-lg leading-none">+</span> Add
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {form.customerIds.map((id, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <SearchableSelect
+                        selectClassName="flex-1"
+                        value={id}
+                        onChange={(value) => updateCustomer(idx, value)}
+                        onFocus={async () => {
+                          // Refresh customer list when user focuses on the select
+                          try {
+                            const res = await fetch("/api/customers");
+                            if (res.ok) {
+                              const customersData = await res.json();
+                              const formatted = customersData.map((c: any) => ({
+                                id: c._id.toString(),
+                                name: `${c.firstName} ${c.middleName || ""} ${c.lastName}`.trim(),
+                              }));
+                              setCustomerOptions(formatted);
+                            }
+                          } catch {
+                            // Ignore errors, keep existing list
+                          }
+                        }}
+                        options={customerOptions.map((customer) => ({
+                          value: customer.id,
+                          label: customer.name,
+                        }))}
+                        placeholderOption="Select customer"
+                        required={idx === 0}
+                      />
+                      {form.customerIds.length > 1 && (
+                        <button
+                          type="button"
+                          className="text-xs text-red-600 hover:underline whitespace-nowrap"
+                          onClick={() => removeCustomerSlot(idx)}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col">
                   <label className="flex items-center gap-2 mb-1">
